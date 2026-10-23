@@ -1,0 +1,316 @@
+/* Command Dock - stile per tablet Android 4.x
+ * Vincoli: niente flexbox, grid, gap, var(), calc(). Prefissi -webkit- per
+ * transizioni e animazioni. Le posizioni delle tile sono calcolate in JS.
+ * Palette: fondo #0b0f14, superficie #18212c, testo #e8eef4, accento #3d8bfd */
+
+* { margin: 0; padding: 0; -webkit-box-sizing: border-box; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  background: #0b0f14;
+  color: #e8eef4;
+  font-family: Roboto, "Droid Sans", "Segoe UI", Arial, sans-serif;
+  -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  -webkit-text-size-adjust: 100%;
+  position: fixed; left: 0; top: 0; right: 0; bottom: 0;
+}
+.hidden { display: none !important; }
+svg.ic { fill: #e8eef4; display: inline-block; vertical-align: middle; }
+
+/* ---------------------------------------------------------- barra in alto */
+#topbar {
+  position: absolute; left: 0; right: 0; top: 0; height: 44px; line-height: 44px;
+  background: #0f151c; border-bottom: 1px solid #1d2733; padding: 0 12px;
+  font-size: 15px; white-space: nowrap; overflow: hidden; z-index: 10;
+}
+.tb-left { position: absolute; left: 12px; top: 0; height: 44px; padding-right: 12px; font-weight: bold; letter-spacing: 1px; }
+#status-dot {
+  display: inline-block; width: 12px; height: 12px; border-radius: 6px; margin-right: 8px;
+  background: #e5534b; vertical-align: -1px;
+}
+#status-dot.on { background: #3fb950; }
+#page-title {
+  text-align: center; font-weight: bold; letter-spacing: 3px; font-size: 16px; color: #9fb3c8;
+  margin: 0 30%;
+}
+.tb-right { position: absolute; right: 12px; top: 0; height: 44px; }
+#mini { color: #8b9bab; font-size: 14px; margin-right: 16px; }
+#clock { font-weight: bold; font-size: 18px; padding: 0 4px; }
+
+#banner {
+  position: absolute; left: 0; right: 0; top: 44px; height: 30px; line-height: 30px; z-index: 20;
+  background: #8b1d1d; color: #fff; text-align: center; font-weight: bold; font-size: 14px; letter-spacing: 1px;
+}
+
+/* ---------------------------------------------------------- area tile */
+#stage { position: absolute; left: 0; right: 0; top: 44px; bottom: 58px; overflow: hidden; }
+body.no-tabs #stage { bottom: 0; }
+body.kb-open #stage { top: 0; bottom: 0; }
+.tile {
+  position: absolute; border-radius: 12px; overflow: hidden;
+  background: #18212c; border: 1px solid #222e3b;
+}
+
+/* pulsanti */
+.tile.btn {
+  background-color: #1d2835;
+  -webkit-transition: -webkit-transform 0.08s, background-color 0.15s;
+  transition: transform 0.08s, background-color 0.15s;
+  cursor: pointer;
+}
+.tile.btn:after {
+  /* riflesso sottile in alto: dà profondità ai tasti colorati */
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 50%;
+  background: rgba(255, 255, 255, 0.04); pointer-events: none;
+}
+.tile.btn.pressed { -webkit-transform: scale(0.95); transform: scale(0.95); border-color: #3d8bfd; }
+.tile.btn.ok { border-color: #3fb950; -webkit-box-shadow: inset 0 0 0 2px #3fb950; box-shadow: inset 0 0 0 2px #3fb950; }
+.tile.btn.err { border-color: #e5534b; -webkit-box-shadow: inset 0 0 0 2px #e5534b; box-shadow: inset 0 0 0 2px #e5534b; }
+.tile.btn.busy .t-icon { opacity: 0.45; }
+.t-icon { position: absolute; left: 0; right: 0; top: 14%; height: 40%; text-align: center; }
+.t-icon svg { height: 100%; width: 100%; }
+.t-label {
+  position: absolute; left: 6px; right: 6px; bottom: 24%; text-align: center;
+  font-weight: bold; font-size: 1em; letter-spacing: 1px; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.t-sub {
+  position: absolute; left: 6px; right: 6px; bottom: 8%; text-align: center; font-size: 0.75em; color: rgba(232, 238, 244, 0.65);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tile.btn.no-icon .t-label { bottom: auto; top: 38%; font-size: 1.15em; }
+.tile.btn.no-icon .t-sub { bottom: 18%; }
+.tile.short .t-icon { top: 10%; height: 36%; }
+.tile.short .t-label { bottom: 22%; font-size: 0.9em; }
+.tile.short .t-sub { display: none; }
+
+/* pulsanti da tenere premuti */
+.t-hold { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(0, 0, 0, 0.3); }
+.t-hold i { display: block; height: 100%; width: 0; background: #ffb454; }
+.tile.btn.confirm.holding .t-hold i {
+  width: 100%;
+  -webkit-transition: width 0.9s linear; transition: width 0.9s linear;
+}
+
+/* ---------------------------------------------------------- barra pagine */
+#tabs {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 58px; background: #0f151c;
+  border-top: 1px solid #1d2733; white-space: nowrap; overflow: hidden; z-index: 10;
+}
+.tab {
+  display: inline-block; height: 58px; text-align: center; vertical-align: top; padding-top: 7px;
+  color: #8b9bab; font-size: 12px; font-weight: bold; letter-spacing: 1px; overflow: hidden;
+}
+.tab svg.ic { width: 24px; height: 24px; fill: #8b9bab; display: block; margin: 0 auto 3px; }
+.tab span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+.tab.active { color: #fff; background: #18212c; -webkit-box-shadow: inset 0 3px 0 #3d8bfd; box-shadow: inset 0 3px 0 #3d8bfd; }
+.tab.active svg.ic { fill: #fff; }
+.tab.pressed { background: #223041; }
+body.kb-open #topbar, body.kb-open #tabs { display: none; }
+
+/* ---------------------------------------------------------- toast e modale */
+#toast {
+  position: absolute; left: 50%; bottom: 76px; width: 520px; margin-left: -260px; z-index: 50;
+  background: #26313d; color: #fff; padding: 12px 16px; border-radius: 10px; text-align: center;
+  font-size: 16px; font-weight: bold; opacity: 0; visibility: hidden;
+  -webkit-transition: opacity 0.2s; transition: opacity 0.2s;
+  -webkit-box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+#toast.show { opacity: 1; visibility: visible; }
+#toast.ok { background: #1e5631; }
+#toast.err { background: #8b1d1d; }
+@media (max-width: 600px) { #toast { width: 90%; left: 5%; margin-left: 0; } }
+
+#modal, #pair, #boot {
+  position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 60; background: rgba(5, 8, 12, 0.88);
+}
+.modal-box {
+  position: absolute; left: 6%; right: 6%; top: 7%; bottom: 7%;
+  background: #141c25; border: 1px solid #2a3746; border-radius: 14px; padding: 14px;
+}
+.modal-title { font-weight: bold; font-size: 17px; letter-spacing: 1px; height: 30px; }
+.modal-body {
+  position: absolute; left: 14px; right: 14px; top: 48px; bottom: 74px; overflow: auto; -webkit-overflow-scrolling: touch;
+  font-family: "Droid Sans Mono", Consolas, monospace; font-size: 14px; color: #cfd9e3; white-space: pre-wrap; word-wrap: break-word;
+  background: #0b0f14; border-radius: 8px; padding: 10px;
+}
+.modal-close {
+  position: absolute; right: 14px; bottom: 12px; width: 160px; height: 50px; line-height: 50px; text-align: center;
+  background: #3d8bfd; border-radius: 10px; font-weight: bold; letter-spacing: 1px;
+}
+
+.pair-box, #boot .boot-title { text-align: center; }
+.pair-box {
+  position: absolute; left: 50%; top: 12%; width: 440px; margin-left: -220px;
+  background: #141c25; border: 1px solid #2a3746; border-radius: 14px; padding: 22px;
+}
+.pair-title { font-size: 22px; font-weight: bold; margin-bottom: 10px; }
+.pair-msg { color: #9fb3c8; font-size: 15px; margin-bottom: 16px; line-height: 1.4; }
+#pair-code {
+  width: 100%; height: 56px; font-size: 26px; text-align: center; letter-spacing: 6px; text-transform: uppercase;
+  background: #0b0f14; color: #fff; border: 2px solid #2a3746; border-radius: 10px; margin-bottom: 14px;
+  -webkit-user-select: text; user-select: text;
+}
+.pair-go { height: 56px; line-height: 56px; background: #3d8bfd; border-radius: 10px; font-weight: bold; font-size: 18px; letter-spacing: 2px; }
+.pair-go.pressed { background: #2f6fd0; }
+#boot { background: #0b0f14; }
+.boot-title { position: absolute; left: 0; right: 0; top: 38%; font-size: 26px; font-weight: bold; letter-spacing: 6px; }
+#boot-msg { position: absolute; left: 0; right: 0; top: 50%; text-align: center; color: #8b9bab; font-size: 16px; }
+
+/* ---------------------------------------------------------- widget: comuni */
+.tile.widget { padding: 10px 12px; }
+.w-head { height: 34px; line-height: 30px; position: relative; white-space: nowrap; overflow: hidden; }
+.w-title { font-weight: bold; letter-spacing: 2px; font-size: 14px; color: #9fb3c8; overflow: hidden; text-overflow: ellipsis; margin-right: 150px; }
+.w-head .sbtn, .w-head .chat-tools { position: absolute; right: 0; top: 0; }
+.sbtn {
+  display: inline-block; height: 30px; line-height: 30px; padding: 0 10px; border-radius: 8px;
+  background: #243142; font-size: 12px; font-weight: bold; letter-spacing: 1px; margin-left: 6px; vertical-align: top;
+}
+.sbtn svg.ic { width: 18px; height: 18px; margin-top: -2px; }
+.sbtn span { margin-left: 4px; }
+.sbtn.pressed { background: #3d8bfd; }
+.sbtn.spin svg.ic { opacity: 0.4; }
+.w-list {
+  position: absolute; left: 10px; right: 10px; bottom: 10px; overflow: auto; -webkit-overflow-scrolling: touch;
+}
+.empty { color: #8b9bab; font-size: 15px; padding: 14px 6px; text-align: center; line-height: 1.4; }
+.empty.err { color: #ff9c94; }
+
+/* ---------------------------------------------------------- widget: system */
+.metric { position: relative; height: 3.05em; margin-bottom: 0.3em; }
+.m-label { position: absolute; left: 0; top: 0; font-weight: bold; color: #9fb3c8; font-size: 0.9em; letter-spacing: 1px; }
+.m-extra { position: absolute; left: 4.4em; top: 0; color: #8b9bab; font-size: 0.9em; }
+.m-val { position: absolute; right: 0; top: -0.15em; font-weight: bold; font-size: 1.2em; }
+.bar { position: absolute; left: 0; right: 0; top: 1.75em; height: 0.75em; background: #0b0f14; border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: #3d8bfd; -webkit-transition: width 0.6s; transition: width 0.6s; }
+.bar.ok i { background: #3fb950; }
+.bar.warn i { background: #d29922; }
+.bar.hot i { background: #e5534b; }
+.bar.nobar { visibility: hidden; }
+
+/* ---------------------------------------------------------- widget: now playing */
+.w-np { padding: 0 !important; }
+.np-art { position: absolute; border-radius: 10px; overflow: hidden; background: #0b0f14; }
+.np-art img { display: none; width: 100%; height: 100%; }
+.np-art-ph { width: 100%; height: 100%; text-align: center; padding: 26%; }
+.np-art-ph svg.ic { width: 100%; height: 100%; fill: #2a3746; }
+.np-info { position: absolute; top: 12px; bottom: 12px; }
+.np-src { font-size: 0.75em; font-weight: bold; color: #8b9bab; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-title {
+  font-size: 1.45em; font-weight: bold; margin-top: 0.3em; line-height: 1.2; max-height: 2.4em; overflow: hidden; word-wrap: break-word;
+}
+.np-artist { color: #b6c4d2; font-size: 1em; margin-top: 0.25em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-prog { margin-top: 0.7em; height: 6px; background: #0b0f14; border-radius: 3px; overflow: hidden; }
+.np-prog i { display: block; height: 100%; width: 0; background: #e8eef4; }
+.np-times { font-size: 0.75em; color: #8b9bab; margin-top: 4px; height: 1.2em; }
+.np-ctr { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; text-align: center; white-space: nowrap; }
+.np-btn {
+  display: inline-block; width: 19%; max-width: 92px; height: 64px; margin: 0 1%; border-radius: 12px; background: #243142;
+  text-align: center; padding-top: 12px; vertical-align: top;
+  -webkit-transition: -webkit-transform 0.08s; transition: transform 0.08s;
+}
+.np-btn svg.ic { width: 40px; height: 40px; }
+.np-btn.np-play { background: #e8eef4; }
+.np-btn.np-play svg.ic { fill: #0b0f14; }
+.np-btn.pressed { -webkit-transform: scale(0.92); transform: scale(0.92); background: #3d8bfd; }
+.np-btn.np-vol { width: 13%; background: #18212c; border: 1px solid #2a3746; }
+.np-compact .np-ctr { height: 50px; }
+.np-compact .np-btn { height: 50px; padding-top: 7px; }
+.np-compact .np-btn svg.ic { width: 34px; height: 34px; }
+.np-compact .np-title { font-size: 1.2em; max-height: 1.25em; }
+.np-compact .np-times { display: none; }
+
+/* ---------------------------------------------------------- widget: github */
+.gh-totals { font-size: 14px; color: #b6c4d2; height: 26px; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gh-totals.err { color: #ff9c94; }
+.w-gh .w-list { top: 74px; }
+.gh-row { position: relative; background: #1d2835; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; min-height: 64px; }
+.gh-row.pressed { background: #26354a; }
+.gh-name { font-weight: bold; font-size: 17px; margin-right: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gh-priv { font-size: 11px; color: #d29922; border: 1px solid #d29922; border-radius: 4px; padding: 0 4px; vertical-align: 2px; }
+.gh-msg { font-size: 14px; color: #9fb3c8; margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gh-msg.err { color: #ff9c94; }
+.gh-when { color: #6e7f90; }
+.gh-badges { position: absolute; right: 10px; top: 8px; white-space: nowrap; }
+.badge { display: inline-block; font-size: 12px; font-weight: bold; padding: 4px 8px; border-radius: 6px; margin-left: 4px; background: #2a3746; }
+.badge.pr { background: #213a5c; }
+.badge.is { background: #3a3220; }
+.badge.good { background: #1e5631; }
+.badge.bad { background: #8b1d1d; }
+.badge.run { background: #6b5214; }
+
+/* ---------------------------------------------------------- widget: todo */
+.todo-form { position: relative; height: 50px; margin-top: 2px; }
+.todo-input {
+  position: absolute; left: 0; right: 60px; top: 0; height: 46px; padding: 0 12px; font-size: 17px;
+  background: #0b0f14; color: #fff; border: 1px solid #2a3746; border-radius: 10px; -webkit-user-select: text; user-select: text;
+}
+.todo-add { position: absolute; right: 0; top: 0; width: 52px; height: 46px; border-radius: 10px; background: #3d8bfd; text-align: center; padding-top: 9px; }
+.todo-add svg.ic { width: 28px; height: 28px; }
+.todo-add.pressed { background: #2f6fd0; }
+.w-todo .w-list { top: 100px; }
+.todo-row { position: relative; min-height: 54px; padding: 15px 56px 13px 54px; background: #1d2835; border-radius: 10px; margin-bottom: 7px; font-size: 17px; line-height: 1.3; }
+.todo-row.pressed { background: #26354a; }
+.todo-row.high { -webkit-box-shadow: inset 4px 0 0 #e5534b; box-shadow: inset 4px 0 0 #e5534b; }
+.todo-row.done .todo-text { color: #6e7f90; text-decoration: line-through; }
+.todo-box { position: absolute; left: 14px; top: 13px; width: 28px; height: 28px; border: 2px solid #5b6b7c; border-radius: 7px; text-align: center; }
+.todo-row.done .todo-box { background: #3fb950; border-color: #3fb950; }
+.todo-box svg.ic { width: 22px; height: 22px; margin-top: 1px; }
+.todo-del { position: absolute; right: 0; top: 0; bottom: 0; width: 52px; text-align: center; padding-top: 14px; }
+.todo-del svg.ic { width: 22px; height: 22px; fill: #6e7f90; }
+
+/* ---------------------------------------------------------- widget: chat */
+.chat-tools { white-space: nowrap; }
+.chat-model {
+  height: 30px; font-size: 14px; max-width: 280px; background: #0b0f14; color: #fff;
+  border: 1px solid #2a3746; border-radius: 8px; padding: 0 6px; vertical-align: top;
+}
+.chat-model-label { font-size: 13px; color: #8b9bab; vertical-align: top; margin-right: 4px; }
+.w-chat .w-title { margin-right: 360px; }
+.chat-log {
+  position: absolute; left: 10px; right: 10px; top: 48px; bottom: 76px; overflow: auto; -webkit-overflow-scrolling: touch;
+  background: #0f151c; border-radius: 10px; padding: 10px;
+}
+.msg { max-width: 86%; padding: 10px 13px; border-radius: 12px; margin-bottom: 8px; font-size: 16px; line-height: 1.45; word-wrap: break-word; -webkit-user-select: text; user-select: text; }
+.msg.user { margin-left: auto; background: #1f4f8f; text-align: left; }
+.msg.assistant { background: #1d2835; }
+.claude .msg.user { background: #8a4227; }
+.msg.error { background: #4d1717; color: #ffc9c4; }
+.msg pre.code {
+  background: #0b0f14; border-radius: 6px; padding: 8px; margin: 6px 0; font-family: "Droid Sans Mono", Consolas, monospace;
+  font-size: 13px; white-space: pre-wrap; word-wrap: break-word;
+}
+.msg code { font-family: "Droid Sans Mono", Consolas, monospace; background: #0b0f14; padding: 1px 4px; border-radius: 4px; font-size: 0.9em; }
+.msg.typing i {
+  display: inline-block; width: 9px; height: 9px; border-radius: 5px; background: #8b9bab; margin-right: 5px;
+  -webkit-animation: blink 1.2s infinite; animation: blink 1.2s infinite;
+}
+.msg.typing i:nth-child(2) { -webkit-animation-delay: 0.2s; animation-delay: 0.2s; }
+.msg.typing i:nth-child(3) { -webkit-animation-delay: 0.4s; animation-delay: 0.4s; }
+@-webkit-keyframes blink { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+@keyframes blink { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+.chat-form { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 58px; }
+.chat-input {
+  position: absolute; left: 0; right: 74px; top: 0; height: 58px; padding: 8px 12px; font-size: 16px; resize: none;
+  background: #0b0f14; color: #fff; border: 1px solid #2a3746; border-radius: 10px; font-family: inherit;
+  -webkit-user-select: text; user-select: text;
+}
+.chat-send { position: absolute; right: 0; top: 0; width: 66px; height: 58px; border-radius: 10px; background: #3d8bfd; text-align: center; padding-top: 13px; }
+.claude .chat-send { background: #c15f3c; }
+.chat-send svg.ic { width: 30px; height: 30px; }
+.chat-send.busy { opacity: 0.4; }
+.chat-send.pressed { -webkit-transform: scale(0.94); transform: scale(0.94); }
+
+/* ---------------------------------------------------------- widget: orologio */
+.w-clock { text-align: center; }
+.clk-time { font-size: 80px; font-weight: bold; margin-top: 18%; letter-spacing: 2px; }
+.clk-date { font-size: 18px; color: #9fb3c8; text-transform: capitalize; }
+
+/* schermi piccoli (800x480) */
+@media (max-width: 860px) {
+  #mini { display: none; }
+  #page-title { margin: 0 25%; }
+  .gh-name { margin-right: 220px; }
+  .w-chat .w-title { margin-right: 300px; }
+  .chat-model { max-width: 200px; }
+}

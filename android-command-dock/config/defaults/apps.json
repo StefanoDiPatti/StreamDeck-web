@@ -1,0 +1,78 @@
+// Applicazioni avviabili dai pulsanti { "type": "launch", "app": "<id>" }.
+// Ogni app può avere una variante "windows" e/o "linux".
+//  path : eseguibile, percorso assoluto o comando nel PATH.
+//         Ammessi %VAR% (Windows), $VAR e ~ (Linux) e * per le versioni.
+//         Windows: "shell:AppsFolder\<AppID>" avvia le app dello Store
+//         (trovi l'AppID con PowerShell: Get-StartApps).
+//  args : lista di argomenti (opzionale)   cwd : cartella di lavoro (opzionale)
+{
+  "apps": {
+    "blender": {
+      "label": "Blender",
+      "windows": { "path": "C:\\Program Files\\Blender Foundation\\Blender *\\blender.exe" },
+      "linux": { "path": "blender" }
+    },
+    "davinci": {
+      "label": "DaVinci Resolve",
+      "windows": { "path": "C:\\Program Files\\Blackmagic Design\\DaVinci Resolve\\Resolve.exe" },
+      "linux": { "path": "/opt/resolve/bin/resolve" }
+    },
+    "vscode": {
+      "label": "VS Code",
+      "windows": { "path": "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe" },
+      "linux": { "path": "code" }
+    },
+    "unreal": {
+      "label": "Unreal Editor",
+      "windows": { "path": "C:\\Program Files\\Epic Games\\UE_*\\Engine\\Binaries\\Win64\\UnrealEditor.exe" },
+      "linux": { "path": "~/UnrealEngine/Engine/Binaries/Linux/UnrealEditor" }
+    },
+    "epic": {
+      "label": "Epic Games",
+      "windows": { "path": "C:\\Program Files\\Epic Games\\Launcher\\Portal\\Binaries\\Win64\\EpicGamesLauncher.exe" }
+    },
+    "apple_music": {
+      "label": "Apple Music",
+      "windows": { "path": "shell:AppsFolder\\AppleInc.AppleMusicWin_nzyj5cx40ttqa!App" }
+    },
+    "spotify": {
+      "label": "Spotify",
+      "windows": { "path": "%APPDATA%\\Spotify\\Spotify.exe" },
+      "linux": { "path": "spotify" }
+    },
+    "claude_desktop": {
+      "label": "Claude",
+      "windows": { "path": "shell:AppsFolder\\Claude_pzs8sxrjxfjjc!Claude" }
+    },
+    "claude_code": {
+      "label": "Claude Code",
+      "windows": { "path": "wt.exe", "args": ["-d", "%USERPROFILE%\\Documents\\AI Projects", "claude"] },
+      "linux": { "path": "x-terminal-emulator", "args": ["-e", "claude"], "cwd": "~" }
+    },
+    "terminal": {
+      "label": "Terminale",
+      "windows": { "path": "wt.exe" },
+      "linux": { "path": "x-terminal-emulator" }
+    },
+    "files": {
+      "label": "File",
+      "windows": { "path": "explorer.exe", "args": ["%USERPROFILE%"] },
+      "linux": { "path": "xdg-open", "args": ["~"] }
+    },
+    "taskmgr": {
+      "label": "Gestione attività",
+      "windows": { "path": "taskmgr.exe" },
+      "linux": { "path": "gnome-system-monitor" }
+    },
+    "steam": {
+      "label": "Steam",
+      "windows": { "path": "C:\\Program Files (x86)\\Steam\\steam.exe" },
+      "linux": { "path": "steam" }
+    },
+    "discord": {
+      "label": "Discord",
+      "windows": { "path": "%LOCALAPPDATA%\\Discord\\Update.exe", "args": ["--processStart", "Discord.exe"] },
+      "linux": { "path": "discord" }
+    }
+  }
+}

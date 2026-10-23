@@ -1,0 +1,7 @@
+node_modules/
+.env
+# configurazione personale (i default stanno in config/defaults/)
+config/*.json
+data/
+.dock-setup.json
+*.log
