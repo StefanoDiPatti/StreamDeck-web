@@ -107,6 +107,118 @@ public static class DockInput {
 }
 "@
 
+# --- Volume per singola app (Core Audio). Blocco separato: se non compila
+#     il resto dell'helper continua a funzionare. ---
+$script:appAudio = $false
+try {
+  Add-Type -TypeDefinition @"
+using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+
+public static class DockAudio {
+  [ComImport, Guid("BCDE0395-E52F-467C-8E3D-C4579291692E")] class MMDeviceEnumeratorCom { }
+
+  [Guid("A95664D2-9614-4F35-A746-DE8DB63617E6"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  interface IMMDeviceEnumerator {
+    int NotImpl1();
+    [PreserveSig] int GetDefaultAudioEndpoint(int dataFlow, int role, out IMMDevice dev);
+  }
+  [Guid("D666063F-1587-4E43-81F1-B948E807363F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  interface IMMDevice {
+    [PreserveSig] int Activate(ref Guid iid, int ctx, IntPtr p, [MarshalAs(UnmanagedType.IUnknown)] out object o);
+  }
+  [Guid("77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  interface IAudioSessionManager2 {
+    int NotImpl1(); int NotImpl2();
+    [PreserveSig] int GetSessionEnumerator(out IAudioSessionEnumerator e);
+  }
+  [Guid("E2F5BB11-0570-40CA-ACDD-3AA01277DEE8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  interface IAudioSessionEnumerator {
+    [PreserveSig] int GetCount(out int n);
+    [PreserveSig] int GetSession(int i, out IAudioSessionControl2 s);
+  }
+  [Guid("bfb7ff88-7239-4fc9-8fa2-07c950be9c6d"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  interface IAudioSessionControl2 {
+    int N0(); int N1(); int N2(); int N3(); int N4(); int N5(); int N6(); int N7(); int N8();
+    int N9(); int N10();
+    [PreserveSig] int GetProcessId(out uint pid);
+  }
+  [Guid("87CE5498-68D6-44E5-9215-6DA47EF883D8"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  interface ISimpleAudioVolume {
+    [PreserveSig] int SetMasterVolume(float level, ref Guid ctx);
+    [PreserveSig] int GetMasterVolume(out float level);
+    [PreserveSig] int SetMute([MarshalAs(UnmanagedType.Bool)] bool mute, ref Guid ctx);
+    [PreserveSig] int GetMute([MarshalAs(UnmanagedType.Bool)] out bool mute);
+  }
+
+  static IAudioSessionEnumerator Sessions() {
+    IMMDeviceEnumerator en = (IMMDeviceEnumerator)(new MMDeviceEnumeratorCom());
+    IMMDevice dev;
+    int hr = en.GetDefaultAudioEndpoint(0, 1, out dev);
+    if (hr != 0) throw new Exception("GetDefaultAudioEndpoint 0x" + hr.ToString("X"));
+    Guid iid = typeof(IAudioSessionManager2).GUID;
+    object o;
+    hr = dev.Activate(ref iid, 23, IntPtr.Zero, out o);
+    if (hr != 0) throw new Exception("Activate 0x" + hr.ToString("X"));
+    IAudioSessionEnumerator list;
+    hr = ((IAudioSessionManager2)o).GetSessionEnumerator(out list);
+    if (hr != 0) throw new Exception("GetSessionEnumerator 0x" + hr.ToString("X"));
+    return list;
+  }
+
+  // Processi che hanno una sessione audio (per capire che nome usare nella config).
+  public static string[] ListProcesses() {
+    IAudioSessionEnumerator list = Sessions();
+    int count; list.GetCount(out count);
+    System.Collections.Generic.List<string> names = new System.Collections.Generic.List<string>();
+    for (int i = 0; i < count; i++) {
+      IAudioSessionControl2 ctl;
+      if (list.GetSession(i, out ctl) != 0 || ctl == null) continue;
+      uint pid; ctl.GetProcessId(out pid);
+      if (pid == 0) continue;
+      try { names.Add(Process.GetProcessById((int)pid).ProcessName.ToLowerInvariant()); } catch { }
+    }
+    return names.ToArray();
+  }
+
+  // Regola il volume delle sessioni audio dei processi indicati.
+  // delta: variazione (es. +0.05); mute: -1 invariato, 0/1 imposta, 2 inverte.
+  // Ritorna il volume risultante (0..1) o -1 se il processo non sta suonando.
+  public static float Adjust(string[] names, float delta, int mute) {
+    IAudioSessionEnumerator list = Sessions();
+    int count; list.GetCount(out count);
+    float result = -1;
+    Guid ctx = Guid.Empty;
+    for (int i = 0; i < count; i++) {
+      IAudioSessionControl2 ctl;
+      if (list.GetSession(i, out ctl) != 0 || ctl == null) continue;
+      uint pid; ctl.GetProcessId(out pid);
+      if (pid == 0) continue;
+      string pname;
+      try { pname = Process.GetProcessById((int)pid).ProcessName.ToLowerInvariant(); } catch { continue; }
+      bool match = false;
+      foreach (string n in names) if (pname == n.ToLowerInvariant()) { match = true; break; }
+      if (!match) continue;
+      ISimpleAudioVolume vol = (ISimpleAudioVolume)ctl;
+      float level; vol.GetMasterVolume(out level);
+      if (delta != 0) {
+        level = Math.Max(0f, Math.Min(1f, level + delta));
+        vol.SetMasterVolume(level, ref ctx);
+      }
+      if (mute >= 0) {
+        bool m; vol.GetMute(out m);
+        vol.SetMute(mute == 2 ? !m : mute == 1, ref ctx);
+      }
+      result = level;
+    }
+    return result;
+  }
+}
+"@
+  $script:appAudio = $true
+} catch { }
+
 # --- WinRT (Now Playing). Se non disponibile il resto continua a funzionare. ---
 $script:winrt = $false
 $script:mgr = $null
@@ -127,35 +239,83 @@ function Await($op, [Type]$type) {
   return $task.Result
 }
 
-function Get-NowPlaying {
-  if (-not $script:winrt) { return @{ supported = $false } }
+$script:thumbs = @{}
+
+function Get-Manager {
   if ($null -eq $script:mgr) {
     $script:mgr = Await ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])
   }
-  $s = $script:mgr.GetCurrentSession()
-  if ($null -eq $s) { $script:thumb = $null; return @{ supported = $true; active = $false } }
-  $p = Await ($s.TryGetMediaPropertiesAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties])
-  $pb = $s.GetPlaybackInfo()
-  $tl = $s.GetTimelineProperties()
-  $script:thumb = $p.Thumbnail
-  return @{
-    supported = $true
-    active = $true
-    app = [string]$s.SourceAppUserModelId
-    title = [string]$p.Title
-    artist = [string]$p.Artist
-    album = [string]$p.AlbumTitle
-    status = [string]$pb.PlaybackStatus
-    position = [double]$tl.Position.TotalSeconds
-    duration = [double]$tl.EndTime.TotalSeconds
-    updatedAt = [double]$tl.LastUpdatedTime.ToUnixTimeMilliseconds()
-    hasArt = ($null -ne $p.Thumbnail)
-  }
+  return $script:mgr
 }
 
-function Get-Art {
-  if ($null -eq $script:thumb) { return @{ ok = $false } }
-  $stream = Await ($script:thumb.OpenReadAsync()) ([Windows.Storage.Streams.IRandomAccessStreamWithContentType])
+function Find-Session([string]$app) {
+  foreach ($s in (Get-Manager).GetSessions()) {
+    if ([string]$s.SourceAppUserModelId -eq $app) { return $s }
+  }
+  return $null
+}
+
+# Tutte le sessioni multimediali: il filtro "solo app musicali" lo fa Node.
+# (Windows considera "corrente" anche sessioni come Riot Client.)
+function Get-Sessions {
+  if (-not $script:winrt) { return @{ supported = $false; sessions = @() } }
+  $mgr = Get-Manager
+  $cur = $mgr.GetCurrentSession()
+  $curId = ''
+  if ($null -ne $cur) { $curId = [string]$cur.SourceAppUserModelId }
+  $list = @()
+  $thumbs = @{}
+  foreach ($s in $mgr.GetSessions()) {
+    try {
+      $p = Await ($s.TryGetMediaPropertiesAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties])
+      $pb = $s.GetPlaybackInfo()
+      $tl = $s.GetTimelineProperties()
+      $app = [string]$s.SourceAppUserModelId
+      $thumbs[$app] = $p.Thumbnail
+      $list += @{
+        app = $app
+        current = ($app -eq $curId)
+        title = [string]$p.Title
+        artist = [string]$p.Artist
+        album = [string]$p.AlbumTitle
+        status = [string]$pb.PlaybackStatus
+        start = [double]$tl.StartTime.TotalSeconds
+        end = [double]$tl.EndTime.TotalSeconds
+        position = [double]$tl.Position.TotalSeconds
+        updatedAt = [double]$tl.LastUpdatedTime.ToUnixTimeMilliseconds()
+        hasArt = ($null -ne $p.Thumbnail)
+        canSeek = [bool]$pb.Controls.IsPlaybackPositionEnabled
+        canShuffle = [bool]$pb.Controls.IsShuffleEnabled
+        shuffle = [bool]$pb.IsShuffleActive
+        repeat = [string]$pb.AutoRepeatMode
+      }
+    } catch { }
+  }
+  $script:thumbs = $thumbs
+  return @{ supported = $true; sessions = $list }
+}
+
+# Comanda una sessione precisa (non "quella corrente" di Windows).
+function Invoke-Control($req) {
+  $s = Find-Session ([string]$req.app)
+  if ($null -eq $s) { throw 'sessione non trovata' }
+  switch ([string]$req.action) {
+    'play_pause' { $op = $s.TryTogglePlayPauseAsync() }
+    'next' { $op = $s.TrySkipNextAsync() }
+    'previous' { $op = $s.TrySkipPreviousAsync() }
+    'stop' { $op = $s.TryStopAsync() }
+    'seek' { $op = $s.TryChangePlaybackPositionAsync([long]([double]$req.position * 10000000)) }
+    'shuffle' { $op = $s.TryChangeShuffleActiveAsync([bool]$req.value) }
+    default { throw ('azione sconosciuta: ' + $req.action) }
+  }
+  return @{ done = [bool](Await $op ([bool])) }
+}
+
+function Get-Art($req) {
+  $thumb = $null
+  if ($req.app -and $script:thumbs.ContainsKey([string]$req.app)) { $thumb = $script:thumbs[[string]$req.app] }
+  if ($null -eq $thumb) { return @{ ok = $false } }
+  $stream = Await ($thumb.OpenReadAsync()) ([Windows.Storage.Streams.IRandomAccessStreamWithContentType])
   try {
     # PowerShell non sa convertire lo stream WinRT: la conversione a .NET
     # Stream si fa via reflection, che esegue il cast vero sul COM object.
@@ -195,7 +355,7 @@ function Open-Target($req) {
   return @{ started = $true }
 }
 
-Send-Reply @{ id = 0; ready = $true; winrt = $script:winrt }
+Send-Reply @{ id = 0; ready = $true; winrt = $script:winrt; appAudio = $script:appAudio }
 
 while ($true) {
   $line = $stdin.ReadLine()
@@ -211,8 +371,14 @@ while ($true) {
       'text' { $data = @{ sent = [DockInput]::Text([string]$req.text) } }
       'focus' { $data = @{ focused = [DockInput]::Focus([string]$req.name) } }
       'open' { $data = Open-Target $req }
-      'nowplaying' { $data = Get-NowPlaying }
-      'art' { $data = Get-Art }
+      'sessions' { $data = Get-Sessions }
+      'control' { $data = Invoke-Control $req }
+      'art' { $data = Get-Art $req }
+      'appvolume' {
+        if (-not $script:appAudio) { throw 'volume per app non disponibile' }
+        $data = @{ level = [DockAudio]::Adjust([string[]]@($req.names), [float]$req.delta, [int]$req.mute) }
+      }
+      'audiosessions' { $data = @{ processes = @([DockAudio]::ListProcesses()) } }
       'net' { $data = Get-Net }
       default { throw ('comando sconosciuto: ' + $req.cmd) }
     }

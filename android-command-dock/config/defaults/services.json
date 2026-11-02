@@ -39,6 +39,37 @@
     // Solo per backend "cli": modello (vuoto = predefinito) e cartella di lavoro
     "cliModel": "",
     "cliCwd": "~",
-    "system": "Rispondi in italiano, in modo conciso: il testo viene letto su un tablet da 8 pollici. Evita tabelle larghe e blocchi di codice lunghi se non richiesti."
+    // Permessi di Claude Code quando lo comandi dal tablet. Vuoto = come da
+    // tue impostazioni (gli strumenti che chiedono conferma vengono negati).
+    // "acceptEdits" = può modificare file senza chiedere.
+    "cliPermissionMode": "",
+    "system": "Rispondi in italiano, in modo conciso: il testo viene letto su un tablet da 8 pollici. Evita tabelle larghe e blocchi di codice lunghi se non richiesti.",
+    // Finestre in cui il tablet può "scrivere come una tastiera" (modalità PC).
+    // focus = nome del processo da portare in primo piano (vuoto = finestra attiva)
+    "remoteTargets": [
+      { "label": "Finestra attiva", "focus": "" },
+      { "label": "Claude (app)", "focus": "claude" },
+      { "label": "VS Code", "focus": "Code" },
+      { "label": "Terminale", "focus": "WindowsTerminal" },
+      { "label": "PowerShell", "focus": "powershell" }
+    ]
+  },
+
+  "media": {
+    // Sorgenti musicali di sistema accettate oltre a quelle predefinite
+    // (Spotify, VLC, Tidal, Deezer, MusicBee, ...). Regex sull'id dell'app.
+    "allowApps": [],
+    // Mai considerate musica (giochi, launcher...)
+    "blockApps": ["riot", "league", "valorant", "steam", "discord", "nvidia", "xbox", "game", "epic", "battle"],
+    // Senza l'estensione del browser, usa i controlli del browser come ripiego
+    "browserFallback": true
+  },
+
+  "voice": {
+    // Trascrizione sul PC degli audio registrati dal tablet (opzionale).
+    // Esempio con whisper.cpp:
+    // "command": "C:\\whisper\\whisper-cli.exe",
+    // "args": ["-m", "C:\\whisper\\ggml-small.bin", "-l", "it", "-nt", "-f", "{file}"]
+    "command": ""
   }
 }

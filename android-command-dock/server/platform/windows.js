@@ -37,6 +37,7 @@ module.exports = {
       focus: true,
       nowPlaying: !!query.info.winrt,
       art: !!query.info.winrt,
+      appVolume: !!input.info.appAudio,
       notes: query.info.winrt === false ? ['API WinRT non disponibili: niente "Now Playing"'] : []
     };
   },
@@ -89,32 +90,64 @@ module.exports = {
     });
   },
 
-  nowPlaying: function () {
-    return query.call('nowplaying', {}, 6000).then(function (d) {
-      if (!d.supported) return { supported: false };
-      if (!d.active) return { supported: true, active: false };
-      const status = String(d.status || '').toLowerCase();
+  // Tutte le sessioni multimediali di Windows, in formato neutro.
+  // position/duration sono relative all'inizio del brano (EndTime - StartTime).
+  sessions: function () {
+    return query.call('sessions', {}, 8000).then(function (d) {
+      if (!d || !d.supported) return { supported: false, sessions: [] };
       return {
         supported: true,
-        active: true,
-        app: d.app || '',
-        title: d.title || '',
-        artist: d.artist || '',
-        album: d.album || '',
-        status: status === 'playing' ? 'playing' : status === 'paused' ? 'paused' : 'stopped',
-        position: d.position || 0,
-        duration: d.duration || 0,
-        updatedAt: d.updatedAt || Date.now(),
-        hasArt: !!d.hasArt
+        sessions: (d.sessions || []).map(function (s) {
+          const status = String(s.status || '').toLowerCase();
+          const start = s.start || 0;
+          return {
+            id: s.app,
+            app: s.app || '',
+            current: !!s.current,
+            title: s.title || '',
+            artist: s.artist || '',
+            album: s.album || '',
+            status: status === 'playing' ? 'playing' : status === 'paused' ? 'paused' : 'stopped',
+            position: Math.max(0, (s.position || 0) - start),
+            duration: Math.max(0, (s.end || 0) - start),
+            start: start,
+            updatedAt: s.updatedAt || 0,
+            hasArt: !!s.hasArt,
+            canSeek: !!s.canSeek,
+            canShuffle: !!s.canShuffle,
+            shuffle: !!s.shuffle
+          };
+        })
       };
     });
   },
 
-  art: function () {
-    return query.call('art', {}, 8000).then(function (d) {
+  // Comando a una sessione precisa: play_pause, next, previous, stop, seek, shuffle
+  control: function (session, action, extra) {
+    const args = { app: session.app, action: action };
+    if (action === 'seek') args.position = (session.start || 0) + Number(extra || 0);
+    if (action === 'shuffle') args.value = !!extra;
+    return input.call('control', args, 6000).then(function (r) {
+      if (!r.done) throw new Error('L\'app non ha accettato il comando');
+      return r;
+    });
+  },
+
+  art: function (session) {
+    return query.call('art', { app: session.app }, 8000).then(function (d) {
       if (!d || !d.ok) return null;
       return { mime: d.mime || 'image/jpeg', data: Buffer.from(d.data, 'base64') };
     });
+  },
+
+  // Volume dell'app (non di sistema): names = nomi dei processi, delta = ±0.05, mute 2 = inverti
+  appVolume: function (names, delta, mute) {
+    return input.call('appvolume', { names: names, delta: delta || 0, mute: mute === undefined ? -1 : mute }, 6000)
+      .then(function (r) { return r.level; });
+  },
+
+  audioProcesses: function () {
+    return query.call('audiosessions', {}, 6000).then(function (r) { return r.processes || []; });
   },
 
   netBytes: function () {

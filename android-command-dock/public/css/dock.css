@@ -200,7 +200,8 @@ body.kb-open #topbar, body.kb-open #tabs { display: none; }
   font-size: 1.45em; font-weight: bold; margin-top: 0.3em; line-height: 1.2; max-height: 2.4em; overflow: hidden; word-wrap: break-word;
 }
 .np-artist { color: #b6c4d2; font-size: 1em; margin-top: 0.25em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.np-prog { margin-top: 0.7em; height: 6px; background: #0b0f14; border-radius: 3px; overflow: hidden; }
+.np-seek { padding: 0.6em 0 0.45em; }
+.np-prog { height: 6px; background: #0b0f14; border-radius: 3px; overflow: hidden; }
 .np-prog i { display: block; height: 100%; width: 0; background: #e8eef4; }
 .np-times { font-size: 0.75em; color: #8b9bab; margin-top: 4px; height: 1.2em; }
 .np-ctr { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; text-align: center; white-space: nowrap; }
@@ -219,6 +220,18 @@ body.kb-open #topbar, body.kb-open #tabs { display: none; }
 .np-compact .np-btn svg.ic { width: 34px; height: 34px; }
 .np-compact .np-title { font-size: 1.2em; max-height: 1.25em; }
 .np-compact .np-times { display: none; }
+.np-seek.can .np-prog { height: 9px; }
+.np-tall .np-title { font-size: 1.3em; }
+.np-ctr2 { position: absolute; left: 0; right: 0; bottom: 74px; height: 40px; text-align: center; white-space: nowrap; }
+.np-btn.np-opt {
+  width: auto; max-width: none; height: 38px; padding: 7px 10px 0; background: #18212c; border: 1px solid #2a3746;
+  font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #b6c4d2;
+}
+.np-btn.np-opt svg.ic { width: 20px; height: 20px; vertical-align: -5px; }
+.np-btn.np-opt span { margin-left: 5px; }
+.np-btn.on { border-color: #3d8bfd; background: #1f3b63; color: #fff; }
+.np-btn.off { opacity: 0.3; }
+.np-vollabel { display: inline-block; vertical-align: top; height: 38px; line-height: 38px; margin-left: 6px; font-size: 13px; font-weight: bold; color: #9fb3c8; min-width: 72px; }
 
 /* ---------------------------------------------------------- widget: github */
 .gh-totals { font-size: 14px; color: #b6c4d2; height: 26px; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -306,6 +319,83 @@ body.kb-open #topbar, body.kb-open #tabs { display: none; }
 .clk-time { font-size: 80px; font-weight: bold; margin-top: 18%; letter-spacing: 2px; }
 .clk-date { font-size: 18px; color: #9fb3c8; text-transform: capitalize; }
 
+/* ---------------------------------------------------------- widget: coda */
+.w-queue .w-list { top: 48px; }
+.q-row { padding: 9px 12px; border-radius: 8px; margin-bottom: 4px; background: #1d2835; }
+.q-row.current { background: #1f3b63; -webkit-box-shadow: inset 4px 0 0 #3d8bfd; box-shadow: inset 4px 0 0 #3d8bfd; }
+.q-row.pressed { background: #26354a; }
+.q-row.busy { opacity: 0.5; }
+.q-title { font-weight: bold; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-title svg.ic { width: 16px; height: 16px; margin-right: 4px; vertical-align: -2px; }
+.q-artist { font-size: 13px; color: #9fb3c8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+
+/* ---------------------------------------------------------- widget: claude */
+.w-claude { padding: 0 !important; }
+.cl-side { position: absolute; left: 0; top: 0; bottom: 0; width: 30%; border-right: 1px solid #222e3b; background: #141c25; }
+.cl-tabs { position: absolute; left: 8px; right: 8px; top: 8px; height: 40px; background: #0b0f14; border-radius: 10px; overflow: hidden; }
+.cl-tab { float: left; width: 50%; height: 40px; line-height: 40px; text-align: center; font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; }
+.cl-tab.on { background: #c15f3c; color: #fff; }
+.cl-new {
+  position: absolute; left: 8px; right: 8px; top: 56px; height: 40px; line-height: 40px; text-align: center;
+  background: #243142; border-radius: 10px; font-weight: bold; font-size: 13px; letter-spacing: 1px;
+}
+.cl-new svg.ic { width: 20px; height: 20px; vertical-align: -5px; margin-right: 4px; }
+.cl-new.pressed { background: #3d8bfd; }
+.cl-list { position: absolute; left: 8px; right: 8px; top: 104px; bottom: 8px; overflow: auto; -webkit-overflow-scrolling: touch; }
+.cl-row { padding: 9px 10px; border-radius: 8px; margin-bottom: 4px; }
+.cl-row.on { background: #1f3b63; }
+.cl-row.pressed { background: #26354a; }
+.cl-row-t { font-weight: bold; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cl-row-m { font-size: 12px; color: #8b9bab; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.cl-row.busy .cl-row-m { color: #ffb454; }
+.cl-main { position: absolute; left: 30%; right: 0; top: 0; bottom: 0; }
+.cl-head { position: absolute; left: 12px; right: 12px; top: 6px; height: 44px; }
+.cl-title { font-weight: bold; font-size: 15px; line-height: 22px; margin-right: 96px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cl-sub { font-size: 12px; color: #8b9bab; margin-right: 96px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cl-tools { position: absolute; right: 0; top: 4px; white-space: nowrap; }
+.cl-del.holding { background: #8b1d1d; }
+.cl-log {
+  position: absolute; left: 10px; right: 10px; top: 54px; bottom: 112px; overflow: auto; -webkit-overflow-scrolling: touch;
+  background: #0f151c; border-radius: 10px; padding: 10px;
+}
+.cl-compose { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 96px; }
+.cl-bar { position: absolute; left: 0; right: 0; top: 0; height: 32px; white-space: nowrap; overflow: hidden; }
+.cl-dest, .cl-enter {
+  display: inline-block; height: 30px; line-height: 28px; padding: 0 10px; border-radius: 8px; background: #18212c;
+  border: 1px solid #2a3746; font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; margin-right: 6px; vertical-align: top;
+}
+.cl-dest svg.ic { width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; fill: #8b9bab; }
+.cl-dest.on { background: #1f3b63; border-color: #3d8bfd; color: #fff; }
+.cl-dest.on svg.ic { fill: #fff; }
+.cl-target, .cl-project {
+  display: none; height: 30px; font-size: 13px; background: #0b0f14; color: #fff; border: 1px solid #2a3746;
+  border-radius: 8px; vertical-align: top; max-width: 180px; margin-right: 6px;
+}
+.cl-enter { display: none; }
+.cl-enter.on { color: #fff; border-color: #3fb950; }
+.cl-pc .cl-target, .cl-pc .cl-enter { display: inline-block; }
+.cl-newcode .cl-project { display: inline-block; }
+.cl-mic { position: absolute; left: 0; bottom: 0; width: 58px; height: 58px; border-radius: 10px; background: #243142; text-align: center; padding-top: 13px; }
+.cl-mic svg.ic { width: 30px; height: 30px; }
+.cl-mic.on { background: #e5534b; }
+.cl-mic.pressed { -webkit-transform: scale(0.94); transform: scale(0.94); }
+.cl-input {
+  position: absolute; left: 66px; right: 74px; bottom: 0; height: 58px; padding: 8px 12px; font-size: 16px; resize: none;
+  background: #0b0f14; color: #fff; border: 1px solid #2a3746; border-radius: 10px; font-family: inherit;
+  -webkit-user-select: text; user-select: text;
+}
+.cl-send { position: absolute; right: 0; bottom: 0; width: 66px; height: 58px; border-radius: 10px; background: #c15f3c; text-align: center; padding-top: 13px; }
+.cl-pc .cl-send { background: #3d8bfd; }
+.cl-send svg.ic { width: 30px; height: 30px; }
+.cl-send.busy { opacity: 0.4; }
+.cl-send.pressed { -webkit-transform: scale(0.94); transform: scale(0.94); }
+.cl-file { position: absolute; left: -9999px; top: 0; width: 1px; height: 1px; opacity: 0; }
+.msg .tool { display: inline-block; font-size: 12px; color: #8b9bab; background: #0b0f14; border-radius: 6px; padding: 1px 6px; margin: 2px 0; }
+.cl-elapsed { font-size: 12px; color: #8b9bab; margin-left: 6px; }
+body.kb-open .cl-side, body.kb-open .cl-head { display: none; }
+body.kb-open .cl-main { left: 0; }
+body.kb-open .cl-log { top: 8px; }
+
 /* schermi piccoli (800x480) */
 @media (max-width: 860px) {
   #mini { display: none; }
@@ -313,4 +403,9 @@ body.kb-open #topbar, body.kb-open #tabs { display: none; }
   .gh-name { margin-right: 220px; }
   .w-chat .w-title { margin-right: 300px; }
   .chat-model { max-width: 200px; }
+  .cl-side { width: 34%; }
+  .cl-main { left: 34%; }
+  .cl-dest span { display: none; }
+  .cl-dest svg.ic { margin-right: 0; }
+  .np-btn.np-opt span { display: none; }
 }

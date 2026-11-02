@@ -20,6 +20,17 @@
 
   var stage = D.$('stage'), tabs = D.$('tabs'), banner = D.$('banner');
 
+  // Versione del codice caricato (messa dal server nella pagina)
+  var buildMeta = document.querySelector('meta[name="dock-build"]');
+  var BUILD = buildMeta ? buildMeta.getAttribute('content') : '';
+  function reloadPage() {
+    // al massimo un ricaricamento al minuto, per non entrare in un ciclo
+    var last = D.store.get('reloadAt', 0);
+    if (new Date().getTime() - last < 60000) return;
+    D.store.set('reloadAt', new Date().getTime());
+    window.location.reload(true);
+  }
+
   // ------------------------------------------------------------ feedback
   var toastTimer = null;
   app.toast = function (msg, kind) {
@@ -152,6 +163,8 @@
   }
 
   function makeWidget(p) {
+    // widget sconosciuto = codice vecchio in cache: si ricarica la pagina
+    if (!Widgets.types[p.tile.widget]) reloadPage();
     var root = D.el('div', 'tile widget');
     p.widget = Widgets.create(p.tile.widget, root, p.tile, app);
     return root;
@@ -236,6 +249,8 @@
       app.state = s;
       setOnline(true);
       D.setText(D.$('mini'), fmtTop(s));
+      // La dock sul PC è stata aggiornata: ricarica la pagina per avere il codice nuovo
+      if (s.build && BUILD && s.build !== BUILD) { reloadPage(); return; }
       if (s.version !== app.version) { loadConfig(); return; }
       // Alcuni browser cambiano viewport senza evento resize (barra indirizzi, fullscreen)
       if (app.page && stage.clientWidth + 'x' + stage.clientHeight !== app.lastSize) layout();

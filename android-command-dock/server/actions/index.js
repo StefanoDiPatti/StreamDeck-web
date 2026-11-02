@@ -89,9 +89,18 @@ const HANDLERS = {
     return { message: appLabel(id, app) + ' avviata' };
   },
 
+  // play_pause/next/previous/stop -> l'app musicale attiva (non quella che Windows sceglie)
+  // volume_up/volume_down/mute    -> volume di SISTEMA
+  // app_volume_up/app_volume_down/app_mute -> volume dell'app musicale
   media: async function (a) {
-    await media.command(a.command);
-    return { message: null };
+    const cmd = String(a.command || '');
+    if (cmd === 'volume_up' || cmd === 'volume_down' || cmd === 'mute') {
+      await platform.media(cmd);
+      return { message: null };
+    }
+    const appCmd = { app_volume_up: 'volume_up', app_volume_down: 'volume_down', app_mute: 'mute' }[cmd] || cmd;
+    const r = await media.command(appCmd);
+    return { message: r && typeof r.volume === 'number' ? 'Volume ' + Math.round(r.volume * 100) + '%' : null };
   },
 
   hotkey: async function (a) {

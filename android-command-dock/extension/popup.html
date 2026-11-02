@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font: 14px system-ui, sans-serif; width: 260px; margin: 12px; background: #0b0f14; color: #e8eef4; }
+    h1 { font-size: 15px; margin: 0 0 8px; }
+    label { display: block; color: #9fb3c8; font-size: 12px; margin: 10px 0 4px; }
+    input { width: 100%; box-sizing: border-box; padding: 6px; background: #18212c; color: #fff; border: 1px solid #2a3746; border-radius: 6px; }
+    button { margin-top: 8px; padding: 6px 12px; background: #3d8bfd; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+    #status { margin-top: 10px; font-weight: bold; }
+    .ok { color: #3fb950; } .err { color: #ff8b80; }
+  </style>
+</head>
+<body>
+  <h1>Command Dock Bridge</h1>
+  <div id="status">Controllo…</div>
+  <div id="detail" style="white-space: pre-line; color: #9fb3c8; font-size: 12px; margin-top: 6px;"></div>
+  <label for="server">Indirizzo del server (su questo PC)</label>
+  <input id="server" placeholder="http://127.0.0.1:8787">
+  <button id="save">Salva</button>
+  <script src="popup.js"></script>
+</body>
+</html>

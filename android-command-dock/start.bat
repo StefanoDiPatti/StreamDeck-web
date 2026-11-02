@@ -1,6 +1,9 @@
 @echo off
 rem Command Dock - avvio con doppio click (Windows).
-rem La prima volta installa le dipendenze e prepara la configurazione.
+rem La prima volta installa le dipendenze e fa qualche domanda, poi la dock
+rem parte in background: la trovi come icona vicino all'orologio.
+rem   start.bat --console   la tiene in questa finestra (per vedere i messaggi)
+rem   start.bat --setup     ripete le domande del primo avvio
 setlocal
 title Command Dock
 cd /d "%~dp0"
@@ -30,5 +33,22 @@ pause
 exit /b 1
 
 :run
-node scripts\bootstrap.js %*
+if /i "%~1"=="--console" goto console
+
+node scripts\bootstrap.js --prepare %*
+if errorlevel 1 goto failed
+echo.
+echo Avvio la dock in background: cerca l'icona vicino all'orologio.
+wscript.exe "%~dp0scripts\windows\start-hidden.vbs"
+exit /b 0
+
+:console
+node scripts\bootstrap.js
 if errorlevel 1 pause
+exit /b
+
+:failed
+echo.
+echo Preparazione non riuscita: controlla i messaggi qui sopra.
+pause
+exit /b 1

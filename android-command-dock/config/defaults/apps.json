@@ -1,6 +1,6 @@
 // Applicazioni avviabili dai pulsanti { "type": "launch", "app": "<id>" }.
 // Ogni app può avere una variante "windows" e/o "linux".
-//  path : eseguibile, percorso assoluto o comando nel PATH.
+//  path : eseguibile, collegamento .lnk, percorso assoluto o comando nel PATH.
 //         Ammessi %VAR% (Windows), $VAR e ~ (Linux) e * per le versioni.
 //         Windows: "shell:AppsFolder\<AppID>" avvia le app dello Store
 //         (trovi l'AppID con PowerShell: Get-StartApps).
@@ -27,13 +27,11 @@
       "windows": { "path": "C:\\Program Files\\Epic Games\\UE_*\\Engine\\Binaries\\Win64\\UnrealEditor.exe" },
       "linux": { "path": "~/UnrealEngine/Engine/Binaries/Linux/UnrealEditor" }
     },
-    "epic": {
-      "label": "Epic Games",
-      "windows": { "path": "C:\\Program Files\\Epic Games\\Launcher\\Portal\\Binaries\\Win64\\EpicGamesLauncher.exe" }
-    },
     "apple_music": {
       "label": "Apple Music",
-      "windows": { "path": "shell:AppsFolder\\AppleInc.AppleMusicWin_nzyj5cx40ttqa!App" }
+      // Web app: si apre dal collegamento sul desktop (Brave)
+      "windows": { "path": "%USERPROFILE%\\Desktop\\Apple Music.lnk" },
+      "linux": { "path": "xdg-open", "args": ["https://music.apple.com"] }
     },
     "spotify": {
       "label": "Spotify",
@@ -46,13 +44,13 @@
     },
     "claude_code": {
       "label": "Claude Code",
-      "windows": { "path": "wt.exe", "args": ["-d", "%USERPROFILE%\\Documents\\AI Projects", "claude"] },
+      "windows": { "path": "powershell.exe", "args": ["-NoExit", "-Command", "claude"], "cwd": "%USERPROFILE%\\Documents\\AI Projects" },
       "linux": { "path": "x-terminal-emulator", "args": ["-e", "claude"], "cwd": "~" }
     },
-    "terminal": {
-      "label": "Terminale",
-      "windows": { "path": "wt.exe" },
-      "linux": { "path": "x-terminal-emulator" }
+    "powershell": {
+      "label": "PowerShell",
+      "windows": { "path": "powershell.exe", "args": ["-NoExit"], "cwd": "%USERPROFILE%" },
+      "linux": { "path": "x-terminal-emulator", "cwd": "~" }
     },
     "files": {
       "label": "File",
@@ -63,11 +61,6 @@
       "label": "Gestione attività",
       "windows": { "path": "taskmgr.exe" },
       "linux": { "path": "gnome-system-monitor" }
-    },
-    "steam": {
-      "label": "Steam",
-      "windows": { "path": "C:\\Program Files (x86)\\Steam\\steam.exe" },
-      "linux": { "path": "steam" }
     },
     "discord": {
       "label": "Discord",

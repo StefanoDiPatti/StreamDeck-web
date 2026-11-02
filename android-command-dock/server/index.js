@@ -18,6 +18,8 @@ const github = require('./services/github');
 const ollama = require('./services/ollama');
 const claude = require('./services/claude');
 const todo = require('./services/todo');
+const bridge = require('./services/bridge');
+const voice = require('./services/voice');
 const pkg = require('../package.json');
 
 const PORT = parseInt(process.env.PORT, 10) || 8787;
@@ -56,12 +58,70 @@ app.get('/api/health', function (req, res) {
   ok(res, { name: 'command-dock', version: pkg.version, platform: platform.name, paired: auth.isAuthorized(req) });
 });
 app.post('/api/pair', auth.pairHandler);
+
+// La pagina del tablet: a ogni file JS/CSS si aggiunge ?v=<data di modifica>.
+// I browser di Android 4 a volte ignorano "no-cache" e tengono i file vecchi:
+// cambiando l'indirizzo dopo ogni aggiornamento sono costretti a riscaricarli.
+// Versione del client = data di modifica più recente dei suoi file.
+// Il tablet la confronta a ogni aggiornamento di stato e si ricarica se cambia.
+let buildCache = { at: 0, value: '' };
+function clientBuild() {
+  if (Date.now() - buildCache.at < 3000) return buildCache.value;
+  const fs = require('fs');
+  let max = 0;
+  ['index.html', 'css', 'js'].forEach(function (p) {
+    const full = path.join(paths.PUBLIC_DIR, p);
+    try {
+      const st = fs.statSync(full);
+      if (st.isDirectory()) {
+        fs.readdirSync(full).forEach(function (f) { max = Math.max(max, fs.statSync(path.join(full, f)).mtimeMs); });
+      } else max = Math.max(max, st.mtimeMs);
+    } catch (e) { /* ignora */ }
+  });
+  buildCache = { at: Date.now(), value: Math.round(max).toString(36) };
+  return buildCache.value;
+}
+
+function versionedIndex() {
+  const fs = require('fs');
+  const html = fs.readFileSync(path.join(paths.PUBLIC_DIR, 'index.html'), 'utf8')
+    .replace('<head>', '<head>\n  <meta name="dock-build" content="' + clientBuild() + '">');
+  return html.replace(/(src|href)="((?:js|css)\/[^"?]+)"/g, function (m, attr, file) {
+    let v = '0';
+    try { v = Math.round(fs.statSync(path.join(paths.PUBLIC_DIR, file)).mtimeMs).toString(36); } catch (e) { /* file mancante */ }
+    return attr + '="' + file + '?v=' + v + '"';
+  });
+}
+app.get(['/', '/index.html'], function (req, res) {
+  res.setHeader('Cache-Control', 'no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.type('html').send(versionedIndex());
+});
 app.use(express.static(paths.PUBLIC_DIR, {
+  index: false,
   setHeaders: function (res) {
-    // Sempre rivalidato (ETag): dopo un aggiornamento il tablet non usa file vecchi
+    // Sempre rivalidato (ETag); in più l'indirizzo cambia a ogni aggiornamento
     res.setHeader('Cache-Control', 'no-cache');
   }
 }));
+
+// --- estensione del browser (stesso PC, niente token) ---
+// Accettata solo da 127.0.0.1 e con l'header X-Dock-Bridge: un sito web
+// aperto nel browser non può impostarlo senza un preflight CORS, che qui non passa.
+function bridgeOnly(req, res, next) {
+  const ip = String(req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+  if ((ip === '127.0.0.1' || ip === '::1') && req.get('x-dock-bridge') === '1') return next();
+  res.status(403).json({ ok: false, error: { code: 'FORBIDDEN', message: 'Solo per l\'estensione su questo PC' } });
+}
+app.post('/api/bridge/state', bridgeOnly, function (req, res) {
+  const b = req.body || {};
+  ok(res, { commands: bridge.update(String(b.key || ''), b.state) });
+});
+app.post('/api/bridge/closed', bridgeOnly, function (req, res) {
+  bridge.remove(String((req.body || {}).key || ''));
+  ok(res, null);
+});
 
 // --- tutto il resto richiede il token ---
 app.use('/api', auth.requireToken);
@@ -81,7 +141,7 @@ app.get('/api/config', route(function () {
 // Stato veloce per il polling (ogni 2s): sistema + musica.
 app.get('/api/state', route(async function () {
   const now = await media.nowPlaying();
-  return { version: config.version(), system: system.get(), media: now, time: Date.now() };
+  return { version: config.version(), build: clientBuild(), system: system.get(), media: now, time: Date.now() };
 }));
 
 app.post('/api/press', route(function (req) {
@@ -93,7 +153,11 @@ app.post('/api/press', route(function (req) {
   return actions.press(b.page, b.tile);
 }));
 
-app.post('/api/media', route(function (req) { return media.command(String((req.body || {}).command || '')); }));
+app.post('/api/media', route(function (req) {
+  const b = req.body || {};
+  return media.command(String(b.command || ''), b.value);
+}));
+app.get('/api/media/queue', route(function () { return media.queue(); }));
 
 app.get('/api/media/art', function (req, res) {
   media.artwork().then(function (art) {
@@ -126,11 +190,39 @@ app.post('/api/ollama/chat', route(function (req) {
   return ollama.chat(b.sessionId, String(b.model || ''), String(b.text).slice(0, 8000));
 }));
 
-app.get('/api/claude/info', route(function () { return claude.info(); }));
+app.get('/api/claude/info', route(function () {
+  return Object.assign(claude.info(), { voiceServer: voice.available() });
+}));
+app.get('/api/claude/chats', route(function () { return claude.listChats(); }));
+app.get('/api/claude/chat', route(function (req) { return claude.getChat(String(req.query.kind || ''), String(req.query.id || '')); }));
+app.post('/api/claude/send', route(function (req) {
+  const b = req.body || {};
+  return claude.send(String(b.kind || ''), b.id ? String(b.id) : null, String(b.text || '').slice(0, 12000), b.cwd ? String(b.cwd) : null);
+}));
+app.get('/api/claude/job', route(function (req) { return claude.getJob(String(req.query.id || '')); }));
+app.post('/api/claude/delete', route(function (req) { return claude.deleteChat(String((req.body || {}).id || '')); }));
+// vecchia API sincrona, tenuta per compatibilità
 app.post('/api/claude/chat', route(function (req) {
   const b = req.body || {};
   if (!b.text || !String(b.text).trim()) throw badRequest('Messaggio vuoto');
   return claude.chat(b.sessionId, String(b.text).slice(0, 8000));
+}));
+
+// Tablet come tastiera remota: scrive il testo nella finestra scelta sul PC.
+app.post('/api/remote/type', route(async function (req) {
+  const b = req.body || {};
+  const text = String(b.text || '');
+  if (!text.trim()) throw badRequest('Testo vuoto');
+  if (text.length > 8000) throw badRequest('Testo troppo lungo');
+  if (b.focus) await platform.focus(String(b.focus));
+  await platform.typeText(text);
+  if (b.enter) await platform.sendKeys(['ENTER']);
+  return { message: b.enter ? 'Inviato sul PC' : 'Scritto sul PC' };
+}));
+
+// Audio registrato sul tablet -> testo (se services.json -> voice è configurato)
+app.post('/api/voice', express.raw({ type: function () { return true; }, limit: '25mb' }), route(function (req) {
+  return voice.transcribe(req.body, req.get('content-type'));
 }));
 
 app.use('/api', function (req, res) {
@@ -174,8 +266,23 @@ function banner() {
   console.log('  Claude: ' + (ci.available ? ci.backend + ' (' + ci.model + ')' : 'non configurato'));
   config.errors().forEach(function (e) { console.log('  ERRORE CONFIG: ' + e); });
   console.log(line);
-  console.log('  Ctrl+C per fermare.\n');
+  console.log(process.env.DOCK_SERVICE === '1'
+    ? '  In background: icona vicino all\'orologio per chiudere.\n'
+    : '  Ctrl+C per fermare.\n');
+  // Letto dall'icona nell'area di notifica (Windows) per mostrare l'indirizzo
+  try {
+    const fs = require('fs');
+    if (!fs.existsSync(paths.DATA_DIR)) fs.mkdirSync(paths.DATA_DIR, { recursive: true });
+    fs.writeFileSync(path.join(paths.DATA_DIR, 'runtime.json'), JSON.stringify({
+      port: PORT,
+      urls: ips.map(function (ip) { return 'http://' + ip.address + ':' + PORT; }),
+      startedAt: new Date().toISOString(),
+      pid: process.pid
+    }, null, 2));
+  } catch (e) { log.warn('server', 'runtime.json non scritto: ' + e.message); }
 }
+
+const EXIT_PORT_IN_USE = 3;
 
 function start() {
   return platform.init().catch(function (e) {
@@ -200,7 +307,7 @@ process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
 if (require.main === module) {
-  start().catch(function () { process.exit(1); });
+  start().catch(function (e) { process.exit(e && e.code === 'EADDRINUSE' ? EXIT_PORT_IN_USE : 1); });
 }
 
 module.exports = { app: app, start: start };

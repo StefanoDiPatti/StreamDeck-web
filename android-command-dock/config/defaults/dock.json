@@ -1,7 +1,7 @@
 // Layout della dock. Modifica e salva: il tablet si aggiorna da solo.
 //
-// Ogni pagina è una griglia (default 5 colonne x 3 righe). Le tile si
-// dispongono da sinistra a destra; "w"/"h" = quante celle occupano.
+// Ogni pagina è una griglia (default 5 colonne x 3 righe, o "columns"/"rows"
+// della pagina). Le tile si dispongono da sinistra a destra; "w"/"h" = celle.
 //
 // Tile pulsante:
 //   { "label": "SALVA", "icon": "save", "color": "#2e7d32", "sub": "Ctrl+S",
@@ -14,7 +14,9 @@
 //   { "type": "hotkey",   "keys": ["CTRL","S"], "focus": "blender" }
 //   { "type": "key",      "key": "F12" }
 //   { "type": "text",     "value": "ciao\n" }
-//   { "type": "media",    "command": "play_pause" }  (next, previous, stop, volume_up, volume_down, mute)
+//   { "type": "media",    "command": "play_pause" }  next, previous, stop -> app musicale
+//                         volume_up, volume_down, mute                  -> volume di SISTEMA
+//                         app_volume_up, app_volume_down, app_mute      -> volume dell'app musicale
 //   { "type": "open_url", "url": "https://github.com" }
 //   { "type": "command",  "id": "lock_pc" }                   -> commands.json
 //   { "type": "page",     "page": "blender" }
@@ -22,12 +24,11 @@
 //   "focus" (opzionale) porta prima in primo piano il programma (nome processo).
 //
 // Tile widget:
-//   { "widget": "system" }  { "widget": "nowplaying" }  { "widget": "github" }
-//   { "widget": "todo" }    { "widget": "clock" }
-//   { "widget": "chat", "provider": "ollama" | "claude" }
+//   { "widget": "system" }  { "widget": "nowplaying" }  { "widget": "queue" }
+//   { "widget": "github" }  { "widget": "todo" }        { "widget": "clock" }
+//   { "widget": "claude" }  { "widget": "chat", "provider": "ollama" }
 //
-// Icone disponibili: vedi README (play, pause, next, prev, cube, film, code,
-// terminal, chat, sparkle, github, save, undo, redo, lock, ...).
+// Icone disponibili: vedi README.
 {
   "title": "COMMAND DOCK",
   "grid": { "columns": 5, "rows": 3 },
@@ -37,14 +38,12 @@
       "id": "main",
       "title": "HOME",
       "icon": "home",
+      "columns": 6,
+      "rows": 4,
       "tiles": [
-        { "widget": "system", "w": 2, "h": 2 },
         { "widget": "nowplaying", "w": 3, "h": 2 },
-        { "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
-        { "label": "CLAUDE CODE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_code" } },
-        { "label": "BLENDER", "icon": "cube", "color": "#d9730d", "action": { "type": "page", "page": "blender" } },
-        { "label": "DAVINCI", "icon": "film", "color": "#6b4fa0", "action": { "type": "page", "page": "davinci" } },
-        { "label": "BLOCCA", "icon": "lock", "color": "#7a2730", "confirm": true, "action": { "type": "command", "id": "lock_pc" } }
+        { "widget": "todo", "w": 3, "h": 4 },
+        { "widget": "system", "w": 3, "h": 2 }
       ]
     },
     {
@@ -52,34 +51,34 @@
       "title": "MUSICA",
       "icon": "music",
       "tiles": [
-        { "widget": "nowplaying", "w": 5, "h": 2 },
-        { "label": "VOL -", "icon": "voldown", "repeat": true, "action": { "type": "media", "command": "volume_down" } },
-        { "label": "MUTE", "icon": "mute", "action": { "type": "media", "command": "mute" } },
-        { "label": "VOL +", "icon": "volup", "repeat": true, "action": { "type": "media", "command": "volume_up" } },
-        { "label": "STOP", "icon": "stop", "action": { "type": "media", "command": "stop" } },
-        { "label": "APPLE MUSIC", "icon": "music", "color": "#c2334d", "action": { "type": "launch", "app": "apple_music" } }
+        { "widget": "nowplaying", "w": 3, "h": 3 },
+        { "widget": "queue", "w": 2, "h": 3 }
       ]
     },
     {
       "id": "apps",
       "title": "APP",
       "icon": "apps",
+      "columns": 6,
+      "rows": 3,
       "tiles": [
-        { "label": "BLENDER", "icon": "cube", "color": "#d9730d", "action": { "type": "launch", "app": "blender" } },
-        { "label": "DAVINCI", "icon": "film", "color": "#6b4fa0", "action": { "type": "launch", "app": "davinci" } },
+        { "label": "BLENDER", "icon": "cube", "color": "#d9730d", "sub": "profilo", "action": { "type": "page", "page": "blender" } },
+        { "label": "DAVINCI", "icon": "film", "color": "#6b4fa0", "sub": "profilo", "action": { "type": "page", "page": "davinci" } },
         { "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
-        { "label": "UNREAL", "icon": "cube", "color": "#444b55", "action": { "type": "launch", "app": "unreal" } },
-        { "label": "EPIC", "icon": "apps", "color": "#333a44", "action": { "type": "launch", "app": "epic" } },
+        { "label": "CLAUDE CODE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_code" } },
+        { "label": "CLAUDE", "icon": "sparkle", "color": "#8a4227", "action": { "type": "launch", "app": "claude_desktop" } },
         { "label": "APPLE MUSIC", "icon": "music", "color": "#c2334d", "action": { "type": "launch", "app": "apple_music" } },
-        { "label": "CLAUDE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_desktop" } },
-        { "label": "STEAM", "icon": "play", "color": "#1b3a5c", "action": { "type": "launch", "app": "steam" } },
+        { "label": "UNREAL", "icon": "cube", "color": "#444b55", "action": { "type": "launch", "app": "unreal" } },
         { "label": "DISCORD", "icon": "chat", "color": "#4752c4", "action": { "type": "launch", "app": "discord" } },
+        { "label": "POWERSHELL", "icon": "terminal", "color": "#1f3b63", "action": { "type": "launch", "app": "powershell" } },
         { "label": "FILE", "icon": "folder", "action": { "type": "launch", "app": "files" } },
-        { "label": "TERMINALE", "icon": "terminal", "action": { "type": "launch", "app": "terminal" } },
         { "label": "TASK MGR", "icon": "cpu", "action": { "type": "launch", "app": "taskmgr" } },
         { "label": "SCREENSHOT", "icon": "camera", "sub": "Win+Shift+S", "action": { "type": "hotkey", "keys": ["WIN", "SHIFT", "S"] } },
         { "label": "DESKTOP", "icon": "desktop", "sub": "Win+D", "action": { "type": "hotkey", "keys": ["WIN", "D"] } },
-        { "label": "BLOCCA", "icon": "lock", "color": "#7a2730", "confirm": true, "action": { "type": "command", "id": "lock_pc" } }
+        { "label": "BLOCCA", "icon": "lock", "color": "#7a2730", "confirm": true, "action": { "type": "command", "id": "lock_pc" } },
+        { "label": "VOL -", "icon": "voldown", "sub": "sistema", "repeat": true, "action": { "type": "media", "command": "volume_down" } },
+        { "label": "MUTE", "icon": "mute", "sub": "sistema", "action": { "type": "media", "command": "mute" } },
+        { "label": "VOL +", "icon": "volup", "sub": "sistema", "repeat": true, "action": { "type": "media", "command": "volume_up" } }
       ]
     },
     {
@@ -89,7 +88,7 @@
       "tiles": [
         { "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
         { "label": "CLAUDE CODE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_code" } },
-        { "label": "TERMINALE", "icon": "terminal", "action": { "type": "launch", "app": "terminal" } },
+        { "label": "POWERSHELL", "icon": "terminal", "color": "#1f3b63", "action": { "type": "launch", "app": "powershell" } },
         { "label": "GITHUB", "icon": "github", "action": { "type": "open_url", "url": "https://github.com" } },
         { "label": "GIT STATUS", "icon": "github", "action": { "type": "command", "id": "git_status_projects" } },
         { "label": "OPENCLAW", "icon": "robot", "sub": "health", "color": "#2c5e4f", "action": { "type": "command", "id": "openclaw_health" } },
@@ -120,16 +119,7 @@
       "id": "claude",
       "title": "CLAUDE",
       "icon": "sparkle",
-      "tiles": [ { "widget": "chat", "provider": "claude", "w": 5, "h": 3 } ]
-    },
-    {
-      "id": "todo",
-      "title": "TODO",
-      "icon": "check",
-      "tiles": [
-        { "widget": "todo", "w": 3, "h": 3 },
-        { "widget": "clock", "w": 2, "h": 3 }
-      ]
+      "tiles": [ { "widget": "claude", "w": 5, "h": 3 } ]
     },
     {
       "id": "blender",
@@ -151,7 +141,7 @@
         { "label": "SCHERMO", "icon": "fullscreen", "sub": "Ctrl+Spazio", "action": { "type": "hotkey", "keys": ["CTRL", "SPACE"], "focus": "blender" } },
         { "label": "APRI FILE", "icon": "folder", "sub": "Ctrl+O", "action": { "type": "hotkey", "keys": ["CTRL", "O"], "focus": "blender" } },
         { "label": "RENDER ANIM", "icon": "film", "sub": "Ctrl+F12", "confirm": true, "action": { "type": "hotkey", "keys": ["CTRL", "F12"], "focus": "blender" } },
-        { "label": "INDIETRO", "icon": "back", "action": { "type": "page", "page": "main" } }
+        { "label": "INDIETRO", "icon": "back", "action": { "type": "page", "page": "apps" } }
       ]
     },
     {
@@ -174,7 +164,7 @@
         { "label": "COLOR", "icon": "film", "sub": "Shift+6", "action": { "type": "hotkey", "keys": ["SHIFT", "6"], "focus": "Resolve" } },
         { "label": "DELIVER", "icon": "camera", "sub": "Shift+8", "action": { "type": "hotkey", "keys": ["SHIFT", "8"], "focus": "Resolve" } },
         { "label": "FRAME +", "icon": "next", "sub": "→", "repeat": true, "action": { "type": "key", "key": "RIGHT", "focus": "Resolve" } },
-        { "label": "INDIETRO", "icon": "back", "action": { "type": "page", "page": "main" } }
+        { "label": "INDIETRO", "icon": "back", "action": { "type": "page", "page": "apps" } }
       ]
     }
   ]

@@ -50,6 +50,13 @@ function resolveWildcard(p) {
 }
 
 const whichCache = {};
+const dirCache = {};
+function listDir(dir) {
+  if (!dirCache[dir]) {
+    try { dirCache[dir] = fs.readdirSync(dir).map(function (n) { return n.toLowerCase(); }); } catch (e) { dirCache[dir] = []; }
+  }
+  return dirCache[dir];
+}
 // Cerca un eseguibile nel PATH (con PATHEXT su Windows). Ritorna il percorso o null.
 function which(cmd) {
   if (whichCache[cmd] !== undefined) return whichCache[cmd];
@@ -69,7 +76,14 @@ function which(cmd) {
         try {
           const st = fs.statSync(candidate);
           if (st.isFile()) { found = candidate; break outer; }
-        } catch (e) { /* continue */ }
+        } catch (e) {
+          // Gli alias delle app di Windows (WindowsApps\wt.exe, ...) sono reparse
+          // point che Node non apre: esistono se compaiono nell'elenco della cartella.
+          if (process.platform === 'win32' && listDir(dirs[i]).indexOf((cmd + exts[j]).toLowerCase()) >= 0) {
+            found = candidate;
+            break outer;
+          }
+        }
       }
     }
   }

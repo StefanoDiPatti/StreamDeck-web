@@ -101,7 +101,7 @@ var D = (function () {
   };
 
   // --- tocco: tap, pressione lunga, ripetizione, tolleranza al trascinamento ---
-  // opts: { onTap(target), hold: ms, repeat: bool, scrollable: bool }
+  // opts: { onTap(target, x, y), hold: ms, repeat: bool, scrollable: bool }
   // scrollable=true non blocca lo scroll della lista che contiene l'elemento.
   function bindTap(node, opts) {
     var pressed = false, moved = false, fired = false;
@@ -114,7 +114,7 @@ var D = (function () {
       removeClass(node, 'pressed');
       removeClass(node, 'holding');
     }
-    function fire() { try { opts.onTap(target); } catch (e) { if (window.console) console.error(e); } }
+    function fire() { try { opts.onTap(target, sx, sy); } catch (e) { if (window.console) console.error(e); } }
 
     function down(x, y, t) {
       pressed = true; moved = false; fired = false; sx = x; sy = y; target = t;

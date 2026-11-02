@@ -67,7 +67,7 @@ async function sendKeysImpl(combo) {
   throw new Error('Per i tasti installa xdotool (X11) o wtype (Wayland)');
 }
 
-const artCache = { url: null, data: null };
+const artCache = {}; // player -> URL copertina
 
 module.exports = {
   name: 'linux',
@@ -85,6 +85,7 @@ module.exports = {
       text: !!inputTool(),
       focus: has('xdotool') && !!process.env.DISPLAY,
       nowPlaying: has('playerctl'),
+      appVolume: has('playerctl'),
       art: has('playerctl'),
       notes: notes
     };
@@ -134,52 +135,77 @@ module.exports = {
     return common.spawnDetached(file, args, cwd);
   },
 
-  nowPlaying: async function () {
-    if (!has('playerctl')) return { supported: false };
-    const fmt = ['{{status}}', '{{title}}', '{{artist}}', '{{album}}', '{{mpris:artUrl}}', '{{playerName}}', '{{position}}', '{{mpris:length}}'].join(SEP);
-    const r = await common.run('playerctl', ['metadata', '--format', fmt], { timeout: 3000 });
-    if (!r.ok || !r.stdout.trim()) { artCache.url = null; return { supported: true, active: false }; }
-    const f = r.stdout.replace(/\r?\n$/, '').split(SEP);
-    const status = (f[0] || '').toLowerCase();
-    artCache.nextUrl = f[4] || null;
-    return {
-      supported: true,
-      active: true,
-      title: f[1] || '',
-      artist: f[2] || '',
-      album: f[3] || '',
-      app: f[5] || '',
-      status: status === 'playing' ? 'playing' : status === 'paused' ? 'paused' : 'stopped',
-      position: (parseInt(f[6], 10) || 0) / 1e6,
-      duration: (parseInt(f[7], 10) || 0) / 1e6,
-      updatedAt: Date.now(),
-      hasArt: !!f[4]
-    };
+  // Un elemento per ogni player MPRIS (playerctl -l), in formato neutro.
+  sessions: async function () {
+    if (!has('playerctl')) return { supported: false, sessions: [] };
+    const list = await common.run('playerctl', ['-l'], { timeout: 3000 });
+    if (!list.ok) return { supported: true, sessions: [] };
+    const names = list.stdout.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+    const fmt = ['{{status}}', '{{title}}', '{{artist}}', '{{album}}', '{{mpris:artUrl}}', '{{position}}', '{{mpris:length}}', '{{shuffle}}'].join(SEP);
+    const out = [];
+    for (let i = 0; i < names.length; i++) {
+      const r = await common.run('playerctl', ['-p', names[i], 'metadata', '--format', fmt], { timeout: 3000 });
+      if (!r.ok || !r.stdout.trim()) continue;
+      const f = r.stdout.replace(/\r?\n$/, '').split(SEP);
+      const status = (f[0] || '').toLowerCase();
+      artCache[names[i]] = f[4] || null;
+      out.push({
+        id: names[i],
+        app: names[i],
+        current: i === 0,
+        title: f[1] || '',
+        artist: f[2] || '',
+        album: f[3] || '',
+        status: status === 'playing' ? 'playing' : status === 'paused' ? 'paused' : 'stopped',
+        position: (parseInt(f[5], 10) || 0) / 1e6,
+        duration: (parseInt(f[6], 10) || 0) / 1e6,
+        start: 0,
+        updatedAt: Date.now(),
+        hasArt: !!f[4],
+        canSeek: true,
+        canShuffle: f[7] === 'true' || f[7] === 'false',
+        shuffle: f[7] === 'true'
+      });
+    }
+    return { supported: true, sessions: out };
   },
 
-  art: async function () {
-    const url = artCache.nextUrl;
+  control: function (session, action, extra) {
+    const p = ['-p', session.app];
+    const map = { play_pause: ['play-pause'], next: ['next'], previous: ['previous'], stop: ['stop'] };
+    if (action === 'seek') return mustRun('playerctl', p.concat(['position', String(Math.max(0, Number(extra) || 0))]), 'Seek');
+    if (action === 'shuffle') return mustRun('playerctl', p.concat(['shuffle', extra ? 'On' : 'Off']), 'Shuffle');
+    if (!map[action]) return Promise.reject(new Error('Azione sconosciuta: ' + action));
+    return mustRun('playerctl', p.concat(map[action]), 'Comando media');
+  },
+
+  // Copertina: file locale letto qui, URL web restituito al servizio media che lo scarica.
+  art: async function (session) {
+    const url = artCache[session.app];
     if (!url) return null;
-    if (artCache.url === url && artCache.data) return artCache.data;
-    let data = null;
     if (url.indexOf('file://') === 0) {
       const file = decodeURIComponent(url.slice(7));
       if (!fs.existsSync(file)) return null;
       const ext = path.extname(file).toLowerCase();
-      data = { mime: ext === '.png' ? 'image/png' : 'image/jpeg', data: fs.readFileSync(file) };
-    } else if (/^https?:\/\//.test(url)) {
-      const ctrl = new AbortController();
-      const t = setTimeout(function () { ctrl.abort(); }, 5000);
-      try {
-        const res = await fetch(url, { signal: ctrl.signal });
-        if (!res.ok) return null;
-        data = { mime: res.headers.get('content-type') || 'image/jpeg', data: Buffer.from(await res.arrayBuffer()) };
-      } catch (e) { return null; } finally { clearTimeout(t); }
+      return { mime: ext === '.png' ? 'image/png' : 'image/jpeg', data: fs.readFileSync(file) };
     }
-    artCache.url = url;
-    artCache.data = data;
-    return data;
+    if (/^https?:\/\//.test(url)) return { url: url };
+    return null;
   },
+
+  // Volume MPRIS del singolo player = volume dell'app, non di sistema.
+  appVolume: async function (names, delta, mute, session) {
+    if (!session || !has('playerctl')) throw new Error('Volume dell\'app non disponibile');
+    if (delta) {
+      const sign = delta > 0 ? '+' : '-';
+      await mustRun('playerctl', ['-p', session.app, 'volume', Math.abs(delta).toFixed(2) + sign], 'Volume app');
+    }
+    const r = await common.run('playerctl', ['-p', session.app, 'volume'], { timeout: 3000 });
+    const v = parseFloat(r.stdout);
+    return isNaN(v) ? -1 : v;
+  },
+
+  audioProcesses: function () { return Promise.resolve([]); },
 
   netBytes: async function () {
     try {

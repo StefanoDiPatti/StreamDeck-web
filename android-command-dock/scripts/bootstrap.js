@@ -7,7 +7,8 @@
 //  5. avvia il server e lo riavvia se va in crash
 //
 // Opzioni:  --setup      ripete le domande del primo avvio
-//           --no-server  prepara tutto ma non avvia il server
+//           --prepare    prepara tutto ma non avvia il server (alias: --no-server)
+//           --service    avvio in background (icona di Windows): niente domande
 'use strict';
 
 const fs = require('fs');
@@ -22,6 +23,10 @@ const IS_WIN = process.platform === 'win32';
 const ARGS = process.argv.slice(2);
 const SETUP_FILE = path.join(ROOT, '.dock-setup.json');
 const STAMP = path.join(ROOT, 'node_modules', '.dock-install-stamp');
+const SERVICE = ARGS.indexOf('--service') >= 0;
+const PREPARE = ARGS.indexOf('--prepare') >= 0 || ARGS.indexOf('--no-server') >= 0;
+const HIDDEN_LAUNCHER = path.join(ROOT, 'scripts', 'windows', 'start-hidden.vbs');
+const EXIT_PORT_IN_USE = 3;
 
 function say(msg) { console.log('  ' + msg); }
 function title(msg) { console.log('\n== ' + msg); }
@@ -139,7 +144,9 @@ const windowsSetup = {
     const lnk = path.join(dir, name + '.lnk');
     const cmd = [
       '$s = (New-Object -ComObject WScript.Shell).CreateShortcut(' + psQuote(lnk) + ')',
-      '$s.TargetPath = ' + psQuote(path.join(ROOT, 'start.bat')),
+      // wscript + vbs: parte nascosto, con l'icona vicino all'orologio
+      '$s.TargetPath = ' + psQuote(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'wscript.exe')),
+      '$s.Arguments = ' + psQuote('"' + HIDDEN_LAUNCHER + '"'),
       '$s.WorkingDirectory = ' + psQuote(ROOT),
       '$s.IconLocation = ' + psQuote(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'shell32.dll') + ',15'),
       '$s.Description = "Command Dock"',
@@ -184,6 +191,7 @@ const linuxSetup = {
 async function firstRunSetup(force) {
   const done = fs.existsSync(SETUP_FILE);
   if (done && !force) return;
+  if (SERVICE) return;
   if (!process.stdin.isTTY) {
     say('Avvio non interattivo: salto le domande del primo avvio (rilancia con --setup).');
     return;
@@ -210,7 +218,7 @@ async function firstRunSetup(force) {
       }
       if (await ask(rl, 'Avvio la dock in automatico quando accedi a Windows?', false)) {
         answers.autostart = windowsSetup.shortcut(windowsSetup.startupDir(), 'Command Dock', true);
-        say(answers.autostart ? 'Avvio automatico attivo (finestra ridotta a icona).' : 'Avvio automatico non configurato.');
+        say(answers.autostart ? 'Avvio automatico attivo (in background, icona vicino all\'orologio).' : 'Avvio automatico non configurato.');
       }
     } else {
       const missing = linuxSetup.missingTools();
@@ -244,9 +252,12 @@ function runServer() {
   let child = null;
 
   function start() {
-    child = spawn(process.execPath, [path.join(ROOT, 'server', 'index.js')], { cwd: ROOT, stdio: 'inherit' });
+    const env = Object.assign({}, process.env, SERVICE ? { DOCK_SERVICE: '1' } : {});
+    child = spawn(process.execPath, [path.join(ROOT, 'server', 'index.js')], { cwd: ROOT, stdio: 'inherit', env: env });
     child.on('exit', function (code, signal) {
       if (stopping || signal === 'SIGINT' || code === 0 || code === 130) process.exit(code || 0);
+      // porta occupata: inutile riprovare (la dock è già avviata altrove)
+      if (code === EXIT_PORT_IN_USE) process.exit(EXIT_PORT_IN_USE);
       const now = Date.now();
       restarts = restarts.filter(function (t) { return now - t < 60000; });
       restarts.push(now);
@@ -275,7 +286,7 @@ async function main() {
   const fresh = ensureEnv();
   ensureConfig();
   await firstRunSetup(ARGS.indexOf('--setup') >= 0 || (fresh && !fs.existsSync(SETUP_FILE)));
-  if (ARGS.indexOf('--no-server') >= 0) { say('Pronto. Avvia con start.bat / start.sh'); return; }
+  if (PREPARE) { say('Pronto.'); return; }
   runServer();
 }
 
