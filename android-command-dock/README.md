@@ -58,6 +58,8 @@ Lo trovi dal menu dell'icona (Windows) o nella finestra del server (Linux / `--c
 4. Tocca l'orologio in alto a destra per il fullscreen, se il browser lo supporta.
 5. Per aprire direttamente una pagina aggiungi il suo id all'indirizzo: `http://IP:8787/#media`, `#claude`, `#blender`.
 
+In alto a destra trovi la rete del PC (nome del Wi-Fi e segnale, oppure Ethernet), la velocità di download/upload e la RAM.
+
 Pulsanti con la barra arancione in basso (es. BLOCCA): vanno **tenuti premuti** circa 1 secondo.
 I pulsanti volume e annulla si ripetono se tieni premuto.
 
@@ -67,7 +69,7 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 |---|---|
 | HOME | musica (comandi base), stato del PC, todo |
 | MUSICA | lettore completo (seek, shuffle, ripeti, volume dell'app) e coda dei brani |
-| APP | programmi, PowerShell, screenshot, blocco PC, **volume di sistema**, profili Blender e DaVinci |
+| APP | programmi (pallino verde = già aperto, un altro tocco lo chiude), PowerShell, screenshot, blocco PC, schermo spento, **volume di sistema**, profili Blender e DaVinci |
 | DEV | VS Code, Claude Code, PowerShell, OpenClaw, scorciatoie di VS Code |
 | GITHUB | PR, issue, CI e ultimo commit dei tuoi repository |
 | OLLAMA | chat con i modelli locali |
@@ -84,7 +86,9 @@ Installazione (una volta sola, in Brave, Chrome o Edge):
 1. Apri `brave://extensions` (o `chrome://extensions`, `edge://extensions`).
 2. Attiva **Modalità sviluppatore** (in alto a destra).
 3. **Carica estensione non pacchettizzata** e scegli la cartella `extension` di questo progetto.
-4. Ricarica le schede di Apple Music / YouTube già aperte.
+4. Le schede di Apple Music / YouTube già aperte vengono collegate da sole (senza ricaricarle).
+
+Dopo un aggiornamento della dock, in `brave://extensions` premi la freccia circolare sull'estensione per caricare la versione nuova.
 
 Cliccando l'icona dell'estensione vedi se è collegata alla dock. Funziona con `music.apple.com`, `music.youtube.com` e `www.youtube.com`. L'estensione parla solo con la dock sullo stesso PC (`127.0.0.1`).
 
@@ -112,9 +116,17 @@ La pagina CLAUDE ha due elenchi:
 Le risposte possono richiedere minuti: puoi cambiare pagina, la risposta arriva lo stesso.
 Per far modificare file a Claude Code dal tablet senza conferme imposta `cliPermissionMode: "acceptEdits"` in `config/services.json`. Di default gli strumenti che chiedono conferma vengono negati.
 
+### TODO e Memo di Windows
+
+Su Windows il TODO mostra le **Memo** (Sticky Notes): ogni riga di una memo è un'attività, una riga barrata è fatta, la prima riga in grassetto è il titolo. Dal tablet puoi aggiungere righe (anche a voce), spuntarle (la riga viene barrata) e toglierle; le modifiche fatte sul PC compaiono sul tablet in pochi secondi.
+
+L'app Memo non vede le modifiche fatte da fuori, quindi a ogni modifica dal tablet la dock la chiude, aggiorna la memo, la mette in coda per la sincronizzazione con il cloud e la riapre (circa un secondo). Più tocchi ravvicinati causano un solo riavvio. La dock non crea e non cancella mai memo intere.
+
+Con più memo, tocca un titolo nel TODO per scegliere dove aggiungere. In `services.json` → `todo`: `"memo"` sceglie la memo predefinita (parte del titolo), `"source": "local"` torna alla lista interna della dock (usata anche su Linux).
+
 ### Dettatura vocale
 
-Il pulsante 🎤 accanto al campo di testo:
+Il pulsante 🎤 accanto al campo di testo (Claude e TODO):
 
 1. usa il riconoscimento vocale del browser, se presente;
 2. altrimenti, se hai configurato una trascrizione sul PC (`services.json` → `voice`, ad esempio whisper.cpp), apre il registratore di Android e il PC trascrive l'audio;
@@ -158,6 +170,12 @@ e in `config/apps.json`:
 
 Nei percorsi puoi usare `%USERPROFILE%`, `%LOCALAPPDATA%`, `~`, `$HOME` e `*` per la versione (`Blender *\blender.exe`). Funzionano anche i collegamenti `.lnk` (così si apre Apple Music dal collegamento sul desktop).
 Le app dello Store di Windows si avviano con `shell:AppsFolder\<AppID>`; l'AppID lo trovi in PowerShell con `Get-StartApps`.
+
+### App aperte: pallino verde e chiusura
+
+Le app con `"toggle": true` in `config/apps.json` mostrano un pallino verde quando sono aperte; un altro tocco le chiude come la X della finestra (l'app può chiedere di salvare). È attivo per Blender, DaVinci, VS Code, Unreal, Apple Music, Spotify, Claude e Discord; volutamente no per PowerShell, Esplora file, Gestione attività e Claude Code, per non interrompere lavori in corso.
+Apple Music (web) si riconosce tramite l'estensione: "chiudere" chiude la sua scheda. Per un pulsante che apre un profilo (es. BLENDER in APP) il pallino si ottiene con `"showRunning": "blender"`.
+Su Linux serve `wmctrl`.
 
 ### Tipi di azione
 

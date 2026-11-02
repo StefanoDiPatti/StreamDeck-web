@@ -81,6 +81,20 @@ function send(key, command) {
   log.debug('bridge', 'comando ' + command.type + ' -> ' + key);
 }
 
+// C'è una scheda aperta di quel sito (anche senza musica)?
+function hasSite(site) {
+  clean();
+  return Object.keys(tabs).some(function (k) { return tabs[k].state && tabs[k].state.site === site; });
+}
+
+// Comando a tutte le schede di un sito (es. chiudere Apple Music)
+function sendSite(site, command) {
+  clean();
+  Object.keys(tabs).forEach(function (k) {
+    if (tabs[k].state && tabs[k].state.site === site) send(k, command);
+  });
+}
+
 function isStale(key, ms) {
   const t = tabs[key];
   return !t || Date.now() - t.at > ms;
@@ -92,6 +106,8 @@ module.exports = {
   players: players,
   send: send,
   isStale: isStale,
+  hasSite: hasSite,
+  sendSite: sendSite,
   lastSeen: function () { return lastSeen; },
   connected: function () { return Date.now() - lastSeen < 5 * 60000; },
   _reset: function () { Object.keys(tabs).forEach(function (k) { delete tabs[k]; }); lastSeen = 0; }

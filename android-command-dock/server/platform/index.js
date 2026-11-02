@@ -18,6 +18,9 @@ else {
     appVolume: unsupported,
     audioProcesses: function () { return Promise.resolve([]); },
     netBytes: function () { return Promise.resolve(null); },
+    netInfo: function () { return Promise.resolve(null); },
+    windows: function () { return Promise.resolve([]); },
+    closeWindows: function () { return Promise.resolve(0); },
     cpuTemp: function () { return Promise.resolve(null); },
     gpuFallback: function () { return Promise.resolve(null); },
     shutdown: function () {}

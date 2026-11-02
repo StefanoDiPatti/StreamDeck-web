@@ -159,7 +159,20 @@
     if (!placed.length) stage.appendChild(D.el('div', 'empty', 'Pagina vuota: aggiungi tile in config/dock.json'));
     markTab();
     layout();
-    if (app.state) for (var j = 0; j < app.tiles.length; j++) if (app.tiles[j].widget) app.tiles[j].widget.update(app.state);
+    if (app.state) paintTiles(app.state);
+  }
+
+  // Aggiorna widget e pallino verde delle app aperte
+  function paintTiles(s) {
+    for (var i = 0; i < app.tiles.length; i++) {
+      var t = app.tiles[i];
+      if (t.widget) t.widget.update(s);
+      else if (s.apps) {
+        // app del pulsante, oppure "showRunning" per i pulsanti che aprono un profilo
+        var appId = t.tile.showRunning || (t.tile.action && t.tile.action.type === 'launch' ? t.tile.action.app : null);
+        if (appId) D.toggleClass(t.el, 'running', !!s.apps[appId]);
+      }
+    }
   }
 
   function makeWidget(p) {
@@ -209,20 +222,33 @@
         return;
       }
       flash(node, 'ok');
+      // stato aperto/chiuso aggiornato subito dopo un avvio o una chiusura
+      if (a.type === 'launch') { clearTimeout(app.pollTimer); app.pollTimer = setTimeout(poll, 1800); }
       if (r && r.output !== undefined) showModal(tile.label || 'Output', r.output);
       else if (r && r.message) app.toast(r.message, 'ok');
     }, 125000);
   }
 
   // ------------------------------------------------------------ stato e polling
+  // 850 -> "850 kbit/s", 12400 -> "12.4 Mbit/s"
+  function speed(kbps) {
+    if (kbps === null || kbps === undefined) return '…';
+    return kbps < 1000 ? kbps + ' kbit/s' : (Math.round(kbps / 100) / 10) + ' Mbit/s';
+  }
+
   function fmtTop(s) {
     var sys = s.system;
     if (!sys) return '';
+    // CPU e GPU sono già nel riquadro PC: qui rete e RAM
     var parts = [];
-    if (sys.cpu.usage !== null) parts.push('CPU ' + sys.cpu.usage + '%');
-    if (sys.gpu && sys.gpu.usage !== null) parts.push('GPU ' + sys.gpu.usage + '%' + (sys.gpu.temp !== null ? ' ' + sys.gpu.temp + '°' : ''));
-    parts.push('RAM ' + sys.ram.usage + '%');
-    return parts.join('   ');
+    var n = sys.net;
+    if (n) {
+      var name = n.type === 'wifi' ? 'Wi-Fi ' + (n.name || '') + (n.signal !== null && n.signal !== undefined ? ' ' + n.signal + '%' : '')
+        : (n.name || 'Rete');
+      parts.push(name + (n.downKbps !== null && n.downKbps !== undefined ? '   ↓ ' + speed(n.downKbps) + '   ↑ ' + speed(n.upKbps) : ''));
+    }
+    // la RAM è già come barra nel riquadro PC
+    return parts.join('    ');
   }
 
   function setOnline(on, retryMs) {
@@ -254,7 +280,7 @@
       if (s.version !== app.version) { loadConfig(); return; }
       // Alcuni browser cambiano viewport senza evento resize (barra indirizzi, fullscreen)
       if (app.page && stage.clientWidth + 'x' + stage.clientHeight !== app.lastSize) layout();
-      for (var i = 0; i < app.tiles.length; i++) if (app.tiles[i].widget) app.tiles[i].widget.update(s);
+      paintTiles(s);
       app.pollTimer = setTimeout(poll, 2000);
     }, 6000);
   }

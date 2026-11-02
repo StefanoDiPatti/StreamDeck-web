@@ -154,6 +154,27 @@ module.exports = {
     return query.call('net', {}, 4000).catch(function () { return null; });
   },
 
+  // Rete attiva: { type: 'wifi'|'ethernet'|'none', name, signal }
+  netInfo: function () {
+    return query.call('netinfo', {}, 6000).catch(function () { return null; });
+  },
+
+  // Finestre visibili: [{ process, title }]
+  windows: function () {
+    return query.call('windows', {}, 5000).then(function (r) {
+      return (r.list || []).map(function (l) {
+        const i = String(l).indexOf('\t');
+        return { process: String(l).slice(0, i), title: String(l).slice(i + 1) };
+      });
+    });
+  },
+
+  // Chiude le finestre di un processo (come la X): ritorna quante
+  closeWindows: function (processName, titlePattern) {
+    return input.call('closewin', { process: String(processName), title: titlePattern || '' }, 5000)
+      .then(function (r) { return r.closed; });
+  },
+
   cpuTemp: function () { return Promise.resolve(null); },
   gpuFallback: function () { return Promise.resolve(null); },
 

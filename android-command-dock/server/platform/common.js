@@ -22,10 +22,16 @@ function expandPath(p) {
 
 function looksLikePath(p) { return /[\\/]/.test(p); }
 
+// Nomi confrontati senza badare a maiuscole e tipo di spazio: alcuni collegamenti
+// hanno uno spazio "non separabile" (U+00A0) che a occhio è identico.
+function looseName(s) { return String(s).replace(/[\s   ]+/g, ' ').trim().toLowerCase(); }
+
 // Risolve "*" nei percorsi (es. "Blender *\blender.exe"): sceglie la cartella
 // più recente in ordine alfabetico/numerico, così un aggiornamento non rompe il pulsante.
+// Se un percorso non esiste, prova anche a confrontare i nomi in modo tollerante.
 function resolveWildcard(p) {
-  if (typeof p !== 'string' || p.indexOf('*') < 0) return p;
+  if (typeof p !== 'string') return p;
+  if (p.indexOf('*') < 0 && (!looksLikePath(p) || fs.existsSync(p))) return p;
   const sep = p.indexOf('\\') >= 0 ? '\\' : '/';
   const parts = p.split(/[\\/]/);
   let current = [parts[0] === '' ? sep : parts[0] + (/^[A-Za-z]:$/.test(parts[0]) ? sep : '')];
@@ -34,7 +40,16 @@ function resolveWildcard(p) {
     if (!seg) continue;
     const next = [];
     current.forEach(function (dir) {
-      if (seg.indexOf('*') < 0) { next.push(path.join(dir, seg)); return; }
+      if (seg.indexOf('*') < 0) {
+        const exact = path.join(dir, seg);
+        if (fs.existsSync(exact)) { next.push(exact); return; }
+        let names = [];
+        try { names = fs.readdirSync(dir); } catch (e) { return; }
+        const want = looseName(seg);
+        const hit = names.filter(function (n) { return looseName(n) === want; })[0];
+        if (hit) next.push(path.join(dir, hit));
+        return;
+      }
       const re = new RegExp('^' + seg.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$', 'i');
       let entries = [];
       try { entries = fs.readdirSync(dir); } catch (e) { return; }

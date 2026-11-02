@@ -1,12 +1,20 @@
-// Todo list salvata in data/todo.json (scrittura atomica: file temporaneo + rename).
+// Lista TODO.
+// Fonte "memo" (predefinita su Windows): le Memo di Windows (Sticky Notes), vedi sticky.js.
+// Fonte "local": lista della dock in data/todo.json (scrittura atomica: file temporaneo + rename).
+// Si sceglie in services.json -> todo.source; senza Memo si usa sempre la lista locale.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const paths = require('../paths');
+const config = require('../config');
+const sticky = require('./sticky');
 
 const FILE = path.join(paths.DATA_DIR, 'todo.json');
 const SEED = path.join(paths.DEFAULTS_DIR, 'todo.json');
 let items = null;
+
+function settings() { return (config.get('services') || {}).todo || {}; }
+function useMemo() { return settings().source !== 'local' && sticky.available(); }
 
 function load() {
   if (items) return items;
@@ -35,7 +43,7 @@ function find(id) {
   throw err;
 }
 
-module.exports = {
+const local = {
   list: function () { return load(); },
   add: function (text, priority) {
     text = String(text || '').trim().slice(0, 200);
@@ -47,6 +55,17 @@ module.exports = {
   },
   toggle: function (id) { const it = find(id); it.done = !it.done; save(); return it; },
   remove: function (id) { find(id); items = load().filter(function (i) { return i.id !== String(id); }); save(); return true; },
-  clearDone: function () { const before = load().length; items = load().filter(function (i) { return !i.done; }); save(); return before - items.length; },
+  clearDone: function () { const before = load().length; items = load().filter(function (i) { return !i.done; }); save(); return before - items.length; }
+};
+
+module.exports = {
+  source: function () { return useMemo() ? 'memo' : 'local'; },
+  notes: function () { return useMemo() ? sticky.notes() : []; },
+  list: function () { return useMemo() ? sticky.list() : local.list(); },
+  // Le operazioni sulle Memo sono asincrone (chiudono e riaprono l'app): ritornano sempre una Promise.
+  add: async function (text, priority, noteId) { return useMemo() ? sticky.add(text, noteId, settings().memo) : local.add(text, priority); },
+  toggle: async function (id) { return useMemo() ? sticky.toggle(id) : local.toggle(id); },
+  remove: async function (id) { return useMemo() ? sticky.remove(id) : local.remove(id); },
+  clearDone: async function () { return useMemo() ? sticky.clearDone() : local.clearDone(); },
   _reset: function () { items = null; }
 };

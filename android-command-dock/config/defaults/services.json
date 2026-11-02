@@ -65,6 +65,14 @@
     "browserFallback": true
   },
 
+  "todo": {
+    // "memo" = usa le Memo di Windows (Sticky Notes) se ci sono, "local" = lista della dock
+    "source": "memo",
+    // Memo in cui aggiungere le nuove attività (parte del titolo, cioè la prima riga in grassetto).
+    // Vuoto = la memo modificata più di recente. Dal tablet puoi scegliere toccando il titolo.
+    "memo": ""
+  },
+
   "voice": {
     // Trascrizione sul PC degli audio registrati dal tablet (opzionale).
     // Esempio con whisper.cpp:

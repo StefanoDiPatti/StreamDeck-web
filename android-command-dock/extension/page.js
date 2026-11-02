@@ -182,9 +182,14 @@
   function post() {
     var s = state();
     // Senza musica si manda comunque un segnale ogni 5 s: così la dock sa
-    // che l'estensione è installata e funzionante.
-    if (!s && !hadState && (++idleTicks % 5) !== 1) return;
-    hadState = !!s;
+    // che la scheda è aperta (pulsante "aperta" sul tablet) e che l'estensione funziona.
+    if (!s) {
+      if (!hadState && (++idleTicks % 5) !== 1) return;
+      s = { site: site, idle: true };
+      hadState = false;
+    } else {
+      hadState = true;
+    }
     window.postMessage({ __dockBridge: 'state', state: s }, '*');
   }
   window.addEventListener('message', function (e) {

@@ -16,6 +16,15 @@ let prevNet = null;
 let nvidia = { available: null, retryAt: 0 };
 let state = null;
 let busy = false;
+let netInfo = { at: 0, data: null };
+
+// Nome della rete (Wi-Fi/Ethernet): cambia di rado, si legge ogni 15 s
+async function currentNetInfo() {
+  if (Date.now() - netInfo.at < 15000) return netInfo.data;
+  netInfo.at = Date.now();
+  netInfo.data = await platform.netInfo().catch(function () { return null; });
+  return netInfo.data;
+}
 
 function cpuTimes() {
   let idle = 0; let total = 0;
@@ -81,10 +90,11 @@ async function sample() {
     const svc = (config.get('services').system) || {};
     const total = os.totalmem();
     const free = os.freemem();
-    const [gpuN, net, temp] = await Promise.all([
+    const [gpuN, net, temp, info] = await Promise.all([
       svc.gpu === false ? null : nvidiaGpu(),
       platform.netBytes(),
-      svc.libreHardwareMonitorUrl ? lhmCpuTemp(svc.libreHardwareMonitorUrl) : platform.cpuTemp()
+      svc.libreHardwareMonitorUrl ? lhmCpuTemp(svc.libreHardwareMonitorUrl) : platform.cpuTemp(),
+      currentNetInfo()
     ]);
     let gpu = gpuN;
     if (!gpu && svc.gpu !== false) gpu = await platform.gpuFallback();
@@ -113,7 +123,16 @@ async function sample() {
         memUsedGb: gpu.memUsedMb === null ? null : Math.round((gpu.memUsedMb / 1024) * 10) / 10,
         memTotalGb: gpu.memTotalMb === null ? null : Math.round((gpu.memTotalMb / 1024) * 10) / 10
       } : null,
-      net: down === null ? null : { downMbps: Math.round(down * 10) / 10, upMbps: Math.round(up * 10) / 10 },
+      net: {
+        downMbps: down === null ? null : Math.round(down * 10) / 10,
+        upMbps: up === null ? null : Math.round(up * 10) / 10,
+        // in kbit/s, per mostrare anche il traffico basso (Ethernet a riposo ~20 kbit/s)
+        downKbps: down === null ? null : Math.round(down * 1000),
+        upKbps: up === null ? null : Math.round(up * 1000),
+        type: info ? info.type : null,
+        name: info ? info.name : '',
+        signal: info && typeof info.signal === 'number' ? info.signal : null
+      },
       uptimeSeconds: Math.round(os.uptime()),
       at: now
     };

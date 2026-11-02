@@ -20,6 +20,7 @@ const claude = require('./services/claude');
 const todo = require('./services/todo');
 const bridge = require('./services/bridge');
 const voice = require('./services/voice');
+const appsState = require('./services/apps');
 const pkg = require('../package.json');
 
 const PORT = parseInt(process.env.PORT, 10) || 8787;
@@ -140,8 +141,8 @@ app.get('/api/config', route(function () {
 
 // Stato veloce per il polling (ogni 2s): sistema + musica.
 app.get('/api/state', route(async function () {
-  const now = await media.nowPlaying();
-  return { version: config.version(), build: clientBuild(), system: system.get(), media: now, time: Date.now() };
+  const [now, running] = await Promise.all([media.nowPlaying(), appsState.running()]);
+  return { version: config.version(), build: clientBuild(), system: system.get(), media: now, apps: running, time: Date.now() };
 }));
 
 app.post('/api/press', route(function (req) {
@@ -177,11 +178,17 @@ app.post('/api/github/open', route(async function (req) {
   return { message: 'Aperto sul PC' };
 }));
 
-app.get('/api/todo', route(function () { return { items: todo.list() }; }));
-app.post('/api/todo/add', route(function (req) { return { item: todo.add((req.body || {}).text, (req.body || {}).priority) }; }));
-app.post('/api/todo/toggle', route(function (req) { return { item: todo.toggle((req.body || {}).id) }; }));
-app.post('/api/todo/remove', route(function (req) { todo.remove((req.body || {}).id); return { items: todo.list() }; }));
-app.post('/api/todo/clear', route(function () { return { removed: todo.clearDone(), items: todo.list() }; }));
+// source "memo" = Memo di Windows, "local" = lista della dock
+function todoState() { return { items: todo.list(), source: todo.source(), notes: todo.notes(), voiceServer: voice.available() }; }
+app.get('/api/todo', route(todoState));
+app.post('/api/todo/add', route(async function (req) {
+  const b = req.body || {};
+  const item = await todo.add(b.text, b.priority, b.note ? String(b.note) : '');
+  return Object.assign(todoState(), { item: item });
+}));
+app.post('/api/todo/toggle', route(async function (req) { await todo.toggle((req.body || {}).id); return todoState(); }));
+app.post('/api/todo/remove', route(async function (req) { await todo.remove((req.body || {}).id); return todoState(); }));
+app.post('/api/todo/clear', route(async function () { const removed = await todo.clearDone(); return Object.assign(todoState(), { removed: removed }); }));
 
 app.get('/api/ollama/models', route(function () { return ollama.models(); }));
 app.post('/api/ollama/chat', route(function (req) {

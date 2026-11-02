@@ -4,10 +4,12 @@
 const { spawn } = require('child_process');
 const os = require('os');
 const config = require('../config');
+const paths = require('../paths');
 const platform = require('../platform');
 const keys = require('../platform/keys');
 const common = require('../platform/common');
 const media = require('../services/media');
+const appsState = require('../services/apps');
 const log = require('../log');
 
 const MAX_MACRO_STEPS = 50;
@@ -46,7 +48,7 @@ function runCommand(id) {
   const def = forPlatform(all[id]);
   if (!all[id]) return Promise.reject(fail('Comando "' + id + '" non definito in commands.json', 'NOT_FOUND'));
   if (!def || !def.cmd) return Promise.reject(fail('Comando "' + id + '" non disponibile su questo sistema', 'UNSUPPORTED'));
-  const args = normalizeArgs(def.args).map(common.expandPath);
+  const args = normalizeArgs(def.args).map(function (a) { return common.expandPath(a.split('{root}').join(paths.ROOT)); });
   const cmd = common.expandPath(def.cmd);
   const timeout = Math.min(def.timeoutMs || 20000, 120000);
   return new Promise(function (resolve, reject) {
@@ -81,6 +83,11 @@ const HANDLERS = {
     const app = forPlatform(apps[id]);
     if (!apps[id]) throw fail('App "' + id + '" non definita in apps.json', 'NOT_FOUND');
     if (!app || !app.path) throw fail(appLabel(id, apps[id]) + ' non configurata per questo sistema', 'UNSUPPORTED');
+    // App con "toggle": se è già aperta, il pulsante la chiude
+    if (app.toggle && await appsState.closeIfRunning(id)) {
+      return { message: appLabel(id, app) + ': chiusura in corso' };
+    }
+    appsState.invalidate();
     try {
       await platform.launch({ path: app.path, args: normalizeArgs(app.args), cwd: app.cwd });
     } catch (e) {

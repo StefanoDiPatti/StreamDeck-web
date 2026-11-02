@@ -5,41 +5,58 @@
 //         Windows: "shell:AppsFolder\<AppID>" avvia le app dello Store
 //         (trovi l'AppID con PowerShell: Get-StartApps).
 //  args : lista di argomenti (opzionale)   cwd : cartella di lavoro (opzionale)
+//  toggle : true = il pulsante mostra se l'app è aperta e, se lo è, la chiude
+//           (come la X della finestra: l'app può chiedere di salvare)
+//  process: nome del processo, se diverso dal file (es. "discord")
+//  title  : regex sul titolo della finestra, per distinguere app con lo stesso processo
+//  bridge : "apple" | "youtube" | "ytmusic" = web app riconosciuta dall'estensione del browser
 {
   "apps": {
     "blender": {
       "label": "Blender",
+      "toggle": true,
       "windows": { "path": "C:\\Program Files\\Blender Foundation\\Blender *\\blender.exe" },
       "linux": { "path": "blender" }
     },
     "davinci": {
       "label": "DaVinci Resolve",
+      "toggle": true,
       "windows": { "path": "C:\\Program Files\\Blackmagic Design\\DaVinci Resolve\\Resolve.exe" },
       "linux": { "path": "/opt/resolve/bin/resolve" }
     },
     "vscode": {
       "label": "VS Code",
+      "toggle": true,
       "windows": { "path": "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe" },
       "linux": { "path": "code" }
     },
     "unreal": {
       "label": "Unreal Editor",
+      "toggle": true,
       "windows": { "path": "C:\\Program Files\\Epic Games\\UE_*\\Engine\\Binaries\\Win64\\UnrealEditor.exe" },
       "linux": { "path": "~/UnrealEngine/Engine/Binaries/Linux/UnrealEditor" }
     },
     "apple_music": {
       "label": "Apple Music",
-      // Web app: si apre dal collegamento sul desktop (Brave)
-      "windows": { "path": "%USERPROFILE%\\Desktop\\Apple Music.lnk" },
+      "toggle": true,
+      "bridge": "apple",
+      // Web app in Brave: stessi parametri del collegamento sul desktop
+      "windows": {
+        "path": "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+        "args": ["--profile-directory=Default", "https://music.apple.com/us/new"]
+      },
       "linux": { "path": "xdg-open", "args": ["https://music.apple.com"] }
     },
     "spotify": {
       "label": "Spotify",
+      "toggle": true,
       "windows": { "path": "%APPDATA%\\Spotify\\Spotify.exe" },
       "linux": { "path": "spotify" }
     },
     "claude_desktop": {
       "label": "Claude",
+      "toggle": true,
+      "process": "claude",
       "windows": { "path": "shell:AppsFolder\\Claude_pzs8sxrjxfjjc!Claude" }
     },
     "claude_code": {
@@ -64,6 +81,8 @@
     },
     "discord": {
       "label": "Discord",
+      "toggle": true,
+      "process": "discord",
       "windows": { "path": "%LOCALAPPDATA%\\Discord\\Update.exe", "args": ["--processStart", "Discord.exe"] },
       "linux": { "path": "discord" }
     }

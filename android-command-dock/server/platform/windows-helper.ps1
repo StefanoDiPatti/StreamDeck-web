@@ -105,6 +105,63 @@ public static class DockInput {
     return ok || GetForegroundWindow() == h;
   }
 }
+
+// Finestre delle app aperte (per mostrare sul tablet quali app sono attive)
+public static class DockWindows {
+  delegate bool EnumProc(IntPtr h, IntPtr l);
+  [DllImport("user32.dll")] static extern bool EnumWindows(EnumProc f, IntPtr l);
+  [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr h, System.Text.StringBuilder s, int n);
+  [DllImport("user32.dll")] static extern int GetWindowTextLength(IntPtr h);
+  [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint cmd);
+  [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  [DllImport("user32.dll")] static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+  [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h, int attr, out int val, int size);
+
+  class Win { public IntPtr h; public string proc; public string title; }
+
+  static System.Collections.Generic.List<Win> All() {
+    var list = new System.Collections.Generic.List<Win>();
+    var names = new System.Collections.Generic.Dictionary<uint, string>();
+    EnumWindows(delegate (IntPtr h, IntPtr l) {
+      if (!IsWindowVisible(h) || GetWindow(h, 4) != IntPtr.Zero) return true; // invisibile o finestra secondaria
+      int cloaked;
+      if (DwmGetWindowAttribute(h, 14, out cloaked, 4) == 0 && cloaked != 0) return true; // app UWP nascosta
+      int len = GetWindowTextLength(h);
+      if (len == 0) return true;
+      var sb = new System.Text.StringBuilder(len + 1);
+      GetWindowText(h, sb, sb.Capacity);
+      uint pid; GetWindowThreadProcessId(h, out pid);
+      string name;
+      if (!names.TryGetValue(pid, out name)) {
+        try { name = Process.GetProcessById((int)pid).ProcessName.ToLowerInvariant(); } catch { name = ""; }
+        names[pid] = name;
+      }
+      list.Add(new Win { h = h, proc = name, title = sb.ToString() });
+      return true;
+    }, IntPtr.Zero);
+    return list;
+  }
+
+  // "processo<TAB>titolo" per ogni finestra visibile
+  public static string[] List() {
+    var outp = new System.Collections.Generic.List<string>();
+    foreach (var w in All()) outp.Add(w.proc + "\t" + w.title);
+    return outp.ToArray();
+  }
+
+  // Chiude in modo "gentile" (come la X della finestra): l'app puo' chiedere di salvare.
+  public static int Close(string process, string titlePattern) {
+    int n = 0;
+    var re = string.IsNullOrEmpty(titlePattern) ? null : new System.Text.RegularExpressions.Regex(titlePattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    foreach (var w in All()) {
+      if (w.proc != process.ToLowerInvariant()) continue;
+      if (re != null && !re.IsMatch(w.title)) continue;
+      if (PostMessage(w.h, 0x0010, IntPtr.Zero, IntPtr.Zero)) n++;
+    }
+    return n;
+  }
+}
 "@
 
 # --- Volume per singola app (Core Audio). Blocco separato: se non compila
@@ -345,6 +402,32 @@ function Get-Net {
   return @{ rx = $rx; tx = $tx }
 }
 
+# Rete attiva (quella con il gateway): Wi-Fi con nome e segnale, oppure Ethernet.
+function Get-NetInfo {
+  $best = $null
+  foreach ($n in [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()) {
+    if ($n.OperationalStatus -ne 'Up') { continue }
+    $t = [string]$n.NetworkInterfaceType
+    if ($t -eq 'Loopback' -or $t -eq 'Tunnel') { continue }
+    if (($n.Name + ' ' + $n.Description) -match 'vEthernet|Hyper-V|VirtualBox|VMware|WSL|Loopback|Bluetooth|TAP|VPN') { continue }
+    $gw = @($n.GetIPProperties().GatewayAddresses | Where-Object { $_.Address.AddressFamily -eq 'InterNetwork' })
+    if ($gw.Count -eq 0) { continue }
+    $best = $n
+    break
+  }
+  if ($null -eq $best) { return @{ type = 'none'; name = '' } }
+  if ([string]$best.NetworkInterfaceType -eq 'Wireless80211') {
+    $ssid = ''
+    $signal = $null
+    foreach ($l in (netsh.exe wlan show interfaces)) {
+      if ($l -match '^\s*SSID\s*:\s*(.+)$') { $ssid = $Matches[1].Trim() }
+      elseif ($l -match ':\s*(\d+)\s*%\s*$') { $signal = [int]$Matches[1] }
+    }
+    return @{ type = 'wifi'; name = $ssid; signal = $signal }
+  }
+  return @{ type = 'ethernet'; name = 'Ethernet' }
+}
+
 function Open-Target($req) {
   $psi = New-Object System.Diagnostics.ProcessStartInfo
   $psi.FileName = [string]$req.file
@@ -380,6 +463,9 @@ while ($true) {
       }
       'audiosessions' { $data = @{ processes = @([DockAudio]::ListProcesses()) } }
       'net' { $data = Get-Net }
+      'netinfo' { $data = Get-NetInfo }
+      'windows' { $data = @{ list = @([DockWindows]::List()) } }
+      'closewin' { $data = @{ closed = [DockWindows]::Close([string]$req.process, [string]$req.title) } }
       default { throw ('comando sconosciuto: ' + $req.cmd) }
     }
     Send-Reply @{ id = $id; ok = $true; data = $data }

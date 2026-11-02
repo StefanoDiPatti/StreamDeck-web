@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Command Dock Bridge",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Collega Apple Music web, YouTube e YouTube Music alla Command Dock sul tablet (coda, volume dell'app, durata esatta).",
   "host_permissions": [
     "http://127.0.0.1/*",

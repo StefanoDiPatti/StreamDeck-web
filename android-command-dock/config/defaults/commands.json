@@ -10,6 +10,12 @@
       "windows": { "cmd": "rundll32.exe", "args": ["user32.dll,LockWorkStation"] },
       "linux": { "cmd": "loginctl", "args": ["lock-session"] }
     },
+    "monitor_off": {
+      "label": "Schermo spento",
+      // {root} = cartella della dock
+      "windows": { "cmd": "powershell.exe", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", "{root}\\scripts\\windows\\monitor-off.ps1"] },
+      "linux": { "cmd": "xset", "args": ["dpms", "force", "off"] }
+    },
     "openclaw_health": {
       "label": "OpenClaw health",
       "cmd": "openclaw", "args": ["health"], "showOutput": true, "timeoutMs": 30000

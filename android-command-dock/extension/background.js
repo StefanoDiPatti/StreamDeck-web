@@ -23,6 +23,11 @@ async function remember(key, value) {
 }
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
+  // Il tablet ha chiesto di chiudere l'app (es. Apple Music): si chiude la scheda
+  if (msg && msg.type === 'close_tab' && sender.tab) {
+    chrome.tabs.remove(sender.tab.id).catch(function () {});
+    return false;
+  }
   if (!msg || msg.type !== 'state' || !sender.tab) return false;
   const key = sender.tab.id + ':' + (sender.frameId || 0);
   post('/api/bridge/state', { key: key, state: msg.state })

@@ -8,6 +8,7 @@
 //     "action": { ... }, "repeat": true, "confirm": true }
 //   repeat  = tenendo premuto l'azione si ripete (volume)
 //   confirm = va tenuto premuto ~1s (azioni delicate)
+//   showRunning = id di un'app di apps.json: pallino verde quando è aperta
 //
 // Azioni:
 //   { "type": "launch",   "app": "blender" }                 -> apps.json
@@ -62,8 +63,8 @@
       "columns": 6,
       "rows": 3,
       "tiles": [
-        { "label": "BLENDER", "icon": "cube", "color": "#d9730d", "sub": "profilo", "action": { "type": "page", "page": "blender" } },
-        { "label": "DAVINCI", "icon": "film", "color": "#6b4fa0", "sub": "profilo", "action": { "type": "page", "page": "davinci" } },
+        { "label": "BLENDER", "icon": "cube", "color": "#d9730d", "sub": "profilo", "showRunning": "blender", "action": { "type": "page", "page": "blender" } },
+        { "label": "DAVINCI", "icon": "film", "color": "#6b4fa0", "sub": "profilo", "showRunning": "davinci", "action": { "type": "page", "page": "davinci" } },
         { "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
         { "label": "CLAUDE CODE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_code" } },
         { "label": "CLAUDE", "icon": "sparkle", "color": "#8a4227", "action": { "type": "launch", "app": "claude_desktop" } },
@@ -76,6 +77,7 @@
         { "label": "SCREENSHOT", "icon": "camera", "sub": "Win+Shift+S", "action": { "type": "hotkey", "keys": ["WIN", "SHIFT", "S"] } },
         { "label": "DESKTOP", "icon": "desktop", "sub": "Win+D", "action": { "type": "hotkey", "keys": ["WIN", "D"] } },
         { "label": "BLOCCA", "icon": "lock", "color": "#7a2730", "confirm": true, "action": { "type": "command", "id": "lock_pc" } },
+        { "label": "SCHERMO OFF", "icon": "power", "sub": "monitor", "color": "#2b3240", "action": { "type": "command", "id": "monitor_off" } },
         { "label": "VOL -", "icon": "voldown", "sub": "sistema", "repeat": true, "action": { "type": "media", "command": "volume_down" } },
         { "label": "MUTE", "icon": "mute", "sub": "sistema", "action": { "type": "media", "command": "mute" } },
         { "label": "VOL +", "icon": "volup", "sub": "sistema", "repeat": true, "action": { "type": "media", "command": "volume_up" } }

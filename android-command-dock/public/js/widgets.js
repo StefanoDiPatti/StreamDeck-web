@@ -23,34 +23,114 @@ var Widgets = (function () {
     return b;
   }
 
+  // Dettatura in un campo di testo, usata da Claude e TODO.
+  // Ordine: riconoscimento vocale del browser > audio trascritto sul PC
+  // (services.json -> voice) > microfono della tastiera di Android.
+  // opts: { mic, input, app, serverVoice: function () -> bool, onText: function (testo) }
+  function dictation(opts) {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var mic = opts.mic, input = opts.input, app = opts.app, rec = null, listening = false;
+    var fileIn = el('input', 'voice-file');
+    fileIn.type = 'file';
+    fileIn.setAttribute('accept', 'audio/*');
+    fileIn.setAttribute('capture', 'microphone');
+    mic.parentNode.appendChild(fileIn);
+
+    function append(t) {
+      t = String(t || '').replace(/^\s+|\s+$/g, '');
+      if (!t) return;
+      input.value = (input.value ? input.value.replace(/\s+$/, '') + ' ' : '') + t;
+      if (opts.onText) opts.onText(t);
+    }
+    function stop() {
+      if (rec && listening) { try { rec.stop(); } catch (e) { /* già fermo */ } }
+      listening = false;
+      D.removeClass(mic, 'on');
+    }
+    function startBrowser() {
+      if (!rec) {
+        rec = new SR();
+        rec.lang = 'it-IT';
+        rec.continuous = false;
+        rec.interimResults = false;
+        rec.onresult = function (e) {
+          var t = '';
+          for (var i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
+          append(t);
+        };
+        rec.onerror = function (e) {
+          stop();
+          app.toast(e.error === 'not-allowed' ? 'Microfono non consentito dal browser' : 'Dettatura non riuscita: usa il microfono della tastiera', 'err');
+        };
+        rec.onend = function () { listening = false; D.removeClass(mic, 'on'); };
+      }
+      try { rec.start(); listening = true; D.addClass(mic, 'on'); } catch (e) { stop(); }
+    }
+    function upload(file) {
+      var xhr = new XMLHttpRequest();
+      D.addClass(mic, 'on');
+      app.toast('Trascrivo sul PC…', 'info');
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4) return;
+        D.removeClass(mic, 'on');
+        var d = null;
+        try { d = JSON.parse(xhr.responseText); } catch (e) { d = null; }
+        if (d && d.ok) append(d.data.text);
+        else app.toast((d && d.error && d.error.message) || 'Trascrizione non riuscita', 'err');
+      };
+      xhr.open('POST', '/api/voice', true);
+      var token = D.store.get('token', '');
+      if (token) xhr.setRequestHeader('X-Dock-Token', token);
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      xhr.send(file);
+    }
+    fileIn.addEventListener('change', function () {
+      if (fileIn.files && fileIn.files[0]) upload(fileIn.files[0]);
+      fileIn.value = '';
+    }, false);
+    D.bindTap(mic, {
+      onTap: function () {
+        if (listening) { stop(); return; }
+        if (SR) { startBrowser(); return; }
+        if (opts.serverVoice && opts.serverVoice()) { fileIn.click(); return; }
+        input.focus();
+        app.toast('Tocca il microfono sulla tastiera di Android per dettare', 'info');
+      }
+    });
+    return { stop: stop };
+  }
+
   // ------------------------------------------------------------ SYSTEM
+  // Una riga per voce (etichetta, barra, valore): le 4 voci stanno anche in
+  // un riquadro basso. Il testo si adatta all'altezza disponibile.
   function system(root) {
     D.addClass(root, 'w-system');
     var title = header(root, 'PC');
+    var list = el('div', 'm-list');
+    root.appendChild(list);
     var rows = {};
+    var KEYS = ['cpu', 'gpu', 'ram', 'vram'];
     function row(key, label) {
-      var r = el('div', 'metric');
+      var r = el('div', 'metric' + (key === 'net' ? ' m-nobar' : ''));
       var l = el('span', 'm-label', label);
-      var v = el('span', 'm-val', '—');
-      var x = el('span', 'm-extra', '');
       var bar = el('div', 'bar');
       var fill = el('i', '');
       bar.appendChild(fill);
-      r.appendChild(l); r.appendChild(x); r.appendChild(v); r.appendChild(bar);
-      root.appendChild(r);
-      rows[key] = { row: r, val: v, extra: x, fill: fill, bar: bar };
+      var v = el('span', 'm-val', '—');
+      r.appendChild(l); r.appendChild(bar); r.appendChild(v);
+      list.appendChild(r);
+      rows[key] = { row: r, val: v, fill: fill, bar: bar };
     }
-    // ordine = priorità: se la tile è bassa si vedono solo le prime righe
-    row('cpu', 'CPU'); row('gpu', 'GPU'); row('ram', 'RAM'); row('vram', 'VRAM'); row('net', 'RETE');
+    // la rete è nella barra in alto
+    row('cpu', 'CPU'); row('gpu', 'GPU'); row('ram', 'RAM'); row('vram', 'VRAM');
 
-    function set(key, value, pct, extra, lvl) {
+    function set(key, value, pct, lvl) {
       var r = rows[key];
       setText(r.val, value);
-      setText(r.extra, extra || '');
       r.fill.style.width = (pct === null || pct === undefined ? 0 : Math.max(2, Math.min(100, pct))) + '%';
       r.bar.className = 'bar ' + (lvl || '');
-      D.toggleClass(r.bar, 'nobar', pct === null || pct === undefined);
     }
+    function deg(t) { return t === null || t === undefined ? '' : ' · ' + t + '°'; }
 
     return {
       update: function (s) {
@@ -58,27 +138,28 @@ var Widgets = (function () {
         if (!sys) return;
         setText(title, 'PC · ' + sys.hostname);
         var c = sys.cpu;
-        set('cpu', c.usage === null ? '…' : c.usage + '%', c.usage, c.temp !== null ? c.temp + '°C' : '', level(Math.max(c.usage || 0, c.temp ? c.temp - 15 : 0), 60, 85));
+        set('cpu', (c.usage === null ? '…' : c.usage + '%') + deg(c.temp), c.usage, level(Math.max(c.usage || 0, c.temp ? c.temp - 15 : 0), 60, 85));
         var g = sys.gpu;
         if (g) {
-          set('gpu', g.usage === null ? 'N/D' : g.usage + '%', g.usage, g.temp !== null ? g.temp + '°C' : '', level(Math.max(g.usage || 0, g.temp ? g.temp - 10 : 0), 65, 85));
+          set('gpu', (g.usage === null ? 'N/D' : g.usage + '%') + deg(g.temp), g.usage, level(Math.max(g.usage || 0, g.temp ? g.temp - 10 : 0), 65, 85));
           var vpct = g.memUsedGb !== null && g.memTotalGb ? Math.round((g.memUsedGb / g.memTotalGb) * 100) : null;
-          set('vram', g.memUsedGb !== null ? g.memUsedGb + ' / ' + g.memTotalGb + ' GB' : 'N/D', vpct, '', level(vpct, 75, 92));
+          set('vram', g.memUsedGb !== null ? g.memUsedGb + '/' + g.memTotalGb + ' GB' : 'N/D', vpct, level(vpct, 75, 92));
         } else {
-          set('gpu', 'N/D', null, '', '');
-          set('vram', 'N/D', null, '', '');
+          set('gpu', 'N/D', null, '');
+          set('vram', 'N/D', null, '');
         }
-        set('ram', sys.ram.usedGb + ' / ' + sys.ram.totalGb + ' GB', sys.ram.usage, sys.ram.usage + '%', level(sys.ram.usage, 75, 90));
-        if (sys.net) set('net', '↓ ' + sys.net.downMbps + '  ↑ ' + sys.net.upMbps, null, 'Mbit/s', '');
-        else set('net', '…', null, '', '');
+        set('ram', sys.ram.usage + '% · ' + sys.ram.usedGb + '/' + sys.ram.totalGb + ' GB', sys.ram.usage, level(sys.ram.usage, 75, 90));
       },
       resize: function (w, h) {
-        // Quante righe entrano davvero (dipende dalla dimensione del testo)
-        rows.cpu.row.style.display = '';
-        var rh = rows.cpu.row.offsetHeight + 6;
-        var n = Math.max(1, Math.floor((h - 50) / (rh || 60)));
-        var keys = ['cpu', 'gpu', 'ram', 'vram', 'net'];
-        for (var i = 0; i < keys.length; i++) rows[keys[i]].row.style.display = i < n ? '' : 'none';
+        // altezza di una riga = spazio disponibile / 5 (tra 24 e 56 px)
+        var rh = Math.max(24, Math.min(56, Math.floor((h - 46) / KEYS.length)));
+        var fs = Math.max(12, Math.min(18, Math.round(rh * 0.5)));
+        list.style.fontSize = fs + 'px';
+        var visible = Math.max(1, Math.min(KEYS.length, Math.floor((h - 46) / rh)));
+        for (var i = 0; i < KEYS.length; i++) {
+          rows[KEYS[i]].row.style.height = rows[KEYS[i]].row.style.lineHeight = rh + 'px';
+          rows[KEYS[i]].row.style.display = i < visible ? '' : 'none';
+        }
       },
       destroy: function () {}
     };
@@ -400,77 +481,135 @@ var Widgets = (function () {
   }
 
   // ------------------------------------------------------------ TODO
+  // Con le Memo di Windows ogni modifica chiude e riapre l'app Memo sul PC:
+  // la risposta arriva dopo 1-2 secondi, intanto la riga si aggiorna subito.
   function todo(root, tile, app) {
     D.addClass(root, 'w-todo');
     var clearBtn = smallBtn('PULISCI', 'trash', function () {
-      D.api.post('/api/todo/clear', {}, function (err, r) {
-        if (err) return app.toast(err.message, 'err');
-        items = r.items; render();
+      send('/api/todo/clear', {}, function (r) {
         app.toast(r.removed ? r.removed + ' completate rimosse' : 'Nessuna completata', 'ok');
       });
     });
     var title = header(root, 'TODO', clearBtn);
     var form = el('div', 'todo-form');
+    var mic = el('div', 'todo-mic');
+    mic.innerHTML = Icons.html('mic');
     var input = el('input', 'todo-input');
     input.type = 'text';
     input.placeholder = 'Nuova attività…';
     input.setAttribute('maxlength', '200');
     var addBtn = el('div', 'todo-add');
     addBtn.innerHTML = Icons.html('add') || '+';
-    form.appendChild(input); form.appendChild(addBtn);
+    form.appendChild(mic); form.appendChild(input); form.appendChild(addBtn);
     var list = el('div', 'w-list scroll');
     root.appendChild(form); root.appendChild(list);
-    var items = [];
+    var state = { items: [], notes: [], source: 'local', voiceServer: false };
+    var target = D.store.get('todo:note', '');
+    var busy = 0;
 
+    dictation({ mic: mic, input: input, app: app, serverVoice: function () { return state.voiceServer; } });
+
+    function targetNote() {
+      for (var i = 0; i < state.notes.length; i++) if (state.notes[i].id === target) return state.notes[i];
+      return state.notes[0] || null;
+    }
     function render() {
       list.innerHTML = '';
-      var open = 0;
-      for (var i = 0; i < items.length; i++) {
-        var it = items[i];
+      var open = 0, group = null, memo = state.source === 'memo';
+      var tn = targetNote();
+      var groups = memo && state.notes.length > 0;
+      for (var i = 0; i < state.items.length; i++) {
+        var it = state.items[i];
         if (!it.done) open++;
+        if (groups && it.note !== group) {
+          group = it.note;
+          list.appendChild(groupRow(it.note, it.group, tn && tn.id === it.note));
+        }
         var row = el('div', 'todo-row' + (it.done ? ' done' : '') + (it.priority === 'high' ? ' high' : ''));
+        var text = D.esc(it.text);
+        if (it.label && it.text.indexOf(it.label) === 0) text = '<b>' + D.esc(it.label) + '</b>' + D.esc(it.text.slice(it.label.length));
         row.innerHTML = '<span class="todo-box">' + (it.done ? Icons.html('check') || 'x' : '') + '</span>' +
-          '<span class="todo-text">' + D.esc(it.text) + '</span>' +
+          '<span class="todo-text">' + text + '</span>' +
           '<span class="todo-del">' + (Icons.html('close') || 'x') + '</span>';
-        bindRow(row, it.id);
+        bindRow(row, it);
         list.appendChild(row);
       }
-      setText(title, 'TODO · ' + open + ' da fare');
-      if (!items.length) list.appendChild(el('div', 'empty', 'Nessuna attività'));
+      // memo senza righe: mostra comunque il titolo per poterla scegliere
+      if (groups) for (var n = 0; n < state.notes.length; n++) {
+        var has = false;
+        for (var j = 0; j < state.items.length; j++) if (state.items[j].note === state.notes[n].id) { has = true; break; }
+        if (!has) list.appendChild(groupRow(state.notes[n].id, state.notes[n].title, tn && tn.id === state.notes[n].id));
+      }
+      setText(title, 'TODO' + (memo ? ' · MEMO' : '') + ' · ' + open + ' da fare');
+      input.placeholder = memo && tn ? 'Aggiungi a ' + tn.title + '…' : 'Nuova attività…';
+      if (!state.items.length && !groups) list.appendChild(el('div', 'empty', 'Nessuna attività'));
     }
-    function bindRow(row, id) {
+    function groupRow(id, label, isTarget) {
+      var g = el('div', 'todo-group' + (isTarget ? ' target' : ''));
+      // con più memo il titolo evidenziato è quella in cui finiscono le nuove righe
+      g.innerHTML = '<span>' + D.esc(label || 'Memo') + '</span>' + (isTarget && state.notes.length > 1 ? '<i>+ qui</i>' : '');
+      if (state.notes.length > 1) {
+        D.bindTap(g, {
+          scrollable: true,
+          onTap: function () { target = id; D.store.set('todo:note', id); render(); }
+        });
+      }
+      return g;
+    }
+    function bindRow(row, it) {
       D.bindTap(row, {
         scrollable: true,
-        onTap: function (target) {
-          var del = D.closestClass(target, 'todo-del', row);
-          D.api.post(del ? '/api/todo/remove' : '/api/todo/toggle', { id: id }, function (err) {
-            if (err) return app.toast(err.message, 'err');
-            load();
-          });
+        onTap: function (t) {
+          var del = D.closestClass(t, 'todo-del', row);
+          if (del) { D.addClass(row, 'busy'); send('/api/todo/remove', { id: it.id }); return; }
+          it.done = !it.done; // subito sul tablet, poi conferma dal PC
+          D.toggleClass(row, 'done', it.done);
+          D.addClass(row, 'busy');
+          send('/api/todo/toggle', { id: it.id });
         }
       });
+    }
+    // Invia una modifica e ridisegna con la lista aggiornata restituita dal server.
+    function send(url, body, done) {
+      busy++;
+      D.addClass(root, 'todo-busy');
+      D.api.post(url, body, function (err, r) {
+        busy--;
+        if (!busy) D.removeClass(root, 'todo-busy');
+        if (err) { app.toast(err.message, 'err'); load(); return; }
+        apply(r);
+        if (done) done(r);
+      }, 20000);
+    }
+    function apply(d) {
+      state.items = d.items || [];
+      state.notes = d.notes || [];
+      state.source = d.source || 'local';
+      state.voiceServer = !!d.voiceServer;
+      render();
     }
     function add() {
       var text = input.value.replace(/^\s+|\s+$/g, '');
       if (!text) { input.focus(); return; }
-      D.api.post('/api/todo/add', { text: text }, function (err) {
-        if (err) return app.toast(err.message, 'err');
-        input.value = '';
-        input.blur();
-        load();
+      var tn = targetNote();
+      input.value = '';
+      input.blur();
+      send('/api/todo/add', { text: text, note: tn ? tn.id : '' }, function () {
+        app.toast(state.source === 'memo' && tn ? 'Aggiunta a ' + tn.title : 'Aggiunta', 'ok');
       });
     }
     D.bindTap(addBtn, { onTap: add });
     input.addEventListener('keydown', function (e) { if (e.keyCode === 13) { e.preventDefault(); add(); } }, false);
     function load() {
+      if (busy) return;
       D.api.get('/api/todo', function (err, d) {
-        if (err) return;
-        items = d.items;
-        render();
+        if (err || busy) return;
+        apply(d);
       });
     }
     load();
-    var timer = setInterval(load, 30000);
+    // le modifiche fatte sul PC compaiono entro qualche secondo
+    var timer = setInterval(load, 10000);
     return { update: function () {}, resize: function () {}, destroy: function () { clearInterval(timer); } };
   }
 
@@ -658,16 +797,15 @@ var Widgets = (function () {
           '<div class="cl-mic">' + Icons.html('mic') + '</div>' +
           '<textarea class="cl-input" rows="2"></textarea>' +
           '<div class="cl-send">' + Icons.html('send') + '</div>' +
-          '<input class="cl-file" type="file" accept="audio/*" capture="microphone">' +
         '</div>' +
       '</div>';
 
     function q(cls) { return root.querySelector('.' + cls); }
     var list = q('cl-list'), log = q('cl-log'), input = q('cl-input'), send = q('cl-send'), mic = q('cl-mic');
     var titleEl = q('cl-title'), subEl = q('cl-sub'), del = q('cl-del'), targetSel = q('cl-target'), projSel = q('cl-project');
-    var enterBtn = q('cl-enter'), fileIn = q('cl-file');
+    var enterBtn = q('cl-enter');
     var tabs = root.querySelectorAll('.cl-tab'), dests = root.querySelectorAll('.cl-dest');
-    var data = null, chat = null, dest = 'claude', sendEnter = true, alive = true, pollTimer = null, rec = null, listening = false;
+    var data = null, chat = null, dest = 'claude', sendEnter = true, alive = true, pollTimer = null;
 
     function persist() { D.store.set('cl:mode', CL.mode); D.store.set('cl:sel', CL.sel); }
 
@@ -851,63 +989,9 @@ var Widgets = (function () {
       if (dest === 'pc') sendToPc(text); else sendToClaude(text);
     }
 
-    // ---- voce: riconoscimento del browser > trascrizione sul PC > microfono della tastiera
-    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    function stopListening() {
-      if (rec && listening) { try { rec.stop(); } catch (e) { /* già fermo */ } }
-      listening = false;
-      D.removeClass(mic, 'on');
-    }
-    function startBrowserDictation() {
-      if (!rec) {
-        rec = new SR();
-        rec.lang = 'it-IT';
-        rec.continuous = false;
-        rec.interimResults = false;
-        rec.onresult = function (e) {
-          var t = '';
-          for (var i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
-          if (t) input.value = (input.value ? input.value.replace(/\s+$/, '') + ' ' : '') + t;
-        };
-        rec.onerror = function (e) {
-          stopListening();
-          app.toast(e.error === 'not-allowed' ? 'Microfono non consentito dal browser' : 'Dettatura non riuscita: usa il microfono della tastiera', 'err');
-        };
-        rec.onend = function () { listening = false; D.removeClass(mic, 'on'); };
-      }
-      try { rec.start(); listening = true; D.addClass(mic, 'on'); } catch (e) { stopListening(); }
-    }
-    function uploadAudio(file) {
-      var xhr = new XMLHttpRequest();
-      D.addClass(mic, 'on');
-      app.toast('Trascrivo sul PC…', 'info');
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState !== 4) return;
-        D.removeClass(mic, 'on');
-        var d = null;
-        try { d = JSON.parse(xhr.responseText); } catch (e) { d = null; }
-        if (d && d.ok) input.value = (input.value ? input.value + ' ' : '') + d.data.text;
-        else app.toast((d && d.error && d.error.message) || 'Trascrizione non riuscita', 'err');
-      };
-      xhr.open('POST', '/api/voice', true);
-      var token = D.store.get('token', '');
-      if (token) xhr.setRequestHeader('X-Dock-Token', token);
-      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-      xhr.send(file);
-    }
-    fileIn.addEventListener('change', function () {
-      if (fileIn.files && fileIn.files[0]) uploadAudio(fileIn.files[0]);
-      fileIn.value = '';
-    }, false);
-    D.bindTap(mic, {
-      onTap: function () {
-        if (listening) { stopListening(); return; }
-        if (SR) { startBrowserDictation(); return; }
-        if (CL.info && CL.info.voiceServer) { fileIn.click(); return; }
-        input.focus();
-        app.toast('Tocca il microfono sulla tastiera di Android per dettare', 'info');
-      }
-    });
+    // ---- voce
+    var voice = dictation({ mic: mic, input: input, app: app, serverVoice: function () { return !!(CL.info && CL.info.voiceServer); } });
+    function stopListening() { voice.stop(); }
 
     // ---- controlli
     for (var t = 0; t < tabs.length; t++) (function (tab) {

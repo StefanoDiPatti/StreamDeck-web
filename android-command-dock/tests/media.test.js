@@ -79,3 +79,14 @@ test('Claude Code: promemoria di sistema e risultati degli strumenti non vengono
   assert.strictEqual(T.messageText({ type: 'user', message: { content: [{ type: 'tool_result', content: 'x' }] } }), null);
   assert.strictEqual(T.messageText({ type: 'assistant', message: { content: [{ type: 'thinking', thinking: '' }, { type: 'text', text: 'Fatto' }, { type: 'tool_use', name: 'Bash' }] } }), 'Fatto\n[ Bash ]');
 });
+
+test('app con apri/chiudi: processo ricavato dal percorso o dalla config', function () {
+  const apps = require('../server/services/apps').toggleApps();
+  if (process.platform === 'win32') {
+    assert.strictEqual(apps.vscode.process, 'code');
+    assert.strictEqual(apps.discord.process, 'discord');
+    assert.strictEqual(apps.apple_music.bridge, 'apple');
+  }
+  assert.ok(!apps.powershell, 'PowerShell non va chiuso dal tablet');
+  assert.ok(!apps.files, 'Esplora file non va chiuso dal tablet');
+});

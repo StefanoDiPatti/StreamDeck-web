@@ -224,6 +224,50 @@ module.exports = {
     } catch (e) { return null; }
   },
 
+  // Rete attiva: Wi-Fi (nome con iwgetid o nmcli) oppure cablata.
+  netInfo: async function () {
+    if (has('iwgetid')) {
+      const r = await common.run('iwgetid', ['-r'], { timeout: 2000 });
+      if (r.ok && r.stdout.trim()) return { type: 'wifi', name: r.stdout.trim(), signal: null };
+    }
+    if (has('nmcli')) {
+      const r = await common.run('nmcli', ['-t', '-f', 'TYPE,STATE,CONNECTION', 'device'], { timeout: 3000 });
+      const lines = r.stdout.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const f = lines[i].split(':');
+        if (f[1] === 'connected' && f[0] === 'wifi') return { type: 'wifi', name: f.slice(2).join(':'), signal: null };
+        if (f[1] === 'connected' && f[0] === 'ethernet') return { type: 'ethernet', name: 'Ethernet' };
+      }
+    }
+    return { type: 'ethernet', name: 'Rete' };
+  },
+
+  // Finestre aperte (serve wmctrl): [{ process, title }]
+  windows: async function () {
+    if (!has('wmctrl') || !process.env.DISPLAY) return [];
+    const r = await common.run('wmctrl', ['-lp'], { timeout: 3000 });
+    if (!r.ok) return [];
+    return r.stdout.split('\n').filter(Boolean).map(function (l) {
+      const m = /^(\S+)\s+\S+\s+(\d+)\s+\S+\s?(.*)$/.exec(l);
+      if (!m) return null;
+      let proc = '';
+      try { proc = fs.readFileSync('/proc/' + m[2] + '/comm', 'utf8').trim().toLowerCase(); } catch (e) { /* processo terminato */ }
+      return { id: m[1], process: proc, title: m[3] };
+    }).filter(Boolean);
+  },
+
+  closeWindows: async function (processName, titlePattern) {
+    const wins = await module.exports.windows();
+    const re = titlePattern ? new RegExp(titlePattern, 'i') : null;
+    let n = 0;
+    for (let i = 0; i < wins.length; i++) {
+      if (wins[i].process !== String(processName).toLowerCase() || (re && !re.test(wins[i].title))) continue;
+      const r = await common.run('wmctrl', ['-ic', wins[i].id], { timeout: 3000 });
+      if (r.ok) n++;
+    }
+    return n;
+  },
+
   // Temperatura CPU da /sys/class/hwmon (coretemp, k10temp, zenpower...).
   cpuTemp: async function () {
     const base = '/sys/class/hwmon';
