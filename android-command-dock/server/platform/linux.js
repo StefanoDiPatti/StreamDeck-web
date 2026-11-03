@@ -111,7 +111,7 @@ module.exports = {
   },
 
   focus: async function (name) {
-    if (!has('xdotool') || !process.env.DISPLAY) throw new Error('Focus finestra disponibile solo su X11 con xdotool');
+    if (!has('xdotool') || !process.env.DISPLAY) throw Object.assign(new Error('Focus finestra disponibile solo su X11 con xdotool'), { code: 'UNSUPPORTED' });
     const r = await common.run('xdotool', ['search', '--onlyvisible', '--class', String(name), 'windowactivate', '--sync'], { timeout: 4000 });
     if (!r.ok) throw new Error('Finestra "' + name + '" non trovata');
     return r;

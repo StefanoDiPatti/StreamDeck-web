@@ -25,18 +25,7 @@ function fail(message, code) {
 
 function appLabel(id, app) { return (app && app.label) || id; }
 
-// Sceglie la variante per il sistema corrente: { windows: {...}, linux: {...} } oppure campi diretti.
-function forPlatform(entry) {
-  if (!entry || typeof entry !== 'object') return null;
-  const key = process.platform === 'win32' ? 'windows' : process.platform;
-  const specific = entry[key];
-  if (specific && typeof specific === 'object') return Object.assign({}, entry, specific);
-  if (entry.windows || entry.linux) {
-    // Definita solo per altri sistemi
-    if (!entry.path && !entry.cmd) return null;
-  }
-  return entry;
-}
+const forPlatform = common.forPlatform;
 
 // Il gioco aperto (app con "game": true), per il Go Live di Discord: { pid, label }
 async function runningGame() {
@@ -57,13 +46,10 @@ async function runningGame() {
   return null;
 }
 
-// "path" può essere una lista di percorsi possibili (es. giochi su C: o D:): vale il primo che esiste.
+// "path" può essere una lista (es. giochi su C: o D:, o più terminali): vale il primo che c'è.
 function pickPath(p) {
   if (!Array.isArray(p)) return p;
-  for (let i = 0; i < p.length; i++) {
-    const file = common.resolveWildcard(common.expandPath(String(p[i])));
-    if (!common.looksLikePath(file) || fs.existsSync(file)) return p[i];
-  }
+  for (let i = 0; i < p.length; i++) if (common.available(String(p[i]))) return p[i];
   return p[0];
 }
 
@@ -105,6 +91,17 @@ function runCommand(id) {
       resolve({ message: (def.label || id) + ': fatto', output: def.showOutput ? text.slice(0, 4000) : undefined });
     });
   });
+}
+
+// Porta in primo piano il programma prima dei tasti. Dove il sistema non lo
+// permette (Linux Wayland senza xdotool) i tasti vanno alla finestra attiva.
+async function focusBefore(name) {
+  if (!name) return;
+  try {
+    await platform.focus(name);
+  } catch (e) {
+    if (e.code !== 'UNSUPPORTED') throw e;
+  }
 }
 
 const HANDLERS = {
@@ -150,14 +147,14 @@ const HANDLERS = {
 
   hotkey: async function (a) {
     const combo = keys.parseCombo(a.keys);
-    if (a.focus) await platform.focus(a.focus);
+    await focusBefore(a.focus);
     await platform.sendKeys(combo);
     return { message: null };
   },
 
   key: async function (a) {
     const combo = keys.parseCombo([a.key]);
-    if (a.focus) await platform.focus(a.focus);
+    await focusBefore(a.focus);
     const times = Math.max(1, Math.min(parseInt(a.repeat, 10) || 1, 50));
     for (let i = 0; i < times; i++) await platform.sendKeys(combo);
     return { message: null };
@@ -165,7 +162,7 @@ const HANDLERS = {
 
   text: async function (a) {
     if (typeof a.value !== 'string' || !a.value) throw fail('Testo mancante', 'BAD_CONFIG');
-    if (a.focus) await platform.focus(a.focus);
+    await focusBefore(a.focus);
     await platform.typeText(a.value);
     return { message: null };
   },

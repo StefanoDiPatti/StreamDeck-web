@@ -13,6 +13,9 @@
 //  game : true = è un gioco: il Go Live di Discord trasmette questo, se è aperto
 //  title  : regex sul titolo della finestra, per distinguere app con lo stesso processo
 //  bridge : "apple" | "youtube" | "ytmusic" = web app riconosciuta dall'estensione del browser
+//  "linux" (o "windows") può essere anche una LISTA di alternative: vale la prima
+//         installata (es. Konsole, poi GNOME Terminal...). I file .desktop
+//         (web app di Brave/Chrome, app scaricate) si avviano con gtk-launch.
 {
   "apps": {
     "blender": {
@@ -48,7 +51,11 @@
         "path": "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
         "args": ["--profile-directory=Default", "https://music.apple.com/us/new"]
       },
-      "linux": { "path": "xdg-open", "args": ["https://music.apple.com"] }
+      // Linux: la web app installata da Brave (collegamento sul desktop), altrimenti il sito
+      "linux": [
+        { "path": "~/.local/share/applications/brave-blgdilankhbcpipclgpdndahbehalgkh-Default.desktop" },
+        { "path": "xdg-open", "args": ["https://music.apple.com"] }
+      ]
     },
     "spotify": {
       "label": "Spotify",
@@ -60,17 +67,37 @@
       "label": "Claude",
       "toggle": true,
       "process": "claude",
-      "windows": { "path": "shell:AppsFolder\\Claude_pzs8sxrjxfjjc!Claude" }
+      "windows": { "path": "shell:AppsFolder\\Claude_pzs8sxrjxfjjc!Claude" },
+      // Linux: la web app di Claude installata da Brave (collegamento sul desktop), altrimenti il sito
+      "linux": [
+        { "path": "~/.local/share/applications/brave-fmpnliohjhemenmnlpbfagaolkdacoja-Default.desktop", "toggle": false },
+        { "path": "xdg-open", "args": ["https://claude.ai"], "toggle": false }
+      ]
+    },
+    "viber": {
+      "label": "Viber",
+      "linux": [
+        { "path": "~/.local/share/applications/viber.desktop" },
+        { "path": "~/.local/opt/Viber/@viberdesktop" },
+        { "path": "viber" }
+      ]
     },
     "claude_code": {
       "label": "Claude Code",
       "windows": { "path": "powershell.exe", "args": ["-NoExit", "-Command", "claude"], "cwd": "%USERPROFILE%\\Documents\\AI Projects" },
-      "linux": { "path": "x-terminal-emulator", "args": ["-e", "claude"], "cwd": "~" }
+      "linux": [
+        { "path": "konsole", "args": ["-e", "claude"], "cwd": "~" },
+        { "path": "gnome-terminal", "args": ["--", "claude"], "cwd": "~" },
+        { "path": "alacritty", "args": ["-e", "claude"], "cwd": "~" },
+        { "path": "kitty", "args": ["claude"], "cwd": "~" },
+        { "path": "xterm", "args": ["-e", "claude"], "cwd": "~" }
+      ]
     },
     "powershell": {
       "label": "PowerShell",
       "windows": { "path": "powershell.exe", "args": ["-NoExit"], "cwd": "%USERPROFILE%" },
-      "linux": { "path": "x-terminal-emulator", "cwd": "~" }
+      // Linux: il terminale del desktop (il primo installato)
+      "linux": { "label": "Terminale", "path": ["konsole", "gnome-terminal", "alacritty", "kitty", "xfce4-terminal", "xterm"], "cwd": "~" }
     },
     "files": {
       "label": "File",
@@ -80,7 +107,16 @@
     "taskmgr": {
       "label": "Gestione attività",
       "windows": { "path": "taskmgr.exe" },
-      "linux": { "path": "gnome-system-monitor" }
+      "linux": { "label": "Monitor di sistema", "path": ["plasma-systemmonitor", "gnome-system-monitor", "ksysguard", "xfce4-taskmanager"] }
+    },
+    // Screenshot di un'area (su Windows il pulsante usa Win+Shift+S)
+    "screenshot": {
+      "label": "Screenshot",
+      "linux": [
+        { "path": "spectacle", "args": ["--region"] },
+        { "path": "gnome-screenshot", "args": ["--area"] },
+        { "path": "flameshot", "args": ["gui"] }
+      ]
     },
     "discord": {
       "label": "Discord",

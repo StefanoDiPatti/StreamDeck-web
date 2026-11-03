@@ -1,0 +1,30 @@
+// Impronte (sha1, fine riga LF) delle versioni precedenti dei file di default.
+// Se un file in config/ è identico a una di queste, nessuno l'ha modificato:
+// all'avvio viene sostituito dalla versione nuova. I file modificati restano come sono.
+// Dopo aver cambiato un default, aggiungi qui l'impronta della versione vecchia.
+{
+  "dock": [
+    "bb587eece23b66e339452d1f4083da85998f9409",
+    "e493bf6018827bf891003e5dda1c565508752e03",
+    "28453e6dd3cf839c0adeedd42ccd1f6a3a093ad6",
+    "44866c154b970bb49fcb8dd2b052e8c1a1b11eb3",
+    "8a913a64e99c8389ed8f4d4c2826c0886503a6c2",
+    "29d53382f6508af2b8196d6d1fc358223769c1db",
+    "b1d08ce5ab014b8f4458584acca1fdba2f1272a1"
+  ],
+  "apps": [
+    "b34cc13da4ad69dc5fbda8c59c5f121ce61aeecd",
+    "6f31546a8f4988c6b1acf1dee3686c5f08b8ade3",
+    "b1e38a75defbb73d837a5edb6b9581993bb1a8a4",
+    "35e4f4ddd9d76c5ecdd95bd438987a9137bb4014"
+  ],
+  "commands": [
+    "8cddcb3f7f5daa56067582e02a3b11927925c60d",
+    "e30e956708e025b2bd5e582a48c28709f766efd5"
+  ],
+  "services": [
+    "bf955d2e1680d6dd7ba9f25a8c9a1d21903f553f",
+    "e5d66858dfab54ed14b7a738d0fce253a3a4b54f",
+    "2e401fcd6846855da9c9502fbe8d8a2f5ab101a6"
+  ]
+}

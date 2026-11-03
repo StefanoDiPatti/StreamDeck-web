@@ -10,17 +10,9 @@ const config = require('../config');
 const platform = require('../platform');
 const bridge = require('./bridge');
 const log = require('../log');
+const forPlatform = require('../platform/common').forPlatform;
 
 let cache = { at: 0, data: null, pending: null };
-
-function forPlatform(entry) {
-  if (!entry || typeof entry !== 'object') return null;
-  const key = process.platform === 'win32' ? 'windows' : process.platform;
-  const specific = entry[key];
-  if (specific && typeof specific === 'object') return Object.assign({}, entry, specific);
-  if ((entry.windows || entry.linux) && !entry.path) return null;
-  return entry;
-}
 
 // Nomi dei processi di un'app: "process" (stringa o lista) oppure il nome del file.
 function processNames(a) {

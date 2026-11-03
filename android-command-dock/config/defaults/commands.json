@@ -3,6 +3,7 @@
 //  cmd / args     : programma e argomenti (varianti "windows" / "linux")
 //  showOutput     : mostra l'output sul tablet in una finestra
 //  timeoutMs      : tempo massimo (default 20s)
+//  "linux" può essere una lista di alternative: vale la prima installata
 {
   "commands": {
     "lock_pc": {
@@ -14,7 +15,19 @@
       "label": "Schermo spento",
       // {root} = cartella della dock
       "windows": { "cmd": "powershell.exe", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", "{root}\\scripts\\windows\\monitor-off.ps1"] },
-      "linux": { "cmd": "xset", "args": ["dpms", "force", "off"] }
+      "linux": [
+        { "cmd": "kscreen-doctor", "args": ["--dpms", "off"] },
+        { "cmd": "xset", "args": ["dpms", "force", "off"] }
+      ]
+    },
+    "show_desktop": {
+      "label": "Mostra desktop",
+      // KDE: la scorciatoia "Show Desktop" di KWin; altrimenti wmctrl (X11)
+      "linux": [
+        { "cmd": "qdbus6", "args": ["org.kde.kglobalaccel", "/component/kwin", "org.kde.kglobalaccel.Component.invokeShortcut", "Show Desktop"] },
+        { "cmd": "qdbus", "args": ["org.kde.kglobalaccel", "/component/kwin", "org.kde.kglobalaccel.Component.invokeShortcut", "Show Desktop"] },
+        { "cmd": "wmctrl", "args": ["-k", "on"] }
+      ]
     },
     "openclaw_health": {
       "label": "OpenClaw health",

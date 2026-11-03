@@ -10,9 +10,10 @@ Il PC (Windows o Linux) fa girare un piccolo server Node.js. Il tablet apre una 
 - **Discord**: server, canali vocali, chi c'è in stanza e chi parla, mute e audio, webcam e Go Live.
 - **Games**: avvio di Hearthstone, World of Tanks e League of Legends (se il gioco è già aperto lo porta in primo piano).
 - **Schermi**: scegli su quale monitor si aprono le app dal tablet e disponi le finestre nelle zone, come Snap di Windows.
-- **Pannello di controllo sul PC** per scegliere e ordinare le pagine del tablet con il trascinamento.
+- **Pannello di controllo sul PC** per scegliere e ordinare con il trascinamento le pagine del tablet e i pulsanti di ogni pagina.
+- **Windows e Linux** riconosciuti da soli: su Linux i pulsanti di Windows diventano i loro equivalenti (PowerShell → Terminale, Task Mgr → Monitor di sistema...).
 - Ollama, riepilogo GitHub, TODO sulle Memo di Windows, orologio.
-- Profili Blender e DaVinci Resolve, che mettono in primo piano il programma prima di premere i tasti.
+- Pagine di scorciatoie per Blender e DaVinci Resolve (da aggiungere alla barra dal pannello), che mettono in primo piano il programma prima di premere i tasti.
 
 ## Avvio rapido
 
@@ -53,6 +54,7 @@ Lo trovi dal menu dell'icona (Windows) o nella finestra del server (Linux / `--c
   Apri sul tablet:  http://192.168.1.50:8787   (Ethernet)
   Codice di accesso: ABCD2345
   Link diretto (salva il codice):  http://192.168.1.50:8787/?t=ABCD2345
+  Pannello di controllo (solo da questo PC):  http://127.0.0.1:8787/control
 ```
 
 ## Sul tablet
@@ -74,15 +76,15 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 |---|---|
 | HOME | musica (comandi base), stato del PC, todo |
 | MUSICA | lettore completo (seek, shuffle, ripeti, volume dell'app) e coda dei brani |
-| APP | programmi (pallino verde = già aperto, un altro tocco lo chiude), PowerShell, screenshot, blocco PC, schermo spento, **volume di sistema**, profili Blender e DaVinci |
+| APP | programmi (pallino verde = già aperto, un altro tocco lo chiude), Claude, PowerShell/Terminale, screenshot, blocco PC, schermo spento, **volume di sistema**, Blender e DaVinci |
 | DEV | VS Code, Claude Code, PowerShell, OpenClaw, scorciatoie di VS Code |
 | GITHUB | PR, issue, CI e ultimo commit dei tuoi repository |
 | OLLAMA | chat con i modelli locali |
 | CLAUDE | chat, sessioni di Claude Code, dettatura, scrittura sul PC |
 | DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, mutare una persona |
 | GAMES | Hearthstone, World of Tanks, League of Legends (pallino verde se aperti; se già aperto lo porta in primo piano) |
-| SCHERMI | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app |
-| BLENDER, DAVINCI *(disponibili)* | scorciatoie dei due programmi |
+| SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app |
+| BLENDER, DAVINCI *(disponibili: aggiungile alla barra dal pannello)* | scorciatoie dei due programmi |
 
 ## Pannello di controllo (sul PC)
 
@@ -90,9 +92,10 @@ Doppio clic sull'icona **Command Dock** (desktop o vicino all'orologio): si apre
 
 - **Trascina** le pagine per cambiare l'ordine della barra in basso, o spostale tra *Nella barra* e *Disponibili*.
 - La **stella** sceglie la pagina che si apre all'avvio.
-- **Salva sul tablet**: il tablet si aggiorna da solo. *Predefinite* torna ai valori di `dock.json`.
+- **Pulsanti delle pagine**: scegli una pagina di soli pulsanti (APP, DEV, GAMES, BLENDER, DAVINCI) e trascina i pulsanti per riordinarli, o spostali tra *Sul tablet* e *Nascosti* (anche con la ✕ e il + su ogni pulsante). La griglia si adatta da sola: con meno pulsanti diventano più grandi. *Mostra tutti* rimette tutti i pulsanti nell'ordine predefinito.
+- **Salva sul tablet**: il tablet si aggiorna da solo. *Predefinite* torna alle pagine e ai pulsanti di `dock.json`.
 
-Le scelte finiscono in `config/layout.json`. Il pannello risponde solo da questo PC (`http://127.0.0.1:8787/control`), non dal tablet né dalla rete. Le pagine disponibili restano raggiungibili dai pulsanti che le aprono (es. BLENDER nella pagina APP). Il contenuto delle pagine si modifica sempre in `config/dock.json`.
+Le scelte finiscono in `config/layout.json`. I pulsanti aggiunti in seguito a `dock.json` compaiono in fondo alla pagina. Il pannello risponde solo da questo PC (`http://127.0.0.1:8787/control`), non dal tablet né dalla rete. Le pagine disponibili si raggiungono solo dai pulsanti che le aprono (`{ "type": "page" }`): per le scorciatoie di Blender e DaVinci aggiungi le loro pagine alla barra. Il contenuto delle pagine si modifica sempre in `config/dock.json`.
 
 ### Discord
 
@@ -180,6 +183,27 @@ Tutti i file accettano commenti `//`. **Salva e il tablet si aggiorna da solo**,
 | `.env` | porta, codice di accesso, token e chiavi API |
 
 I file in `config/` sono tuoi e non vanno su git. I default stanno in `config/defaults/`: cancella un file da `config/` per ripristinarlo.
+Se un file in `config/` non l'hai mai modificato, all'avvio passa da solo alla nuova versione predefinita (dopo un `git pull`). Quelli modificati restano come sono.
+
+### Windows e Linux
+
+La dock riconosce il sistema e mostra i pulsanti adatti. In `dock.json`:
+
+```json
+{ "id": "viber", "os": "linux", "label": "VIBER", "action": { "type": "launch", "app": "viber" } },
+{ "id": "terminal", "label": "POWERSHELL", "linux": { "label": "TERMINALE" }, "action": { "type": "launch", "app": "powershell" } }
+```
+
+- `"os": "linux"` (o `"windows"`): il pulsante, o la pagina, c'è solo su quel sistema.
+- `"linux": { ... }` (o `"windows"`): i campi che cambiano su quel sistema, anche `action`.
+- `"id"`: nome fisso del pulsante, con cui il pannello ricorda ordine e pulsanti nascosti.
+- `"autoGrid": true` sulla pagina: colonne e righe scelte in base a quanti pulsanti ci sono.
+
+In `apps.json` e `commands.json` la variante `"linux"` può essere una lista di alternative: vale la prima installata.
+
+```json
+"linux": [ { "path": "konsole", "args": ["-e", "claude"] }, { "path": "gnome-terminal", "args": ["--", "claude"] } ]
+```
 
 ### Aggiungere un pulsante
 
@@ -219,7 +243,7 @@ I giochi sono in `config/apps.json` con `"game": true` e `"whenRunning": "focus"
 ### App aperte: pallino verde e chiusura
 
 Le app con `"toggle": true` in `config/apps.json` mostrano un pallino verde quando sono aperte; un altro tocco le chiude come la X della finestra (l'app può chiedere di salvare). È attivo per Blender, DaVinci, VS Code, Unreal, Apple Music, Spotify, Claude e Discord; volutamente no per PowerShell, Esplora file, Gestione attività e Claude Code, per non interrompere lavori in corso.
-Apple Music (web) si riconosce tramite l'estensione: "chiudere" chiude la sua scheda. Per un pulsante che apre un profilo (es. BLENDER in APP) il pallino si ottiene con `"showRunning": "blender"`.
+Apple Music (web) si riconosce tramite l'estensione: "chiudere" chiude la sua scheda. Per un pulsante che non avvia l'app (es. uno che apre la pagina BLENDER) il pallino si ottiene con `"showRunning": "blender"`.
 Su Linux serve `wmctrl`.
 
 ### Tipi di azione
@@ -262,7 +286,15 @@ Basta che Ollama sia acceso sul PC. Il tablet non parla mai direttamente con Oll
 
 ## Linux
 
-Funziona tutto tranne le parti che dipendono da Windows, sostituite da strumenti standard:
+Funziona tutto tranne le parti che dipendono da Windows (pagina SCHERMI, Memo), sostituite da strumenti standard.
+Nella pagina APP: **TERMINALE** (Konsole, GNOME Terminal, Alacritty...), **MONITOR** di sistema, **SCREENSHOT** di un'area (Spectacle), **DESKTOP** (mostra il desktop di KDE), **CLAUDE** apre la web app di Claude installata da Brave (altrimenti claude.ai), **VIBER** l'app dal desktop. Su CachyOS / Arch:
+
+```bash
+sudo pacman -S playerctl wtype
+sudo ufw allow 8787/tcp
+```
+
+Su Debian/Ubuntu:
 
 ```bash
 sudo apt install playerctl xdotool wtype pulseaudio-utils

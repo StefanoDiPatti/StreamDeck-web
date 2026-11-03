@@ -1,5 +1,6 @@
 // Pannello di controllo di Command Dock (solo su questo PC).
 // Pagine del tablet: ordine, visibilità e pagina iniziale -> config/layout.json.
+// Pulsanti delle pagine: quali mostrare e in che ordine -> config/layout.json (tiles).
 // Discord: credenziali dell'applicazione personale e autorizzazione.
 (function () {
   'use strict';
@@ -13,6 +14,10 @@
   let home = '';
   let saved = '';           // per capire se ci sono modifiche
   let drag = null;          // { id }
+  let buttons = {};         // pagina -> { show: [id in ordine], hide: [id] }
+  let touched = {};         // pagine dei pulsanti modificate (solo queste vanno salvate)
+  let btPage = 'apps';      // pagina dei pulsanti mostrata
+  let tdrag = null;         // trascinamento di un pulsante
 
   async function api(method, url, body) {
     const res = await fetch(url, {
@@ -35,7 +40,7 @@
     toastTimer = setTimeout(() => { t.className = ''; }, kind === 'err' ? 5000 : 2600);
   }
 
-  const snapshot = () => JSON.stringify({ tabs: tabs, home: home });
+  const snapshot = () => JSON.stringify({ tabs: tabs, home: home, buttons: buttons });
   const dirty = () => snapshot() !== saved;
   const page = (id) => info.pages.find((p) => p.id === id);
 
@@ -46,6 +51,7 @@
     renderList($('on'), tabs.map(page).filter(Boolean), true);
     renderList($('off'), info.pages.filter((p) => tabs.indexOf(p.id) < 0), false);
     $('count').textContent = tabs.length;
+    renderButtons();
     $('savebar').classList.toggle('show', dirty());
   }
 
@@ -207,12 +213,176 @@
   document.addEventListener('pointercancel', endDrag);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && drag && drag.started) endDrag({ type: 'pointercancel', pointerId: drag.pid }); });
 
+  // ------------------------------------------------------------ pulsanti delle pagine
+
+  const bpage = (id) => (info.buttons || []).find((b) => b.id === id);
+
+  // Stessa regola del server (config.js -> autoGrid): niente buchi inutili,
+  // celle di forma comoda sul tablet orizzontale.
+  function autoGrid(tiles) {
+    let cells = 0, minCols = 1, minRows = 1;
+    tiles.forEach((t) => { cells += (t.w || 1) * (t.h || 1); minCols = Math.max(minCols, t.w || 1); minRows = Math.max(minRows, t.h || 1); });
+    cells = Math.max(1, cells);
+    let best = null;
+    for (let r = minRows; r <= 6; r++) {
+      const c = Math.max(minCols, Math.ceil(cells / r));
+      if (c > 8) continue;
+      const score = (c * r - cells) + 3 * Math.abs(Math.log((c / r) / 1.7));
+      if (!best || score < best.score - 1e-9) best = { columns: c, rows: r, score: score };
+    }
+    return best || { columns: 8, rows: 6 };
+  }
+
+  function tileHtml(t, on) {
+    return '<div class="btile" data-id="' + esc(t.id) + '" style="--c:' + esc(t.color || '#1d2835') + (on && t.w > 1 ? ';grid-column:span ' + t.w : '') + (on && t.h > 1 ? ';grid-row:span ' + t.h : '') + '" title="' + esc(t.label + (t.sub ? ' · ' + t.sub : '')) + '">' +
+      (t.icon ? '<span class="bi">' + icon(t.icon) + '</span>' : '') +
+      '<span class="bl">' + esc(t.label || t.id) + '</span>' +
+      (t.sub ? '<span class="bs">' + esc(t.sub) + '</span>' : '') +
+      '<button class="tbtn" type="button" data-tact="' + (on ? 'hide' : 'show') + '" aria-label="' + (on ? 'Nascondi ' : 'Mostra ') + esc(t.label) + '" title="' + (on ? 'Nascondi' : 'Mostra sul tablet') + '">' + icon(on ? 'close' : 'add') + '</button>' +
+      '</div>';
+  }
+
+  function renderButtons() {
+    const list = info.buttons || [];
+    $('buttons-card').hidden = !list.length;
+    const os = info.platform === 'win32' || info.platform === 'windows' ? 'Windows' : info.platform === 'linux' ? 'Linux' : info.platform;
+    $('os-pill').textContent = os ? 'PULSANTI PER ' + String(os).toUpperCase() : '';
+    if (!list.length) return;
+    if (!bpage(btPage)) btPage = list[0].id;
+    $('bt-pages').innerHTML = list.map((b) => '<button class="chip' + (b.id === btPage ? ' on' : '') + '" type="button" role="tab" aria-selected="' + (b.id === btPage) + '" data-bpage="' + esc(b.id) + '">' + icon(b.icon) + esc(b.title) + (touched[b.id] ? ' •' : '') + '</button>').join('');
+    const b = bpage(btPage);
+    const st = buttons[btPage];
+    const byId = {};
+    b.all.forEach((t) => { byId[t.id] = t; });
+    const shown = st.show.map((id) => byId[id]).filter(Boolean);
+    const g = autoGrid(shown);
+    const grid = $('bt-on');
+    grid.style.gridTemplateColumns = 'repeat(' + g.columns + ', minmax(0, 1fr))';
+    grid.style.gridTemplateRows = 'repeat(' + g.rows + ', minmax(0, 1fr))';
+    let cells = 0;
+    shown.forEach((t) => { cells += (t.w || 1) * (t.h || 1); });
+    let html = shown.map((t) => tileHtml(t, true)).join('');
+    for (let i = cells; i < g.columns * g.rows; i++) html += '<div class="bcell" aria-hidden="true"></div>';
+    grid.innerHTML = html;
+    $('bt-size').textContent = shown.length + (shown.length === 1 ? ' pulsante' : ' pulsanti') + ' · griglia ' + g.columns + ' × ' + g.rows;
+    const hidden = st.hide.map((id) => byId[id]).filter(Boolean);
+    $('bt-off').innerHTML = hidden.length
+      ? hidden.map((t) => tileHtml(t, false)).join('')
+      : '<div class="empty">Nessun pulsante nascosto: trascina qui quelli che non usi</div>';
+    $('bt-all').disabled = !hidden.length && st.show.join() === b.all.map((t) => t.id).join();
+  }
+
+  // Sposta un pulsante in "show" o "hide" alla posizione index
+  function moveTile(id, to, index) {
+    const st = buttons[btPage];
+    if (to === 'hide' && st.show.length === 1 && st.show[0] === id) { toast('Serve almeno un pulsante sulla pagina', 'err'); renderButtons(); return; }
+    st.show = st.show.filter((x) => x !== id);
+    st.hide = st.hide.filter((x) => x !== id);
+    const list = to === 'show' ? st.show : st.hide;
+    list.splice(Math.max(0, Math.min(index == null ? list.length : index, list.length)), 0, id);
+    touched[btPage] = true;
+    render();
+  }
+
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-bpage]');
+    if (chip) { btPage = chip.dataset.bpage; renderButtons(); return; }
+    const tb = e.target.closest('.tbtn[data-tact]');
+    if (tb) { moveTile(tb.closest('.btile').dataset.id, tb.dataset.tact === 'hide' ? 'hide' : 'show'); }
+  });
+  $('bt-all').addEventListener('click', () => {
+    const b = bpage(btPage);
+    buttons[btPage] = { show: b.all.map((t) => t.id), hide: [] };
+    touched[btPage] = true;
+    render();
+  });
+
+  // ---- trascinamento dei pulsanti (griglia del tablet <-> nascosti)
+  function tileListAt(x, y) {
+    for (const id of ['bt-on', 'bt-off']) {
+      const r = $(id).getBoundingClientRect();
+      if (x >= r.left - 20 && x <= r.right + 20 && y >= r.top - 20 && y <= r.bottom + 20) return $(id);
+    }
+    return null;
+  }
+  // Posizione d'arrivo: il primo pulsante che sta "dopo" il puntatore (per righe)
+  function tileSlot(box, x, y) {
+    const items = Array.from(box.querySelectorAll('.btile:not(.dragging):not(.ghost)'));
+    for (let i = 0; i < items.length; i++) {
+      const r = items[i].getBoundingClientRect();
+      if (y < r.top) return { index: i, ref: items[i] };
+      if (y <= r.bottom && x < r.left + r.width / 2) return { index: i, ref: items[i] };
+    }
+    return { index: items.length, ref: box.querySelector('.bcell') || null };
+  }
+
+  document.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    const el = e.target.closest('.btile');
+    if (!el || e.target.closest('button') || el.classList.contains('ghost')) return;
+    tdrag = { id: el.dataset.id, el: el, x0: e.clientX, y0: e.clientY, started: false, box: null, index: 0, pid: e.pointerId };
+  });
+
+  document.addEventListener('pointermove', (e) => {
+    if (!tdrag || e.pointerId !== tdrag.pid) return;
+    const dx = e.clientX - tdrag.x0, dy = e.clientY - tdrag.y0;
+    if (!tdrag.started) {
+      if (Math.abs(dx) + Math.abs(dy) < 6) return;
+      tdrag.started = true;
+      const r = tdrag.el.getBoundingClientRect();
+      const float = tdrag.el.cloneNode(true);
+      float.classList.add('floating');
+      float.style.width = r.width + 'px';
+      float.style.height = r.height + 'px';
+      float.style.left = r.left + 'px';
+      float.style.top = r.top + 'px';
+      document.body.appendChild(float);
+      tdrag.float = float;
+      tdrag.ghost = document.createElement('div');
+      tdrag.ghost.className = 'btile ghost';
+      tdrag.el.parentNode.insertBefore(tdrag.ghost, tdrag.el);
+      tdrag.el.classList.add('dragging');
+      document.body.classList.add('is-dragging');
+    }
+    e.preventDefault();
+    tdrag.float.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    const box = tileListAt(e.clientX, e.clientY);
+    $('bt-on').classList.toggle('drop', box === $('bt-on'));
+    $('bt-off').classList.toggle('drop', box === $('bt-off'));
+    if (box) {
+      const empty = box.querySelector('.empty');
+      if (empty) empty.style.display = 'none';
+      const slot = tileSlot(box, e.clientX, e.clientY);
+      if (tdrag.ghost.parentNode !== box || tdrag.ghost.nextSibling !== slot.ref) box.insertBefore(tdrag.ghost, slot.ref);
+      tdrag.index = slot.index;
+    }
+    tdrag.box = box;
+  });
+
+  function endTileDrag(e) {
+    if (!tdrag || (e && e.pointerId !== tdrag.pid)) return;
+    const d = tdrag;
+    tdrag = null;
+    if (!d.started) return;
+    if (d.float) d.float.remove();
+    document.body.classList.remove('is-dragging');
+    $('bt-on').classList.remove('drop');
+    $('bt-off').classList.remove('drop');
+    if ((e && e.type === 'pointercancel') || !d.box) { renderButtons(); return; }
+    moveTile(d.id, d.box === $('bt-on') ? 'show' : 'hide', d.index);
+  }
+  document.addEventListener('pointerup', endTileDrag);
+  document.addEventListener('pointercancel', endTileDrag);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && tdrag && tdrag.started) endTileDrag({ type: 'pointercancel', pointerId: tdrag.pid }); });
+
   // ---- salvataggio
   $('save').addEventListener('click', async () => {
     const b = $('save');
     b.disabled = true;
     try {
-      info = await api('POST', '/api/control/layout', { tabs: tabs, home: home });
+      const tiles = {};
+      Object.keys(touched).forEach((id) => { if (buttons[id]) tiles[id] = buttons[id]; });
+      info = await api('POST', '/api/control/layout', { tabs: tabs, home: home, tiles: tiles });
       adopt(true);
       toast('Salvato: il tablet si aggiorna da solo', 'ok');
     } catch (e) { toast(e.message, 'err'); }
@@ -220,11 +390,11 @@
   });
   $('undo').addEventListener('click', () => { adopt(true); });
   $('reset').addEventListener('click', async () => {
-    if (!confirm('Tornare alle pagine predefinite di dock.json?')) return;
+    if (!confirm('Tornare alle pagine e ai pulsanti predefiniti di dock.json?')) return;
     try {
       info = await api('POST', '/api/control/layout/reset');
       adopt(true);
-      toast('Ripristinate le pagine predefinite', 'ok');
+      toast('Ripristinate pagine e pulsanti predefiniti', 'ok');
     } catch (e) { toast(e.message, 'err'); }
   });
   window.addEventListener('beforeunload', (e) => { if (dirty()) { e.preventDefault(); e.returnValue = ''; } });
@@ -236,11 +406,17 @@
       loaded = true;
       tabs = info.tabs.slice();
       home = info.home;
+      buttons = {};
+      touched = {};
+      (info.buttons || []).forEach((b) => {
+        buttons[b.id] = { show: b.shown.slice(), hide: b.all.map((t) => t.id).filter((id) => b.shown.indexOf(id) < 0) };
+      });
       saved = snapshot();
     }
     const urls = info.tablet || [];
     $('tablet').innerHTML = urls.length ? 'Tablet: <b>' + esc(urls[0]) + '</b>' : '';
-    $('sub').textContent = 'Pannello di controllo · v' + info.version;
+    const os = info.platform === 'windows' ? 'Windows' : info.platform === 'linux' ? 'Linux' : info.platform;
+    $('sub').textContent = 'Pannello di controllo · v' + info.version + (os ? ' · ' + os : '');
     render();
     renderDiscord();
   }
@@ -351,5 +527,5 @@
     }
   }
   refresh();
-  setInterval(() => { if (!document.hidden && !drag) refresh(); }, 5000);
+  setInterval(() => { if (!document.hidden && !drag && !tdrag) refresh(); }, 5000);
 })();

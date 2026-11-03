@@ -94,6 +94,8 @@ function ensureConfig() {
   const config = require(path.join(ROOT, 'server', 'config.js'));
   const copied = config.ensureUserConfig();
   if (copied.length) say('Configurazione creata in config/: ' + copied.join(', '));
+  const updated = config.upgradeUserConfig();
+  if (updated.length) say('Configurazione aggiornata alla nuova versione: ' + updated.join(', ') + ' (non erano stati modificati)');
   const dataDir = path.join(ROOT, 'data');
   if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 }

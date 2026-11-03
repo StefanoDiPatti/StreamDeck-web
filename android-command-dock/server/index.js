@@ -29,6 +29,7 @@ const PORT = parseInt(process.env.PORT, 10) || 8787;
 const HOST = process.env.HOST || '0.0.0.0';
 
 config.ensureUserConfig();
+config.upgradeUserConfig().forEach(function (f) { log.info('config', f + ' aggiornato alla nuova versione predefinita (non era stato modificato)'); });
 
 const app = express();
 app.disable('x-powered-by');
@@ -160,12 +161,18 @@ function pageSummary(p) {
   if (buttons.length) auto += (auto ? ' + ' : '') + buttons.length + ' pulsanti (' + buttons.slice(0, 4).join(', ') + (buttons.length > 4 ? '…' : '') + ')';
   return { id: p.id, title: p.title, icon: p.icon, tab: p.tab, description: p.description || auto, contents: auto };
 }
+// Pulsanti di una pagina modificabile dal pannello: tutti (anche nascosti) e quelli mostrati in ordine.
+function pageButtons(p) {
+  const btn = function (t) { return { id: t.id, label: t.label || '', sub: t.sub || '', icon: t.icon || null, color: t.color || null, w: t.w || 1, h: t.h || 1 }; };
+  return { id: p.id, title: p.title, icon: p.icon, columns: p.columns, rows: p.rows, all: p.allTiles.map(btn), shown: p.tiles.map(function (t) { return t.id; }) };
+}
 function controlInfo() {
   const d = config.dock();
   let urls = [];
   try { urls = JSON.parse(require('fs').readFileSync(path.join(paths.DATA_DIR, 'runtime.json'), 'utf8')).urls || []; } catch (e) { urls = []; }
   return {
     pages: d.pages.map(pageSummary),
+    buttons: d.pages.filter(function (p) { return p.editable; }).map(pageButtons),
     tabs: d.pages.filter(function (p) { return p.tab; }).map(function (p) { return p.id; }),
     home: d.home,
     custom: !!(config.get('layout') || {}).tabs,
@@ -178,7 +185,7 @@ function controlInfo() {
 app.get('/api/control/info', controlOnly, route(async function () { await discord.ensure(); return controlInfo(); }));
 app.post('/api/control/layout', controlOnly, route(function (req) {
   const b = req.body || {};
-  config.saveLayout(b.tabs, b.home);
+  config.saveLayout(b.tabs, b.home, b.tiles);
   log.info('control', 'pagine del tablet: ' + b.tabs.join(', '));
   return controlInfo();
 }));
@@ -238,7 +245,7 @@ app.post('/api/screens/window', route(function (req) {
 app.get('/api/config', route(function () {
   return {
     version: config.version(),
-    dock: config.dock(),
+    dock: config.tabletDock(),
     capabilities: platform.capabilities(),
     platform: platform.name,
     hostname: os.hostname(),
@@ -375,6 +382,7 @@ function banner() {
   } else {
     console.log('  ATTENZIONE: DOCK_TOKEN vuoto, chiunque in rete può usare la dock.');
   }
+  console.log('  Pannello di controllo (solo da questo PC):  http://127.0.0.1:' + PORT + '/control');
   const caps = platform.capabilities();
   (caps.notes || []).forEach(function (n) { console.log('  Nota: ' + n); });
   const ci = claude.info();

@@ -40,8 +40,33 @@
         <div class="col">
           <h3>Disponibili</h3>
           <ol id="off" class="list off" data-list="off"></ol>
-          <p class="hint small">Le pagine disponibili restano raggiungibili dai pulsanti che le aprono (es. BLENDER nella pagina APP).</p>
+          <p class="hint small">Le pagine disponibili non sono sul tablet, salvo i pulsanti che le aprono. BLENDER e DAVINCI RESOLVE hanno le scorciatoie dei due programmi: aggiungile alla barra se le usi.</p>
         </div>
+      </div>
+    </section>
+
+    <section class="card" id="buttons-card" hidden>
+      <div class="card-head">
+        <div>
+          <h2>Pulsanti delle pagine</h2>
+          <p class="hint">Trascina i pulsanti per cambiarne l'ordine, o spostali tra <b>Sul tablet</b> e <b>Nascosti</b>. Con meno pulsanti la griglia si adatta e diventano più grandi.</p>
+        </div>
+        <span id="os-pill" class="pill"></span>
+      </div>
+
+      <div id="bt-pages" class="chips" role="tablist" aria-label="Pagina da modificare"></div>
+
+      <div class="preview bt-preview">
+        <div class="preview-label">Sul tablet <span id="bt-size" class="count"></span></div>
+        <div id="bt-on" class="bt-grid" data-blist="show"></div>
+      </div>
+
+      <div class="bt-hidden-wrap">
+        <div class="bt-hidden-head">
+          <h3>Nascosti</h3>
+          <button id="bt-all" class="btn ghost small-btn" type="button" title="Rimette tutti i pulsanti della pagina, nell'ordine predefinito">Mostra tutti</button>
+        </div>
+        <div id="bt-off" class="bt-hidden" data-blist="hide"></div>
       </div>
     </section>
 
@@ -58,14 +83,14 @@
 
     <section class="card subtle">
       <h2>Pulsanti e nuove pagine</h2>
-      <p class="hint">Il contenuto di ogni pagina (pulsanti, scorciatoie, widget) si modifica in <code>config/dock.json</code>; le app in <code>config/apps.json</code>. Il tablet si aggiorna da solo quando salvi.</p>
+      <p class="hint">Per creare pulsanti nuovi o cambiare cosa fanno modifica <code>config/dock.json</code>; le app stanno in <code>config/apps.json</code>. Il tablet si aggiorna da solo quando salvi. La dock riconosce da sola se è su Windows o su Linux e mostra i pulsanti adatti (<code>"os"</code> e <code>"linux"</code> nei pulsanti).</p>
     </section>
   </main>
 
   <footer id="savebar" class="savebar">
     <span id="dirty-msg">Modifiche non salvate</span>
     <div class="actions">
-      <button id="reset" class="btn ghost" type="button" title="Torna alle pagine predefinite di dock.json">Predefinite</button>
+      <button id="reset" class="btn ghost" type="button" title="Torna alle pagine e ai pulsanti predefiniti di dock.json">Predefinite</button>
       <button id="undo" class="btn ghost" type="button">Annulla</button>
       <button id="save" class="btn primary" type="button">Salva sul tablet</button>
     </div>

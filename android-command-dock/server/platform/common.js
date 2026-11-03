@@ -179,6 +179,36 @@ function monitorName(deviceId, names) {
   return hit ? names[hit] : '';
 }
 
+// Chiave del sistema nei file di config: "windows" | "linux" | "darwin".
+function osKey() { return process.platform === 'win32' ? 'windows' : process.platform; }
+
+// Il programma c'è? Un percorso deve esistere, un nome deve stare nel PATH.
+// Ammette * nelle versioni e liste (basta che ce ne sia uno).
+function available(p) {
+  const list = Array.isArray(p) ? p : [p];
+  return list.some(function (x) {
+    if (typeof x !== 'string' || !x) return false;
+    const file = resolveWildcard(expandPath(x));
+    return looksLikePath(file) ? fs.existsSync(file) : !!which(file);
+  });
+}
+
+// Variante per il sistema corrente: { windows: {...}, linux: {...} } oppure campi diretti.
+// La variante può essere una lista di alternative (es. Konsole, poi Alacritty):
+// vale la prima installata ("path" per le app, "cmd" per i comandi), altrimenti la prima.
+function forPlatform(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  let specific = entry[osKey()];
+  if (Array.isArray(specific)) {
+    const options = specific.filter(function (v) { return v && typeof v === 'object'; });
+    specific = options.filter(function (v) { return available(v.path || v.cmd); })[0] || options[0];
+  }
+  if (specific && typeof specific === 'object') return Object.assign({}, entry, specific);
+  // Definita solo per altri sistemi
+  if ((entry.windows || entry.linux) && !entry.path && !entry.cmd) return null;
+  return entry;
+}
+
 module.exports = {
   monitorName: monitorName,
   MEDIA_COMMANDS: MEDIA_COMMANDS,
@@ -190,5 +220,8 @@ module.exports = {
   spawnDetached: spawnDetached,
   quoteWinArg: quoteWinArg,
   fetchJson: fetchJson,
-  stripAnsi: stripAnsi
+  stripAnsi: stripAnsi,
+  osKey: osKey,
+  available: available,
+  forPlatform: forPlatform
 };
