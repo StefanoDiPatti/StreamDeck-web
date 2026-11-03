@@ -140,13 +140,14 @@ const windowsSetup = {
     const r = ps('Start-Process powershell.exe -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList "-NoProfile","-EncodedCommand","' + encoded + '"');
     return r.status === 0 && windowsSetup.firewallExists();
   },
-  shortcut: function (dir, name, minimized) {
+  // panel = il doppio clic apre anche il pannello di controllo (collegamento sul desktop)
+  shortcut: function (dir, name, minimized, panel) {
     const lnk = path.join(dir, name + '.lnk');
     const cmd = [
       '$s = (New-Object -ComObject WScript.Shell).CreateShortcut(' + psQuote(lnk) + ')',
       // wscript + vbs: parte nascosto, con l'icona vicino all'orologio
       '$s.TargetPath = ' + psQuote(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'wscript.exe')),
-      '$s.Arguments = ' + psQuote('"' + HIDDEN_LAUNCHER + '"'),
+      '$s.Arguments = ' + psQuote('"' + HIDDEN_LAUNCHER + '"' + (panel ? ' /panel' : '')),
       '$s.WorkingDirectory = ' + psQuote(ROOT),
       '$s.IconLocation = ' + psQuote(path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'shell32.dll') + ',15'),
       '$s.Description = "Command Dock"',
@@ -213,7 +214,7 @@ async function firstRunSetup(force) {
         say(answers.firewall ? 'Regola firewall creata.' : 'Regola non creata: potrai consentire l\'accesso quando Windows lo chiede.');
       }
       if (await ask(rl, 'Creo il collegamento "Command Dock" sul desktop?', true)) {
-        answers.desktop = windowsSetup.shortcut(windowsSetup.desktopDir(), 'Command Dock', false);
+        answers.desktop = windowsSetup.shortcut(windowsSetup.desktopDir(), 'Command Dock', false, true);
         say(answers.desktop ? 'Collegamento creato.' : 'Collegamento non creato.');
       }
       if (await ask(rl, 'Avvio la dock in automatico quando accedi a Windows?', false)) {

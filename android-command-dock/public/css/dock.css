@@ -433,3 +433,117 @@ body.kb-open .cl-log { top: 8px; }
   .cl-dest svg.ic { margin-right: 0; }
   .np-btn.np-opt span { display: none; }
 }
+
+/* ---------------------------------------------------------- widget: discord */
+.w-discord { padding: 0 !important; }
+.dc-guilds { position: absolute; left: 0; top: 0; bottom: 0; width: 24%; padding: 8px; background: #141c25; border-right: 1px solid #222e3b; overflow: auto; -webkit-overflow-scrolling: touch; }
+.dc-guild { position: relative; height: 52px; padding: 8px 6px 0 54px; border-radius: 10px; margin-bottom: 4px; font-size: 14px; font-weight: bold; line-height: 18px; overflow: hidden; }
+.dc-guild span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 9px; }
+.dc-guild.on { background: #2d3576; }
+.dc-guild.pressed { background: #26354a; }
+.dc-gic { position: absolute; left: 6px; top: 6px; width: 40px; height: 40px; border-radius: 12px; }
+.dc-chans { position: absolute; left: 24%; right: 36%; top: 0; bottom: 0; }
+.dc-ctitle { position: absolute; left: 12px; right: 12px; top: 10px; height: 20px; font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-clist { position: absolute; left: 8px; right: 8px; top: 36px; bottom: 8px; overflow: auto; -webkit-overflow-scrolling: touch; }
+.dc-chan { padding: 8px 10px; border-radius: 10px; margin-bottom: 4px; background: #172029; }
+.dc-chan.pressed, .dc-chan.joining { background: #26354a; }
+.dc-chan.here { background: #1d3b2a; -webkit-box-shadow: inset 4px 0 0 #3fb950; box-shadow: inset 4px 0 0 #3fb950; }
+.dc-cname { font-size: 16px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 26px; }
+.dc-cname svg.ic { width: 20px; height: 20px; vertical-align: -4px; margin-right: 6px; fill: #8b9bab; }
+.dc-cname b { font-size: 12px; background: #2a3746; border-radius: 9px; padding: 1px 7px; margin-left: 6px; vertical-align: 2px; }
+.dc-cmem { position: relative; height: 28px; line-height: 28px; padding-left: 58px; font-size: 14px; color: #c6d1dc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-sav { position: absolute; left: 26px; top: 3px; width: 22px; height: 22px; border-radius: 50%; }
+.dc-room { position: absolute; right: 0; top: 0; bottom: 0; width: 36%; background: #141c25; border-left: 1px solid #222e3b; }
+.dc-rhead { position: absolute; left: 12px; right: 12px; top: 8px; height: 46px; }
+.dc-rtitle { font-size: 16px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 24px; }
+.dc-rtitle svg.ic { width: 20px; height: 20px; vertical-align: -4px; margin-right: 6px; fill: #3fb950; }
+.dc-rsub { font-size: 12px; color: #8b9bab; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-members { position: absolute; left: 8px; right: 8px; top: 58px; bottom: 82px; overflow: auto; -webkit-overflow-scrolling: touch; }
+.dc-mem { position: relative; height: 50px; line-height: 50px; padding-left: 54px; padding-right: 6px; border-radius: 10px; margin-bottom: 3px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dc-mem.pressed { background: #26354a; }
+.dc-mem i { font-style: normal; color: #8b9bab; font-size: 13px; }
+.dc-av { position: absolute; left: 6px; top: 6px; width: 38px; height: 38px; border-radius: 50%; border: 2px solid transparent; }
+.dc-mem.speaking .dc-av { border-color: #3fb950; -webkit-box-shadow: 0 0 0 2px rgba(63, 185, 80, 0.35); box-shadow: 0 0 0 2px rgba(63, 185, 80, 0.35); }
+.dc-mem.lmuted .dc-name { color: #6e7f90; text-decoration: line-through; }
+.noav { display: inline-block; background: #4752c4; color: #fff; text-align: center; font-weight: bold; line-height: 38px; font-size: 16px; }
+.dc-sav.noav { line-height: 22px; font-size: 11px; }
+.dc-gic.noav { line-height: 40px; }
+svg.ic.dc-flag { width: 16px; height: 16px; fill: #e5534b; vertical-align: -3px; margin-left: 6px; }
+.dc-local { font-size: 11px; color: #ffb454; margin-left: 6px; }
+.dc-ctrl { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 66px; }
+.dc-btn { float: left; width: 18.4%; margin-right: 2%; height: 66px; border-radius: 12px; background: #243142; text-align: center; padding-top: 9px; font-size: 10px; font-weight: bold; letter-spacing: .5px; white-space: nowrap; overflow: hidden; }
+.dc-btn:last-child { margin-right: 0; }
+.dc-btn svg.ic { display: block; width: 26px; height: 26px; margin: 0 auto 5px; }
+.dc-btn.on { background: #2f6b3a; }
+.dc-live.on { background: #c0392b; }
+.dc-livebadge { font-size: 9px; font-weight: bold; letter-spacing: .5px; background: #c0392b; color: #fff; border-radius: 4px; padding: 1px 4px; margin-left: 6px; vertical-align: 2px; }
+svg.ic.dc-camflag { fill: #3fb950; }
+.dc-btn.off { background: #8b1d1d; }
+.dc-leave { background: #5a1f24; }
+.dc-leave.holding { background: #8b1d1d; }
+.dc-btn.disabled { opacity: 0.35; }
+.dc-btn.pressed { -webkit-transform: scale(0.95); transform: scale(0.95); }
+.w-discord .empty { font-size: 14px; }
+.w-discord.dc-off .dc-guilds { display: none; }
+.w-discord.dc-off .dc-chans { left: 0; }
+.w-discord.dc-off .dc-ctrl { top: 70px; bottom: auto; height: 120px; }
+.w-discord.dc-off .dc-btn { height: 120px; padding-top: 30px; font-size: 13px; }
+.w-discord.dc-off .dc-btn svg.ic { width: 36px; height: 36px; }
+.w-discord.dc-off .dc-leave, .w-discord.dc-off .dc-cam, .w-discord.dc-off .dc-live { display: none; }
+.w-discord.dc-off .dc-mute, .w-discord.dc-off .dc-deaf { width: 49%; }
+.w-discord.dc-off .dc-deaf { margin-right: 0; }
+.dc-setup { text-align: center; padding: 60px 30px 0; color: #8b9bab; }
+.dc-setup svg.ic { width: 56px; height: 56px; fill: #5865f2; display: block; margin: 0 auto 14px; }
+.dc-setup b { display: block; font-size: 20px; color: #fff; margin-bottom: 8px; }
+.dc-setup p { font-size: 15px; line-height: 1.45; margin: 0 auto; max-width: 420px; }
+
+/* ---- Schermi: monitor, disposizioni, finestre */
+.w-screens { padding: 0 !important; }
+.sc-left { position: absolute; left: 0; top: 0; bottom: 0; width: 60%; }
+.sc-head { position: absolute; left: 12px; right: 12px; top: 8px; height: 24px; line-height: 24px; white-space: nowrap; overflow: hidden; }
+.sc-title { font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; }
+.sc-hint { font-size: 13px; color: #6cb6ff; margin-left: 10px; }
+.sc-hint .err { color: #ff9c94; font-weight: normal; }
+.sc-map { position: absolute; left: 8px; right: 8px; top: 36px; bottom: 140px; }
+.sc-mon { position: absolute; background: #172029; border: 2px solid #2a3746; border-radius: 8px; overflow: hidden; }
+.sc-mon.sel { border-color: #3d8bfd; background: #0f1a2a; }
+.sc-mon.pressed { background: #1d2a3a; }
+.sc-mlabel { position: absolute; left: 6px; right: 6px; bottom: 4px; font-size: 12px; color: #c6d1dc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px #000; }
+.sc-mlabel b { display: inline-block; min-width: 18px; height: 18px; line-height: 18px; text-align: center; background: #3d8bfd; color: #fff; border-radius: 9px; font-size: 11px; margin-right: 3px; }
+.sc-mlabel span { display: block; font-size: 10px; color: #8b9bab; }
+.sc-mon .sc-mlabel { z-index: 2; }
+.sc-zone { position: absolute; }
+.sc-zin { position: absolute; left: 3px; top: 3px; right: 3px; bottom: 3px; border: 1px dashed #3b5170; border-radius: 6px; background: rgba(61, 139, 253, 0.06); text-align: center; overflow: hidden; }
+.sc-zin b { display: block; font-size: 18px; color: #6cb6ff; margin-top: 8px; }
+.sc-zin span { display: block; font-size: 11px; color: #c6d1dc; padding: 2px 4px; line-height: 1.25; }
+.sc-zone.on .sc-zin { border: 2px solid #6cb6ff; background: rgba(61, 139, 253, 0.28); }
+.sc-zone.on .sc-zin b { color: #fff; }
+.sc-layouts { position: absolute; left: 8px; right: 8px; bottom: 62px; height: 72px; overflow: hidden; white-space: nowrap; }
+.sc-lay { display: inline-block; vertical-align: top; width: 11.5%; margin-right: 1%; height: 72px; border-radius: 8px; background: #172029; text-align: center; padding-top: 7px; }
+.sc-lay:last-child { margin-right: 0; }
+.sc-lay.on { background: #2d3576; }
+.sc-lay.pressed { background: #26354a; }
+.sc-lbox { position: relative; width: 48px; height: 30px; margin: 0 auto 5px; }
+.sc-lay.tall .sc-lbox { width: 22px; height: 34px; margin-bottom: 1px; }
+.sc-lbox i { position: absolute; -webkit-box-sizing: border-box; box-sizing: border-box; border: 1.5px solid #0b0f14; background: #6cb6ff; border-radius: 3px; }
+.sc-lay span { display: block; font-size: 10px; font-weight: bold; color: #c6d1dc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+.sc-open { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 46px; white-space: nowrap; overflow: hidden; }
+.sc-olabel { display: inline-block; vertical-align: middle; font-size: 11px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; margin: 0 8px 0 4px; }
+.sc-opt { display: inline-block; vertical-align: middle; height: 42px; line-height: 42px; min-width: 64px; padding: 0 12px; margin-right: 6px; border-radius: 10px; background: #243142; font-size: 14px; font-weight: bold; text-align: center; }
+.sc-opt svg.ic { width: 18px; height: 18px; vertical-align: -3px; margin-right: 5px; }
+.sc-opt.on { background: #2f6b3a; }
+.sc-opt.pressed { -webkit-transform: scale(0.95); transform: scale(0.95); }
+.sc-right { position: absolute; right: 0; top: 0; bottom: 0; width: 40%; background: #141c25; border-left: 1px solid #222e3b; }
+.sc-whead { position: absolute; left: 12px; right: 12px; top: 8px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; }
+.sc-wins { position: absolute; left: 6px; right: 6px; top: 36px; bottom: 6px; overflow: auto; -webkit-overflow-scrolling: touch; }
+.sc-win { position: relative; height: 54px; padding: 7px 92px 0 40px; border-radius: 10px; margin-bottom: 3px; background: #172029; }
+.sc-win.active { -webkit-box-shadow: inset 3px 0 0 #3d8bfd; box-shadow: inset 3px 0 0 #3d8bfd; }
+.sc-win.min { opacity: 0.6; }
+.sc-win.pressed, .sc-win.busy { background: #26354a; }
+.sc-wmon { position: absolute; left: 8px; top: 15px; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 6px; background: #2a3746; font-size: 12px; font-weight: bold; }
+.sc-wtitle { display: block; font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 21px; }
+.sc-wproc { display: block; font-size: 11px; color: #8b9bab; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-wbtn { position: absolute; top: 7px; width: 40px; height: 40px; border-radius: 8px; background: #243142; text-align: center; }
+.sc-wbtn svg.ic { width: 20px; height: 20px; margin-top: 10px; }
+.sc-wbtn[data-act="minimize"] { right: 50px; }
+.sc-wbtn[data-act="maximize"] { right: 6px; }

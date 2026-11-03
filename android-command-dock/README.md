@@ -7,7 +7,11 @@ Il PC (Windows o Linux) fa girare un piccolo server Node.js. Il tablet apre una 
 - **Musica**: copertina, coda dei brani, salto a un punto del brano, shuffle e ripeti, volume dell'app (non di sistema). Funziona con Apple Music web e YouTube tramite un'estensione del browser, e con le app desktop (Spotify, VLC, ...). Giochi e launcher (es. Riot Client) vengono ignorati.
 - **Claude**: chat della dock e sessioni di Claude Code del PC, continuabili dal tablet, con dettatura vocale. Il tablet può anche fare da tastiera remota e scrivere nella finestra scelta sul PC.
 - Monitor PC: CPU, RAM, GPU NVIDIA (uso, temperatura, VRAM), rete.
-- Ollama, riepilogo GitHub, todo list, orologio.
+- **Discord**: server, canali vocali, chi c'è in stanza e chi parla, mute e audio, webcam e Go Live.
+- **Games**: avvio di Hearthstone, World of Tanks e League of Legends (se il gioco è già aperto lo porta in primo piano).
+- **Schermi**: scegli su quale monitor si aprono le app dal tablet e disponi le finestre nelle zone, come Snap di Windows.
+- **Pannello di controllo sul PC** per scegliere e ordinare le pagine del tablet con il trascinamento.
+- Ollama, riepilogo GitHub, TODO sulle Memo di Windows, orologio.
 - Profili Blender e DaVinci Resolve, che mettono in primo piano il programma prima di premere i tasti.
 
 ## Avvio rapido
@@ -29,7 +33,8 @@ Per ripetere le domande: `start.bat --setup` (o `./start.sh --setup`).
 
 Su Windows la dock gira **in background**, senza finestre aperte. La trovi come icona (quattro quadratini blu) nell'area di notifica, sotto la freccetta vicino all'orologio. Dal menu dell'icona puoi:
 
-- aprire la dock su questo PC (anche con doppio click sull'icona);
+- aprire il **pannello di controllo** (anche con doppio clic sull'icona, o sul collegamento *Command Dock* del desktop);
+- aprire la dock su questo PC;
 - vedere indirizzo e codice per il tablet (vengono anche copiati negli appunti);
 - aprire il log (`data/dock.log`);
 - riavviarla;
@@ -74,6 +79,32 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | GITHUB | PR, issue, CI e ultimo commit dei tuoi repository |
 | OLLAMA | chat con i modelli locali |
 | CLAUDE | chat, sessioni di Claude Code, dettatura, scrittura sul PC |
+| DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, mutare una persona |
+| GAMES | Hearthstone, World of Tanks, League of Legends (pallino verde se aperti; se già aperto lo porta in primo piano) |
+| SCHERMI | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app |
+| BLENDER, DAVINCI *(disponibili)* | scorciatoie dei due programmi |
+
+## Pannello di controllo (sul PC)
+
+Doppio clic sull'icona **Command Dock** (desktop o vicino all'orologio): si apre nel browser del PC una pagina per scegliere le pagine del tablet.
+
+- **Trascina** le pagine per cambiare l'ordine della barra in basso, o spostale tra *Nella barra* e *Disponibili*.
+- La **stella** sceglie la pagina che si apre all'avvio.
+- **Salva sul tablet**: il tablet si aggiorna da solo. *Predefinite* torna ai valori di `dock.json`.
+
+Le scelte finiscono in `config/layout.json`. Il pannello risponde solo da questo PC (`http://127.0.0.1:8787/control`), non dal tablet né dalla rete. Le pagine disponibili restano raggiungibili dai pulsanti che le aprono (es. BLENDER nella pagina APP). Il contenuto delle pagine si modifica sempre in `config/dock.json`.
+
+### Discord
+
+Usa il collegamento locale dell'app Discord (lo stesso delle Stream Deck): niente bot, funziona con Discord aperto sul PC. Discord lo concede solo alle applicazioni registrate, quindi serve una configurazione, una volta sola, guidata dal pannello:
+
+1. sul [Developer Portal](https://discord.com/developers/applications) crea una *New Application*;
+2. in *OAuth2* copia **Client ID** e **Client Secret**; sotto *Redirects* premi *Add Redirect*, scrivi `http://localhost` (senza barra finale) e premi **Save Changes**. Se manca, Discord risponde *"invalid_request: missing redirect_uri"*;
+3. incollali nel pannello e premi **Collega**: Discord chiede di autorizzare la dock.
+
+Dal tablet: tocca un server, poi un canale per entrarci; tocca una persona nella tua stanza per mutarla solo per te; **MIC** e **AUDIO** per mutarti o silenziare; **CAM** accende la webcam; **LIVE** avvia il Go Live del gioco aperto (Hearthstone, World of Tanks, LoL, o qualsiasi app con `"game": true`); **ESCI** (tieni premuto) per lasciare la stanza.
+
+Webcam e Go Live usano due comandi di Discord non documentati (`TOGGLE_VIDEO`, `TOGGLE_SCREENSHARE`) e un permesso in più: se avevi già collegato la dock, premi **Riautorizza** nel pannello. Se Discord non concede quel permesso, l'autorizzazione prosegue senza, e CAM e LIVE restano spenti. Senza configurazione MIC e AUDIO funzionano lo stesso, con le scorciatoie predefinite di Discord (Ctrl+Shift+M / Ctrl+Shift+D). Le credenziali stanno in `data/discord.json`, solo su questo PC.
 
 ## Musica
 
@@ -171,6 +202,20 @@ e in `config/apps.json`:
 Nei percorsi puoi usare `%USERPROFILE%`, `%LOCALAPPDATA%`, `~`, `$HOME` e `*` per la versione (`Blender *\blender.exe`). Funzionano anche i collegamenti `.lnk` (così si apre Apple Music dal collegamento sul desktop).
 Le app dello Store di Windows si avviano con `shell:AppsFolder\<AppID>`; l'AppID lo trovi in PowerShell con `Get-StartApps`.
 
+## Schermi (Windows)
+
+Nella pagina **SCHERMI** del tablet vedi i monitor come sono disposti sulla scrivania (numerati da sinistra) e le finestre aperte.
+
+- **Disporre le finestre**: tocca un monitor, scegli una disposizione (metà, terzi, 2/3 + 1/3, quarti, ...), tocca una zona e poi una finestra nella lista a destra. La zona successiva si seleziona da sola, come lo Snap Assist di Windows. Sui monitor verticali le colonne diventano righe.
+- Senza una zona scelta, toccare una finestra la porta in primo piano. I due pulsanti di ogni riga la riducono a icona o la ingrandiscono.
+- **Apri le app su**: AUTO lascia decidere a Windows; con un monitor scelto, le app avviate dal tablet (pulsanti *launch*) vengono spostate lì appena compare la loro finestra, mantenendo dimensioni e posizione relative.
+
+Le finestre dei programmi avviati come amministratore non si possono spostare (limite di Windows). I giochi a schermo intero esclusivo non si spostano. La scelta del monitor sta in `data/screens.json`.
+
+### Giochi
+
+I giochi sono in `config/apps.json` con `"game": true` e `"whenRunning": "focus"`: il pulsante mostra il pallino verde se il gioco è aperto e, in quel caso, lo porta in primo piano invece di riavviarlo. `"path"` può essere una lista di percorsi (vale il primo che esiste), `"process"` una lista di processi (LoL ha client e partita).
+
 ### App aperte: pallino verde e chiusura
 
 Le app con `"toggle": true` in `config/apps.json` mostrano un pallino verde quando sono aperte; un altro tocco le chiude come la X della finestra (l'app può chiedere di salvare). È attivo per Blender, DaVinci, VS Code, Unreal, Apple Music, Spotify, Claude e Discord; volutamente no per PowerShell, Esplora file, Gestione attività e Claude Code, per non interrompere lavori in corso.
@@ -193,6 +238,7 @@ Su Linux serve `wmctrl`.
 | Comando | `{ "type": "command", "id": "lock_pc" }` → `commands.json` |
 | Cambia pagina | `{ "type": "page", "page": "blender" }` |
 | Macro | `{ "type": "macro", "steps": [ {…}, { "type": "wait", "ms": 300 }, {…} ] }` |
+| Discord | `{ "type": "discord", "command": "stream" }` (anche `mute`, `deaf`, `video`) |
 
 `focus` (opzionale) porta in primo piano il programma prima di premere i tasti. Il valore è il nome del processo: `blender`, `Resolve`, `Code`.
 
@@ -200,9 +246,9 @@ Opzioni del pulsante: `"sub"` (seconda riga), `"color"`, `"repeat": true` (ripet
 
 **Tasti:** `CTRL SHIFT ALT WIN`, `A`–`Z`, `0`–`9`, `F1`–`F24`, `ENTER ESC TAB SPACE BACKSPACE DELETE INSERT HOME END PAGEUP PAGEDOWN UP DOWN LEFT RIGHT`, `NUM0`–`NUM9`, `PRINTSCREEN MINUS EQUALS COMMA PERIOD SLASH BACKQUOTE`, `MEDIA_PLAY_PAUSE VOLUME_UP`…
 
-**Widget:** `system`, `nowplaying`, `queue`, `github`, `todo`, `clock`, `claude`, `chat` (con `"provider": "ollama"`).
+**Widget:** `system`, `nowplaying`, `queue`, `github`, `todo`, `clock`, `claude`, `chat` (con `"provider": "ollama"`), `discord`, `screens`.
 
-**Icone:** `home music apps code github chat sparkle check cube film lock play pause stop next prev volup voldown mute shuffle repeat folder terminal cpu camera desktop robot refresh save keyboard undo redo fullscreen cut flag back add close send trash power bolt mic link`.
+**Icone:** `home music apps code github chat sparkle check cube film lock play pause stop next prev volup voldown mute shuffle repeat folder terminal cpu camera desktop robot refresh save keyboard undo redo fullscreen cut flag back add close send trash power bolt mic link headset gamepad cards tank sword layout live camoff window target`.
 
 ### GitHub
 

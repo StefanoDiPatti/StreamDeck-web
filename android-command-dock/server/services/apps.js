@@ -1,7 +1,8 @@
 // App aperte / chiuse. Per le app con "toggle": true in apps.json il pulsante
 // sul tablet mostra se l'app è aperta e, se lo è, la chiude.
+// Con "whenRunning": "focus" (i giochi) mostra se è aperta e la porta in primo piano.
 //  - di default l'app si riconosce dal nome del processo (es. Code.exe -> "code");
-//    si può forzare con "process" e restringere con "title" (regex sul titolo).
+//    si può forzare con "process" (anche una lista) e restringere con "title" (regex sul titolo).
 //  - con "bridge": "apple" | "youtube" | "ytmusic" si usa l'estensione del
 //    browser: aperta = c'è una scheda di quel sito, chiudi = chiude la scheda.
 const path = require('path');
@@ -21,18 +22,28 @@ function forPlatform(entry) {
   return entry;
 }
 
-// App con toggle attivo, già "risolte" per questo sistema.
-function toggleApps() {
-  const apps = (config.get('apps').apps) || {};
+// Nomi dei processi di un'app: "process" (stringa o lista) oppure il nome del file.
+function processNames(a) {
+  if (Array.isArray(a.process)) return a.process.map(function (p) { return String(p).toLowerCase(); });
+  if (a.process) return [String(a.process).toLowerCase()];
+  const file = Array.isArray(a.path) ? a.path[0] : a.path;
+  return [path.basename(String(file || '')).replace(/\.(exe|lnk|cmd|bat)$/i, '').toLowerCase()];
+}
+
+// App di cui serve sapere se sono aperte, già "risolte" per questo sistema.
+function trackedApps() {
+  const apps = config.apps();
   const out = {};
   Object.keys(apps).forEach(function (id) {
     const a = forPlatform(apps[id]);
-    if (!a || !a.toggle) return;
+    if (!a || !(a.toggle || a.whenRunning)) return;
     out[id] = {
       id: id,
       label: a.label || id,
+      toggle: !!a.toggle,
+      whenRunning: a.whenRunning || null,
       bridge: a.bridge || null,
-      process: String(a.process || path.basename(String(a.path || '')).replace(/\.(exe|lnk|cmd|bat)$/i, '')).toLowerCase(),
+      processes: processNames(a),
       title: a.title || ''
     };
   });
@@ -40,13 +51,13 @@ function toggleApps() {
 }
 
 function matches(app, w) {
-  if (w.process !== app.process) return false;
+  if (app.processes.indexOf(w.process) < 0) return false;
   if (!app.title) return true;
   try { return new RegExp(app.title, 'i').test(w.title); } catch (e) { return false; }
 }
 
 async function compute() {
-  const apps = toggleApps();
+  const apps = trackedApps();
   const ids = Object.keys(apps);
   if (!ids.length) return {};
   const needWindows = ids.some(function (id) { return !apps[id].bridge; });
@@ -80,19 +91,39 @@ function invalidate() { cache.at = 0; }
 
 // Se l'app ha il toggle ed è aperta, la chiude e ritorna true.
 async function closeIfRunning(id) {
-  const app = toggleApps()[id];
-  if (!app) return false;
+  const app = trackedApps()[id];
+  if (!app || !app.toggle) return false;
   invalidate();
   const state = await running();
   if (!state[id]) return false;
   if (app.bridge) {
     bridge.sendSite(app.bridge, { type: 'close_tab' });
   } else {
-    const n = await platform.closeWindows(app.process, app.title);
+    let n = 0;
+    for (let i = 0; i < app.processes.length; i++) n += await platform.closeWindows(app.processes[i], app.title);
     if (!n) return false;
   }
   invalidate();
   return true;
 }
 
-module.exports = { running: running, closeIfRunning: closeIfRunning, invalidate: invalidate, toggleApps: toggleApps };
+// Se l'app ha "whenRunning": "focus" ed è aperta, la porta in primo piano e ritorna true.
+async function focusIfRunning(id) {
+  const app = trackedApps()[id];
+  if (!app || app.whenRunning !== 'focus' || app.bridge) return false;
+  invalidate();
+  const windows = await platform.windows().catch(function () { return []; });
+  const w = windows.filter(function (x) { return matches(app, x); })[0];
+  if (!w) return false;
+  await platform.focus(w.process);
+  return true;
+}
+
+module.exports = {
+  running: running,
+  closeIfRunning: closeIfRunning,
+  focusIfRunning: focusIfRunning,
+  invalidate: invalidate,
+  trackedApps: trackedApps,
+  processNames: processNames
+};

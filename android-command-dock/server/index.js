@@ -21,6 +21,8 @@ const todo = require('./services/todo');
 const bridge = require('./services/bridge');
 const voice = require('./services/voice');
 const appsState = require('./services/apps');
+const discord = require('./services/discord');
+const screens = require('./services/screens');
 const pkg = require('../package.json');
 
 const PORT = parseInt(process.env.PORT, 10) || 8787;
@@ -124,8 +126,114 @@ app.post('/api/bridge/closed', bridgeOnly, function (req, res) {
   ok(res, null);
 });
 
+// --- pannello di controllo (solo da questo PC) ---
+// Si apre con il doppio clic sull'icona Command Dock. Le API vogliono anche
+// l'header X-Dock-Control, così un sito aperto nel browser non può usarle.
+function isLoopback(req) {
+  const ip = String(req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+  return ip === '127.0.0.1' || ip === '::1';
+}
+function localPage(req, res, next) {
+  if (isLoopback(req)) return next();
+  res.status(403).type('text').send('Il pannello di controllo si apre solo sul PC della dock.');
+}
+function controlOnly(req, res, next) {
+  if (isLoopback(req) && req.get('x-dock-control') === '1') return next();
+  res.status(403).json({ ok: false, error: { code: 'FORBIDDEN', message: 'Solo dal pannello di controllo su questo PC' } });
+}
+app.get(['/control', '/control/'], localPage, function (req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  res.sendFile(path.join(paths.CONTROL_DIR, 'index.html'));
+});
+app.use('/control', localPage, express.static(paths.CONTROL_DIR, { index: false, setHeaders: function (res) { res.setHeader('Cache-Control', 'no-cache'); } }));
+
+// Riassunto di una pagina per il pannello: cosa contiene.
+const WIDGET_NAMES = { system: 'stato PC', nowplaying: 'musica', queue: 'coda', github: 'GitHub', todo: 'TODO', clock: 'orologio', claude: 'Claude', chat: 'chat', discord: 'Discord', screens: 'schermi e finestre' };
+function pageSummary(p) {
+  const widgets = [], buttons = [];
+  p.tiles.forEach(function (t) {
+    if (t.widget) widgets.push(t.widget === 'chat' && t.provider ? t.provider : (WIDGET_NAMES[t.widget] || t.widget));
+    else if (t.label) buttons.push(t.label);
+  });
+  let auto = '';
+  if (widgets.length) auto = widgets.join(', ');
+  if (buttons.length) auto += (auto ? ' + ' : '') + buttons.length + ' pulsanti (' + buttons.slice(0, 4).join(', ') + (buttons.length > 4 ? '…' : '') + ')';
+  return { id: p.id, title: p.title, icon: p.icon, tab: p.tab, description: p.description || auto, contents: auto };
+}
+function controlInfo() {
+  const d = config.dock();
+  let urls = [];
+  try { urls = JSON.parse(require('fs').readFileSync(path.join(paths.DATA_DIR, 'runtime.json'), 'utf8')).urls || []; } catch (e) { urls = []; }
+  return {
+    pages: d.pages.map(pageSummary),
+    tabs: d.pages.filter(function (p) { return p.tab; }).map(function (p) { return p.id; }),
+    home: d.home,
+    custom: !!(config.get('layout') || {}).tabs,
+    discord: discord.panelInfo(),
+    tablet: urls,
+    version: pkg.version,
+    platform: platform.name
+  };
+}
+app.get('/api/control/info', controlOnly, route(async function () { await discord.ensure(); return controlInfo(); }));
+app.post('/api/control/layout', controlOnly, route(function (req) {
+  const b = req.body || {};
+  config.saveLayout(b.tabs, b.home);
+  log.info('control', 'pagine del tablet: ' + b.tabs.join(', '));
+  return controlInfo();
+}));
+app.post('/api/control/layout/reset', controlOnly, route(function () { config.resetLayout(); return controlInfo(); }));
+app.post('/api/control/discord', controlOnly, route(async function (req) {
+  const b = req.body || {};
+  await discord.setup(b.clientId, b.clientSecret);
+  return controlInfo();
+}));
+app.post('/api/control/discord/authorize', controlOnly, route(async function () { await discord.authorize(); return controlInfo(); }));
+app.post('/api/control/discord/logout', controlOnly, route(function () { discord.logout(); return controlInfo(); }));
+
 // --- tutto il resto richiede il token ---
 app.use('/api', auth.requireToken);
+
+// --- Discord (tablet) ---
+app.get('/api/discord/state', route(async function () { await discord.ensure(); return discord.state(); }));
+app.get('/api/discord/guilds', route(function (req) { return discord.guilds(req.query.refresh === '1'); }));
+app.get('/api/discord/channels', route(function (req) { return discord.channels(String(req.query.guild || '')); }));
+// what: mute | deaf | video (webcam) | stream (Go Live del gioco aperto)
+app.post('/api/discord/toggle', route(function (req) {
+  const what = String((req.body || {}).what || '');
+  if (['mute', 'deaf', 'video', 'stream'].indexOf(what) < 0) throw badRequest('Comando non valido');
+  return actions.execute({ type: 'discord', command: what });
+}));
+app.post('/api/discord/join', route(function (req) {
+  const c = (req.body || {}).channel;
+  return discord.join(c === null || c === undefined || c === '' ? null : String(c));
+}));
+app.post('/api/discord/user', route(function (req) {
+  const b = req.body || {};
+  return discord.userVoice(String(b.user || ''), { mute: typeof b.mute === 'boolean' ? b.mute : undefined, volume: typeof b.volume === 'number' ? b.volume : undefined });
+}));
+app.get('/api/discord/img', function (req, res) {
+  discord.image(String(req.query.p || '')).then(function (im) {
+    res.setHeader('Cache-Control', 'max-age=86400');
+    res.type(im.type).send(im.body);
+  }).catch(function () { res.status(404).end(); });
+});
+
+// --- Schermi: monitor, finestre e disposizioni ---
+app.get('/api/screens', route(function () { return screens.info(); }));
+app.get('/api/screens/windows', route(function () { return screens.windows(); }));
+app.post('/api/screens/target', route(function (req) {
+  const m = (req.body || {}).monitor;
+  return screens.setTarget(m === null || m === undefined || m === '' ? null : String(m));
+}));
+app.post('/api/screens/place', route(function (req) {
+  const b = req.body || {};
+  return screens.place(String(b.window || ''), String(b.monitor || ''), String(b.layout || ''), b.zone);
+}));
+app.post('/api/screens/window', route(function (req) {
+  const b = req.body || {};
+  return screens.act(String(b.window || ''), String(b.action || ''));
+}));
 
 app.get('/api/config', route(function () {
   return {

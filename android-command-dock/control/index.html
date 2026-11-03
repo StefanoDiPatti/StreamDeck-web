@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Command Dock · Pannello</title>
+  <link rel="stylesheet" href="/control/control.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <div>
+        <h1>Command Dock</h1>
+        <p id="sub">Pannello di controllo</p>
+      </div>
+    </div>
+    <div id="tablet" class="tablet-url"></div>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>Pagine del tablet</h2>
+          <p class="hint">Trascina le pagine per cambiare l'ordine, o spostale tra le due colonne. La <b>stella</b> è la pagina che si apre all'avvio.</p>
+        </div>
+      </div>
+
+      <div class="preview" aria-label="Anteprima della barra del tablet">
+        <div class="preview-label">Barra sul tablet</div>
+        <div id="preview" class="preview-bar"></div>
+      </div>
+
+      <div class="columns">
+        <div class="col">
+          <h3>Nella barra <span id="count" class="count"></span></h3>
+          <ol id="on" class="list on" data-list="on"></ol>
+        </div>
+        <div class="col">
+          <h3>Disponibili</h3>
+          <ol id="off" class="list off" data-list="off"></ol>
+          <p class="hint small">Le pagine disponibili restano raggiungibili dai pulsanti che le aprono (es. BLENDER nella pagina APP).</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="discord-card">
+      <div class="card-head">
+        <div>
+          <h2>Discord</h2>
+          <p class="hint">Server, canali vocali, chi c'è in stanza e mute dal tablet. Aggiungi la pagina <b>DISCORD</b> alla barra qui sopra.</p>
+        </div>
+        <span id="dc-status" class="pill">…</span>
+      </div>
+      <div id="dc-body"></div>
+    </section>
+
+    <section class="card subtle">
+      <h2>Pulsanti e nuove pagine</h2>
+      <p class="hint">Il contenuto di ogni pagina (pulsanti, scorciatoie, widget) si modifica in <code>config/dock.json</code>; le app in <code>config/apps.json</code>. Il tablet si aggiorna da solo quando salvi.</p>
+    </section>
+  </main>
+
+  <footer id="savebar" class="savebar">
+    <span id="dirty-msg">Modifiche non salvate</span>
+    <div class="actions">
+      <button id="reset" class="btn ghost" type="button" title="Torna alle pagine predefinite di dock.json">Predefinite</button>
+      <button id="undo" class="btn ghost" type="button">Annulla</button>
+      <button id="save" class="btn primary" type="button">Salva sul tablet</button>
+    </div>
+  </footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/js/icons.js"></script>
+  <script src="/control/control.js"></script>
+</body>
+</html>

@@ -175,6 +175,45 @@ module.exports = {
       .then(function (r) { return r.closed; });
   },
 
+  // ---- Schermi (pixel fisici). Monitor: { id, primary, x, y, w, h, work: {x,y,w,h}, hw }
+  monitors: function () {
+    return query.call('monitors', {}, 8000).then(function (r) {
+      const names = {};
+      (r.names || []).forEach(function (l) {
+        const i = String(l).indexOf('\t');
+        names[String(l).slice(0, i).toLowerCase()] = String(l).slice(i + 1);
+      });
+      return (r.list || []).map(function (l) {
+        const f = String(l).split('\t');
+        const b = f[2].split(' ').map(Number), w = f[3].split(' ').map(Number);
+        return { id: f[0], primary: f[1] === '1', x: b[0], y: b[1], w: b[2], h: b[3], work: { x: w[0], y: w[1], w: w[2], h: w[3] }, name: common.monitorName(f[4], names) };
+      });
+    });
+  },
+
+  // Finestre con posizione: [{ id, pid, process, state: normal|min|max, monitor, x, y, w, h, active, title }]
+  windowList: function () {
+    return query.call('winlist', {}, 6000).then(function (r) {
+      return (r.list || []).map(function (l) {
+        const f = String(l).split('\t');
+        const b = f[5].split(' ').map(Number);
+        return { id: f[0], pid: Number(f[1]), process: f[2], state: f[3] === 'm' ? 'min' : f[3] === 'M' ? 'max' : 'normal', monitor: f[4], x: b[0], y: b[1], w: b[2], h: b[3], active: f[6] === '1', title: f.slice(7).join(' ') };
+      });
+    });
+  },
+
+  // rect = area visibile voluta; max = massimizza dopo lo spostamento
+  placeWindow: function (id, rect, max, focus) {
+    return input.call('place', { hwnd: Number(id), x: Math.round(rect.x), y: Math.round(rect.y), w: Math.round(rect.w), h: Math.round(rect.h), max: !!max, focus: !!focus }, 6000).then(function (r) {
+      if (!r.moved) throw new Error('Windows non permette di spostare questa finestra (programma avviato come amministratore?)');
+      return r;
+    });
+  },
+
+  windowAction: function (id, action) {
+    return input.call('winact', { hwnd: Number(id), action: String(action) }, 5000);
+  },
+
   cpuTemp: function () { return Promise.resolve(null); },
   gpuFallback: function () { return Promise.resolve(null); },
 

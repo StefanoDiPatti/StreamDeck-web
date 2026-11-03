@@ -21,13 +21,18 @@
 //   { "type": "open_url", "url": "https://github.com" }
 //   { "type": "command",  "id": "lock_pc" }                   -> commands.json
 //   { "type": "page",     "page": "blender" }
+//   { "type": "discord",  "command": "stream" }  mute, deaf, video (webcam), stream (Go Live del gioco aperto)
 //   { "type": "macro",    "steps": [ {azione}, {"type":"wait","ms":300}, ... ] }
 //   "focus" (opzionale) porta prima in primo piano il programma (nome processo).
 //
 // Tile widget:
 //   { "widget": "system" }  { "widget": "nowplaying" }  { "widget": "queue" }
 //   { "widget": "github" }  { "widget": "todo" }        { "widget": "clock" }
-//   { "widget": "claude" }  { "widget": "chat", "provider": "ollama" }
+//   { "widget": "claude" }  { "widget": "chat", "provider": "ollama" }  { "widget": "discord" }
+//   { "widget": "screens" } (monitor e disposizione delle finestre)
+//
+// "description" = testo mostrato nel pannello di controllo sul PC, dove scegli
+// quali pagine stanno nella barra del tablet e in che ordine (config/layout.json).
 //
 // Icone disponibili: vedi README.
 {
@@ -39,6 +44,7 @@
       "id": "main",
       "title": "HOME",
       "icon": "home",
+      "description": "Musica, stato del PC e TODO delle Memo",
       "columns": 6,
       "rows": 4,
       "tiles": [
@@ -51,6 +57,7 @@
       "id": "media",
       "title": "MUSICA",
       "icon": "music",
+      "description": "Brano in riproduzione e coda della playlist",
       "tiles": [
         { "widget": "nowplaying", "w": 3, "h": 3 },
         { "widget": "queue", "w": 2, "h": 3 }
@@ -60,6 +67,7 @@
       "id": "apps",
       "title": "APP",
       "icon": "apps",
+      "description": "Avvio app (pallino verde se aperte), schermo, volume di sistema",
       "columns": 6,
       "rows": 3,
       "tiles": [
@@ -87,6 +95,7 @@
       "id": "dev",
       "title": "DEV",
       "icon": "code",
+      "description": "VS Code, Claude Code, terminale, OpenClaw e scorciatoie",
       "tiles": [
         { "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
         { "label": "CLAUDE CODE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_code" } },
@@ -109,24 +118,58 @@
       "id": "github",
       "title": "GITHUB",
       "icon": "github",
+      "description": "Repository, pull request e issue",
       "tiles": [ { "widget": "github", "w": 5, "h": 3 } ]
     },
     {
       "id": "ollama",
       "title": "OLLAMA",
       "icon": "chat",
+      "description": "Chat con i modelli locali di Ollama",
       "tiles": [ { "widget": "chat", "provider": "ollama", "w": 5, "h": 3 } ]
     },
     {
       "id": "claude",
       "title": "CLAUDE",
       "icon": "sparkle",
+      "description": "Chat, sessioni di Claude Code, dettatura, scrittura sul PC",
       "tiles": [ { "widget": "claude", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "discord",
+      "title": "DISCORD",
+      "icon": "headset",
+      "description": "Server, canali vocali, chi c'è in stanza, mute e audio",
+      "tab": false,
+      "tiles": [ { "widget": "discord", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "games",
+      "title": "GAMES",
+      "icon": "gamepad",
+      "description": "Hearthstone, World of Tanks e League of Legends (pallino verde se aperti)",
+      "tab": false,
+      "columns": 3,
+      "rows": 1,
+      "tiles": [
+        { "label": "HEARTHSTONE", "icon": "cards", "color": "#8a5a1c", "showRunning": "hearthstone", "action": { "type": "launch", "app": "hearthstone" } },
+        { "label": "WORLD OF TANKS", "icon": "tank", "color": "#5b3a1e", "showRunning": "world_of_tanks", "action": { "type": "launch", "app": "world_of_tanks" } },
+        { "label": "LEAGUE OF LEGENDS", "icon": "sword", "color": "#1d4a5e", "showRunning": "league_of_legends", "action": { "type": "launch", "app": "league_of_legends" } }
+      ]
+    },
+    {
+      "id": "screens",
+      "title": "SCHERMI",
+      "icon": "layout",
+      "description": "Monitor dove aprire le app e disposizione delle finestre (come Snap di Windows)",
+      "tab": false,
+      "tiles": [ { "widget": "screens", "w": 5, "h": 3 } ]
     },
     {
       "id": "blender",
       "title": "BLENDER",
       "icon": "cube",
+      "description": "Scorciatoie di Blender: viste, render, salva",
       "tab": false,
       "tiles": [
         { "label": "APRI", "icon": "cube", "color": "#d9730d", "action": { "type": "launch", "app": "blender" } },
@@ -150,6 +193,7 @@
       "id": "davinci",
       "title": "DAVINCI RESOLVE",
       "icon": "film",
+      "description": "Scorciatoie di DaVinci Resolve: timeline, tagli, pagine",
       "tab": false,
       "tiles": [
         { "label": "APRI", "icon": "film", "color": "#6b4fa0", "action": { "type": "launch", "app": "davinci" } },

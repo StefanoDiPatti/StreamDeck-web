@@ -7,7 +7,9 @@ const path = require('path');
 const paths = require('./paths');
 const log = require('./log');
 
-const FILES = ['dock', 'apps', 'commands', 'services'];
+const FILES = ['dock', 'apps', 'commands', 'services', 'layout'];
+// layout.json è scritto dal pannello di controllo sul PC: se manca va bene così.
+const OPTIONAL = { layout: true };
 const cache = {};   // name -> { mtime, data }
 const errors = {};  // name -> messaggio dell'ultimo errore di parsing
 
@@ -93,6 +95,11 @@ function get(name) {
   const file = fileFor(name);
   let stat;
   try { stat = fs.statSync(file); } catch (e) {
+    if (OPTIONAL[name]) {
+      if (cache[name] && cache[name].mtime) log.info('config', name + '.json rimosso');
+      cache[name] = { mtime: 0, file: file, data: {} };
+      return cache[name].data;
+    }
     errors[name] = 'File mancante: ' + path.basename(file);
     return (cache[name] && cache[name].data) || {};
   }
@@ -120,7 +127,7 @@ function clampInt(v, min, max, def) {
 }
 
 // Normalizza dock.json: id per ogni tile, dimensioni valide, default sensati.
-function normalizeDock(raw) {
+function normalizeDock(raw, layout) {
   raw = raw || {};
   const grid = raw.grid || {};
   const columns = clampInt(grid.columns, 1, 8, 5);
@@ -147,6 +154,7 @@ function normalizeDock(raw) {
       id: p.id,
       title: p.title || p.id.toUpperCase(),
       icon: p.icon || null,
+      description: typeof p.description === 'string' ? p.description : '',
       tab: p.tab !== false,
       columns: cols,
       rows: rws,
@@ -154,18 +162,66 @@ function normalizeDock(raw) {
     });
   });
   if (!pages.length) {
-    pages.push({ id: 'main', title: 'HOME', icon: 'home', tab: true, columns: columns, rows: rows, tiles: [] });
+    pages.push({ id: 'main', title: 'HOME', icon: 'home', description: '', tab: true, columns: columns, rows: rows, tiles: [] });
   }
+  let home = raw.home && seenPages[raw.home] ? raw.home : pages[0].id;
+
+  // Pannello di controllo (layout.json): quali pagine stanno nella barra in basso e in che ordine.
+  // Le altre restano raggiungibili dai pulsanti { "type": "page" }.
+  layout = layout || {};
+  if (Array.isArray(layout.tabs)) {
+    const order = layout.tabs.filter(function (id, i) { return seenPages[id] && layout.tabs.indexOf(id) === i; });
+    if (order.length) {
+      const rank = {};
+      pages.forEach(function (p, i) { rank[p.id] = order.indexOf(p.id) >= 0 ? order.indexOf(p.id) : 1000 + i; p.tab = order.indexOf(p.id) >= 0; });
+      pages.sort(function (a, b) { return rank[a.id] - rank[b.id]; });
+    }
+  }
+  if (typeof layout.home === 'string' && seenPages[layout.home]) home = layout.home;
+
   return {
     title: raw.title || 'COMMAND DOCK',
     theme: raw.theme || {},
     grid: { columns: columns, rows: rows },
-    home: raw.home && seenPages[raw.home] ? raw.home : pages[0].id,
+    home: home,
     pages: pages
   };
 }
 
-function dock() { return normalizeDock(get('dock')); }
+// Default letto direttamente (per le pagine aggiunte con gli aggiornamenti).
+let defaultsCache = null;
+function defaultDock() {
+  const file = path.join(paths.DEFAULTS_DIR, 'dock.json');
+  try {
+    const mtime = fs.statSync(file).mtimeMs;
+    if (!defaultsCache || defaultsCache.mtime !== mtime) defaultsCache = { mtime: mtime, data: parseJson(fs.readFileSync(file, 'utf8')) };
+    return defaultsCache.data;
+  } catch (e) { return {}; }
+}
+
+// dock.json dell'utente + le pagine dei default che non ha (nuovi moduli, es. Discord):
+// arrivano come "disponibili", fuori dalla barra finché non le attivi dal pannello.
+function mergedDock() {
+  const user = get('dock');
+  if (fileFor('dock') === path.join(paths.DEFAULTS_DIR, 'dock.json')) return user;
+  const have = {};
+  (Array.isArray(user.pages) ? user.pages : []).forEach(function (p) { if (p && p.id) have[p.id] = true; });
+  const extra = (defaultDock().pages || []).filter(function (p) { return p && p.id && !have[p.id]; })
+    .map(function (p) { return Object.assign({}, p, { tab: false }); });
+  if (!extra.length) return user;
+  return Object.assign({}, user, { pages: (user.pages || []).concat(extra) });
+}
+
+function dock() { return normalizeDock(mergedDock(), get('layout')); }
+
+// apps.json dell'utente + le app dei default che non ha (es. i giochi aggiunti dopo).
+function apps() {
+  const user = (get('apps').apps) || {};
+  if (fileFor('apps') === path.join(paths.DEFAULTS_DIR, 'apps.json')) return user;
+  let defaults = {};
+  try { defaults = parseJson(fs.readFileSync(path.join(paths.DEFAULTS_DIR, 'apps.json'), 'utf8')).apps || {}; } catch (e) { /* nessun default */ }
+  return Object.assign({}, defaults, user);
+}
 
 function findTile(pageId, tileId) {
   const d = dock();
@@ -185,6 +241,32 @@ function version() {
   }).join('-');
 }
 
+// Salva le scelte del pannello di controllo. Ritorna il dock aggiornato.
+function saveLayout(tabs, home) {
+  const all = normalizeDock(mergedDock(), {});
+  const ids = {};
+  all.pages.forEach(function (p) { ids[p.id] = true; });
+  tabs = (Array.isArray(tabs) ? tabs : []).map(String).filter(function (id, i, a) { return ids[id] && a.indexOf(id) === i; });
+  if (!tabs.length) throw Object.assign(new Error('Serve almeno una pagina nella barra'), { code: 'BAD_REQUEST' });
+  if (tabs.length > 10) throw Object.assign(new Error('Al massimo 10 pagine nella barra: sul tablet non ci starebbero'), { code: 'BAD_REQUEST' });
+  home = ids[home] ? String(home) : tabs[0];
+  const file = path.join(paths.CONFIG_DIR, 'layout.json');
+  if (!fs.existsSync(paths.CONFIG_DIR)) fs.mkdirSync(paths.CONFIG_DIR, { recursive: true });
+  const text = '// Scritto dal pannello di controllo (doppio clic sull\'icona Command Dock).\n' +
+    '// tabs = pagine nella barra del tablet, in ordine. home = pagina iniziale.\n' +
+    JSON.stringify({ tabs: tabs, home: home }, null, 2) + '\n';
+  fs.writeFileSync(file + '.tmp', text);
+  fs.renameSync(file + '.tmp', file);
+  return dock();
+}
+
+// Torna alle pagine definite in dock.json ("tab": true/false).
+function resetLayout() {
+  const file = path.join(paths.CONFIG_DIR, 'layout.json');
+  try { fs.unlinkSync(file); } catch (e) { /* già assente */ }
+  return dock();
+}
+
 function getErrors() {
   FILES.forEach(get);
   return Object.keys(errors).map(function (k) { return errors[k]; });
@@ -197,8 +279,11 @@ module.exports = {
   ensureUserConfig: ensureUserConfig,
   get: get,
   dock: dock,
+  apps: apps,
   normalizeDock: normalizeDock,
   findTile: findTile,
+  saveLayout: saveLayout,
+  resetLayout: resetLayout,
   version: version,
   errors: getErrors
 };

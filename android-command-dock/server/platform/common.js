@@ -169,7 +169,18 @@ function stripAnsi(s) {
   return String(s || '').replace(/\u001b\[[0-9;?]*[A-Za-z]/g, '').replace(/\u001b\][^\u0007]*\u0007/g, '');
 }
 
+// Nome leggibile di un monitor: DeviceID '\\?\DISPLAY#MSI3CA4#5&1a&0&UID4352#{...}'
+// confrontato con l'istanza WMI 'DISPLAY\MSI3CA4\5&1a&0&UID4352_0' -> 'MSI MP242'.
+function monitorName(deviceId, names) {
+  const parts = String(deviceId || '').split('#');
+  if (parts.length < 3) return '';
+  const key = ('display\\' + parts[1] + '\\' + parts[2]).toLowerCase();
+  const hit = Object.keys(names || {}).filter(function (k) { return k.indexOf(key) === 0; })[0];
+  return hit ? names[hit] : '';
+}
+
 module.exports = {
+  monitorName: monitorName,
   MEDIA_COMMANDS: MEDIA_COMMANDS,
   expandPath: expandPath,
   looksLikePath: looksLikePath,

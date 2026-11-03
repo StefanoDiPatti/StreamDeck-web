@@ -10,6 +10,8 @@ const keys = require('../platform/keys');
 const common = require('../platform/common');
 const media = require('../services/media');
 const appsState = require('../services/apps');
+const screens = require('../services/screens');
+const fs = require('fs');
 const log = require('../log');
 
 const MAX_MACRO_STEPS = 50;
@@ -34,6 +36,35 @@ function forPlatform(entry) {
     if (!entry.path && !entry.cmd) return null;
   }
   return entry;
+}
+
+// Il gioco aperto (app con "game": true), per il Go Live di Discord: { pid, label }
+async function runningGame() {
+  if (typeof platform.windowList !== 'function') return null;
+  const all = config.apps();
+  const games = Object.keys(all).map(function (id) { return { id: id, app: forPlatform(all[id]) }; })
+    .filter(function (g) { return g.app && g.app.game; });
+  if (!games.length) return null;
+  const wins = await platform.windowList().catch(function () { return []; });
+  // prima la finestra in primo piano, poi le altre dall'alto
+  wins.sort(function (x, y) { return (y.active ? 1 : 0) - (x.active ? 1 : 0); });
+  for (let i = 0; i < wins.length; i++) {
+    if (wins[i].state === 'min') continue;
+    for (let j = 0; j < games.length; j++) {
+      if (appsState.processNames(games[j].app).indexOf(wins[i].process) >= 0) return { pid: wins[i].pid, label: appLabel(games[j].id, games[j].app) };
+    }
+  }
+  return null;
+}
+
+// "path" può essere una lista di percorsi possibili (es. giochi su C: o D:): vale il primo che esiste.
+function pickPath(p) {
+  if (!Array.isArray(p)) return p;
+  for (let i = 0; i < p.length; i++) {
+    const file = common.resolveWildcard(common.expandPath(String(p[i])));
+    if (!common.looksLikePath(file) || fs.existsSync(file)) return p[i];
+  }
+  return p[0];
 }
 
 function normalizeArgs(args) {
@@ -79,7 +110,7 @@ function runCommand(id) {
 const HANDLERS = {
   launch: async function (a) {
     const id = a.app || a.target;
-    const apps = (config.get('apps').apps) || {};
+    const apps = config.apps();
     const app = forPlatform(apps[id]);
     if (!apps[id]) throw fail('App "' + id + '" non definita in apps.json', 'NOT_FOUND');
     if (!app || !app.path) throw fail(appLabel(id, apps[id]) + ' non configurata per questo sistema', 'UNSUPPORTED');
@@ -87,12 +118,19 @@ const HANDLERS = {
     if (app.toggle && await appsState.closeIfRunning(id)) {
       return { message: appLabel(id, app) + ': chiusura in corso' };
     }
+    // Giochi: se è già aperto lo porta in primo piano invece di riavviarlo
+    if (app.whenRunning === 'focus' && await appsState.focusIfRunning(id).catch(function () { return false; })) {
+      return { message: appLabel(id, app) + ' in primo piano' };
+    }
     appsState.invalidate();
+    // Monitor scelto nella pagina Schermi: la finestra nuova viene spostata lì
+    const follow = screens.followLaunch(appsState.processNames(app));
     try {
-      await platform.launch({ path: app.path, args: normalizeArgs(app.args), cwd: app.cwd });
+      await platform.launch({ path: pickPath(app.path), args: normalizeArgs(app.args), cwd: app.cwd });
     } catch (e) {
       throw fail(appLabel(id, app) + ': ' + e.message, 'NOT_FOUND');
     }
+    if (follow) follow();
     return { message: appLabel(id, app) + ' avviata' };
   },
 
@@ -153,6 +191,28 @@ const HANDLERS = {
 
   command: async function (a) {
     return runCommand(a.id || a.commandId);
+  },
+
+  // { "type": "discord", "command": "mute" | "deaf" | "video" | "stream" }
+  // stream = Go Live del gioco aperto (app con "game": true in apps.json)
+  discord: async function (a) {
+    const discord = require('../services/discord');
+    const what = String(a.command || '');
+    if (['mute', 'deaf', 'video', 'stream'].indexOf(what) < 0) throw fail('Comando Discord sconosciuto: ' + what, 'BAD_CONFIG');
+    await discord.ensure();
+    if (discord.state().status !== 'ready') {
+      if (what === 'video' || what === 'stream') throw fail('Per webcam e Go Live collega Discord dal pannello di controllo sul PC', 'UNAVAILABLE');
+      // senza collegamento: le scorciatoie di Discord (finestra in primo piano)
+      await HANDLERS.hotkey({ keys: ['CTRL', 'SHIFT', what === 'mute' ? 'M' : 'D'], focus: 'discord' });
+      return Object.assign(discord.state(), { message: (what === 'mute' ? 'Mute' : 'Silenzia') + ' inviato a Discord (scorciatoia)' });
+    }
+    if (what === 'mute' || what === 'deaf') return Object.assign(await discord.toggle(what), { message: null });
+    const was = discord.state().voice[what];
+    const game = what === 'stream' && !was ? await runningGame() : null;
+    const st = await discord.toggleMedia(what, game ? game.pid : null);
+    const message = what === 'video' ? (was ? 'Webcam spenta' : 'Webcam accesa') :
+      was ? 'Condivisione fermata' : 'Go Live' + (game ? ': ' + game.label : ' avviato');
+    return Object.assign(st, { message: message });
   },
 
   wait: async function (a) {

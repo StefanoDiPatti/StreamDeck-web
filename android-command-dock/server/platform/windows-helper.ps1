@@ -3,7 +3,7 @@
 # e risponde su stdout con righe "@@DOCK {json}". Tenerlo aperto evita i ~0.5s
 # di avvio di PowerShell a ogni tocco sul tablet.
 #
-# Comandi: ping, keys, text, open, focus, nowplaying, art, net
+# Comandi: ping, keys, text, open, focus, nowplaying, art, net, monitors, winlist, place, winact
 # Richiede Windows PowerShell 5.1 (powershell.exe), che espone le API WinRT
 # usate per "Now Playing".
 
@@ -90,6 +90,10 @@ public static class DockInput {
     foreach (Process p in Process.GetProcessesByName(processName)) {
       if (p.MainWindowHandle != IntPtr.Zero) { h = p.MainWindowHandle; break; }
     }
+    return FocusWindow(h);
+  }
+
+  public static bool FocusWindow(IntPtr h) {
     if (h == IntPtr.Zero) return false;
     if (GetForegroundWindow() == h) return true;
     if (IsIconic(h)) ShowWindow(h, 9);
@@ -163,6 +167,167 @@ public static class DockWindows {
   }
 }
 "@
+
+# --- Schermi: monitor, finestre con posizione, spostamento nelle zone.
+#     Coordinate in pixel fisici (thread "per-monitor DPI aware"). ---
+$script:screens = $false
+try {
+  Add-Type -TypeDefinition @"
+using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
+
+public static class DockScreens {
+  [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L; public int T; public int R; public int B; }
+  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+  struct MONITORINFOEX { public int cbSize; public RECT rcMonitor; public RECT rcWork; public uint dwFlags; [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string szDevice; }
+  [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+  struct DISPLAY_DEVICE {
+    public int cb;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string DeviceName;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceString;
+    public int StateFlags;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceID;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)] public string DeviceKey;
+  }
+  delegate bool MonEnum(IntPtr h, IntPtr hdc, ref RECT r, IntPtr d);
+  delegate bool WinEnum(IntPtr h, IntPtr l);
+  [DllImport("user32.dll")] static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr clip, MonEnum f, IntPtr d);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool GetMonitorInfo(IntPtr h, ref MONITORINFOEX mi);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool EnumDisplayDevices(string dev, uint i, ref DISPLAY_DEVICE dd, uint flags);
+  [DllImport("user32.dll")] static extern IntPtr SetThreadDpiAwarenessContext(IntPtr ctx);
+  [DllImport("user32.dll")] static extern IntPtr MonitorFromWindow(IntPtr h, uint flags);
+  [DllImport("user32.dll")] static extern bool EnumWindows(WinEnum f, IntPtr l);
+  [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll")] static extern bool IsWindow(IntPtr h);
+  [DllImport("user32.dll")] static extern bool IsIconic(IntPtr h);
+  [DllImport("user32.dll")] static extern bool IsZoomed(IntPtr h);
+  [DllImport("user32.dll")] static extern IntPtr GetWindow(IntPtr h, uint cmd);
+  [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int idx);
+  [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassName(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll")] static extern int GetWindowTextLength(IntPtr h);
+  [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
+  [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h, int attr, out RECT r, int size);
+  [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h, int attr, out int v, int size);
+  [DllImport("user32.dll", SetLastError = true)] static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int w, int hh, uint flags);
+  [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr h, int cmd);
+
+  static void Aware() { try { SetThreadDpiAwarenessContext(new IntPtr(-4)); } catch { } }
+
+  static string Clean(string s) { return (s ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", ""); }
+
+  // "device<TAB>primario<TAB>x y w h<TAB>work x y w h<TAB>id hardware" per ogni monitor
+  public static string[] Monitors() {
+    Aware();
+    var list = new System.Collections.Generic.List<string>();
+    EnumDisplayMonitors(IntPtr.Zero, IntPtr.Zero, delegate (IntPtr h, IntPtr hdc, ref RECT r, IntPtr d) {
+      var mi = new MONITORINFOEX(); mi.cbSize = Marshal.SizeOf(typeof(MONITORINFOEX));
+      if (!GetMonitorInfo(h, ref mi)) return true;
+      var dd = new DISPLAY_DEVICE(); dd.cb = Marshal.SizeOf(typeof(DISPLAY_DEVICE));
+      string hw = "";
+      if (EnumDisplayDevices(mi.szDevice, 0, ref dd, 1)) hw = dd.DeviceID ?? "";
+      RECT m = mi.rcMonitor, w = mi.rcWork;
+      list.Add(mi.szDevice + "\t" + ((mi.dwFlags & 1) != 0 ? "1" : "0") + "\t" +
+        m.L + " " + m.T + " " + (m.R - m.L) + " " + (m.B - m.T) + "\t" +
+        w.L + " " + w.T + " " + (w.R - w.L) + " " + (w.B - w.T) + "\t" + hw);
+      return true;
+    }, IntPtr.Zero);
+    return list.ToArray();
+  }
+
+  static string MonitorOf(IntPtr h) {
+    var mi = new MONITORINFOEX(); mi.cbSize = Marshal.SizeOf(typeof(MONITORINFOEX));
+    IntPtr mon = MonitorFromWindow(h, 2);
+    return GetMonitorInfo(mon, ref mi) ? mi.szDevice : "";
+  }
+
+  static bool Listed(IntPtr h) {
+    if (!IsWindowVisible(h) || GetWindow(h, 4) != IntPtr.Zero) return false;   // nascosta o secondaria
+    int ex = GetWindowLong(h, -20);
+    if ((ex & 0x80) != 0) return false;                                          // finestra strumento
+    int cloaked;
+    if (DwmGetWindowAttribute(h, 14, out cloaked, 4) == 0 && cloaked != 0) return false;
+    if (GetWindowTextLength(h) == 0) return false;
+    var cls = new StringBuilder(64); GetClassName(h, cls, 64);
+    string c = cls.ToString();
+    return c != "Progman" && c != "WorkerW" && c != "Shell_TrayWnd" && c != "Shell_SecondaryTrayWnd";
+  }
+
+  // "hwnd<TAB>pid<TAB>processo<TAB>stato<TAB>monitor<TAB>x y w h<TAB>primo piano<TAB>titolo"
+  // stato: n normale, m minimizzata, M massimizzata. Ordine: dalla più in alto.
+  public static string[] Windows() {
+    Aware();
+    var list = new System.Collections.Generic.List<string>();
+    var names = new System.Collections.Generic.Dictionary<uint, string>();
+    IntPtr fg = GetForegroundWindow();
+    EnumWindows(delegate (IntPtr h, IntPtr l) {
+      if (!Listed(h)) return true;
+      int len = GetWindowTextLength(h);
+      var sb = new StringBuilder(len + 1); GetWindowText(h, sb, sb.Capacity);
+      uint pid; GetWindowThreadProcessId(h, out pid);
+      string name;
+      if (!names.TryGetValue(pid, out name)) {
+        try { name = Process.GetProcessById((int)pid).ProcessName.ToLowerInvariant(); } catch { name = ""; }
+        names[pid] = name;
+      }
+      if (name == "textinputhost") return true;
+      RECT r;
+      if (DwmGetWindowAttribute(h, 9, out r, 16) != 0) GetWindowRect(h, out r);
+      string st = IsIconic(h) ? "m" : IsZoomed(h) ? "M" : "n";
+      list.Add(h.ToInt64() + "\t" + pid + "\t" + name + "\t" + st + "\t" + MonitorOf(h) + "\t" +
+        r.L + " " + r.T + " " + (r.R - r.L) + " " + (r.B - r.T) + "\t" + (h == fg ? "1" : "0") + "\t" + Clean(sb.ToString()));
+      return true;
+    }, IntPtr.Zero);
+    return list.ToArray();
+  }
+
+  static IntPtr Check(long hwnd) {
+    IntPtr h = new IntPtr(hwnd);
+    if (!IsWindow(h) || !Listed(h)) throw new Exception("finestra non trovata (chiusa?)");
+    return h;
+  }
+
+  // Porta la finestra nel rettangolo (area visibile, senza i bordi invisibili di Windows 10/11).
+  // max = poi la massimizza (su quel monitor). Ritorna false se Windows nega lo spostamento
+  // (finestra di un programma avviato come amministratore).
+  public static bool Place(long hwnd, int x, int y, int w, int hh, bool max) {
+    Aware();
+    IntPtr h = Check(hwnd);
+    if (IsIconic(h) || IsZoomed(h)) ShowWindow(h, 9);
+    bool ok = true;
+    for (int pass = 0; pass < 2; pass++) {
+      // due passaggi: tra monitor con scala diversa la finestra si ridimensiona da sola al primo
+      RECT wr, fr;
+      int l = 0, t = 0, r = 0, b = 0;
+      if (GetWindowRect(h, out wr) && DwmGetWindowAttribute(h, 9, out fr, 16) == 0) {
+        l = fr.L - wr.L; t = fr.T - wr.T; r = wr.R - fr.R; b = wr.B - fr.B;
+      }
+      ok = SetWindowPos(h, IntPtr.Zero, x - l, y - t, w + l + r, hh + t + b, 0x0004 | 0x0010 | 0x0040) && ok;
+    }
+    if (max) ShowWindow(h, 3);
+    return ok;
+  }
+
+  public static IntPtr Handle(long hwnd) { return Check(hwnd); }
+
+  public static bool Act(long hwnd, string what) {
+    Aware();
+    IntPtr h = Check(hwnd);
+    switch (what) {
+      case "minimize": return ShowWindow(h, 6) || true;
+      case "maximize": return ShowWindow(h, 3) || true;
+      case "restore": return ShowWindow(h, 9) || true;
+    }
+    throw new Exception("azione sconosciuta: " + what);
+  }
+}
+"@
+  $script:screens = $true
+} catch { [Console]::Error.WriteLine('schermi non disponibili: ' + $_.Exception.Message) }
 
 # --- Volume per singola app (Core Audio). Blocco separato: se non compila
 #     il resto dell'helper continua a funzionare. ---
@@ -428,6 +593,21 @@ function Get-NetInfo {
   return @{ type = 'ethernet'; name = 'Ethernet' }
 }
 
+# Nomi dei monitor (es. "MSI MP242") dall'EDID: "istanza<TAB>nome". Lento (~1 s): una volta sola.
+$script:monitorNames = $null
+function Get-MonitorNames {
+  if ($null -ne $script:monitorNames) { return $script:monitorNames }
+  $out = @()
+  try {
+    foreach ($m in (Get-CimInstance -Namespace root\wmi -ClassName WmiMonitorID -ErrorAction Stop)) {
+      $name = (($m.UserFriendlyName | Where-Object { $_ -ne 0 } | ForEach-Object { [char]$_ }) -join '').Trim()
+      if ($name) { $out += ([string]$m.InstanceName + "`t" + $name) }
+    }
+  } catch { }
+  $script:monitorNames = $out
+  return $out
+}
+
 function Open-Target($req) {
   $psi = New-Object System.Diagnostics.ProcessStartInfo
   $psi.FileName = [string]$req.file
@@ -438,7 +618,7 @@ function Open-Target($req) {
   return @{ started = $true }
 }
 
-Send-Reply @{ id = 0; ready = $true; winrt = $script:winrt; appAudio = $script:appAudio }
+Send-Reply @{ id = 0; ready = $true; winrt = $script:winrt; appAudio = $script:appAudio; screens = $script:screens }
 
 while ($true) {
   $line = $stdin.ReadLine()
@@ -466,6 +646,24 @@ while ($true) {
       'netinfo' { $data = Get-NetInfo }
       'windows' { $data = @{ list = @([DockWindows]::List()) } }
       'closewin' { $data = @{ closed = [DockWindows]::Close([string]$req.process, [string]$req.title) } }
+      'monitors' {
+        if (-not $script:screens) { throw 'schermi non disponibili' }
+        $data = @{ list = @([DockScreens]::Monitors()); names = @(Get-MonitorNames) }
+      }
+      'winlist' {
+        if (-not $script:screens) { throw 'schermi non disponibili' }
+        $data = @{ list = @([DockScreens]::Windows()) }
+      }
+      'place' {
+        if (-not $script:screens) { throw 'schermi non disponibili' }
+        $data = @{ moved = [DockScreens]::Place([long]$req.hwnd, [int]$req.x, [int]$req.y, [int]$req.w, [int]$req.h, [bool]$req.max) }
+        if ($req.focus) { [void][DockInput]::FocusWindow([DockScreens]::Handle([long]$req.hwnd)) }
+      }
+      'winact' {
+        if (-not $script:screens) { throw 'schermi non disponibili' }
+        if ([string]$req.action -eq 'focus') { $data = @{ done = [DockInput]::FocusWindow([DockScreens]::Handle([long]$req.hwnd)) } }
+        else { $data = @{ done = [DockScreens]::Act([long]$req.hwnd, [string]$req.action) } }
+      }
       default { throw ('comando sconosciuto: ' + $req.cmd) }
     }
     Send-Reply @{ id = $id; ok = $true; data = $data }

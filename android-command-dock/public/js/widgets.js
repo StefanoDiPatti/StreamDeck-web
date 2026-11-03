@@ -1051,8 +1051,484 @@ var Widgets = (function () {
     };
   }
 
+  // ------------------------------------------------------------ DISCORD
+  // Tre colonne: server | canali vocali con chi c'è dentro | la tua stanza e i comandi.
+  // Tocca un canale per entrarci, una persona nella tua stanza per mutarla (solo per te).
+  var DC = { guild: D.store.get('dc:guild', '') };
+  function discord(root, tile, app) {
+    D.addClass(root, 'w-discord');
+    root.innerHTML =
+      '<div class="dc-guilds scroll"></div>' +
+      '<div class="dc-chans"><div class="dc-ctitle"></div><div class="dc-clist scroll"></div></div>' +
+      '<div class="dc-room">' +
+        '<div class="dc-rhead"><div class="dc-rtitle">DISCORD</div><div class="dc-rsub"></div></div>' +
+        '<div class="dc-members scroll"></div>' +
+        '<div class="dc-ctrl">' +
+          '<div class="dc-btn dc-mute">' + Icons.html('mic') + '<span>MIC</span></div>' +
+          '<div class="dc-btn dc-deaf">' + Icons.html('headset') + '<span>AUDIO</span></div>' +
+          '<div class="dc-btn dc-cam">' + Icons.html('camera') + '<span>CAM</span></div>' +
+          '<div class="dc-btn dc-live">' + Icons.html('live') + '<span>LIVE</span></div>' +
+          '<div class="dc-btn dc-leave">' + Icons.html('hangup') + '<span>ESCI</span></div>' +
+        '</div>' +
+      '</div>';
+    function q(c) { return root.querySelector('.' + c); }
+    var guildsEl = q('dc-guilds'), ctitle = q('dc-ctitle'), clist = q('dc-clist'), members = q('dc-members');
+    var rtitle = q('dc-rtitle'), rsub = q('dc-rsub'), muteBtn = q('dc-mute'), deafBtn = q('dc-deaf'), leaveBtn = q('dc-leave');
+    var camBtn = q('dc-cam'), liveBtn = q('dc-live');
+    var st = null, guilds = null, chans = null, alive = true, lastRoom = '';
+
+    function av(m, cls) {
+      return m.avatar ? '<img class="' + cls + '" src="' + D.esc(m.avatar) + '" alt="">' : '<span class="' + cls + ' noav">' + D.esc((m.name || '?').charAt(0).toUpperCase()) + '</span>';
+    }
+    function flags(m) {
+      return (m.stream ? '<span class="dc-livebadge">LIVE</span>' : '') +
+        (m.video ? Icons.html('camera', 'dc-flag dc-camflag') : '') +
+        (m.deaf ? Icons.html('headsetoff', 'dc-flag') : m.mute ? Icons.html('micoff', 'dc-flag') : '') +
+        (m.localMute ? '<span class="dc-local">muto per te</span>' : '');
+    }
+
+    function renderState() {
+      var ready = st && st.status === 'ready';
+      var v = (st && st.voice) || {};
+      D.toggleClass(muteBtn, 'off', !!v.mute);
+      D.toggleClass(deafBtn, 'off', !!v.deaf);
+      muteBtn.innerHTML = Icons.html(v.mute ? 'micoff' : 'mic') + '<span>' + (v.mute ? 'MUTO' : 'MIC') + '</span>';
+      deafBtn.innerHTML = Icons.html(v.deaf ? 'headsetoff' : 'headset') + '<span>' + (v.deaf ? 'SILENZIATO' : 'AUDIO') + '</span>';
+      D.toggleClass(leaveBtn, 'disabled', !(ready && st.channel));
+      // webcam e Go Live: servono una stanza e il permesso (riautorizzazione dal pannello)
+      var inRoom = !!(ready && st.channel);
+      D.toggleClass(camBtn, 'on', !!v.video);
+      D.toggleClass(liveBtn, 'on', !!v.stream);
+      D.toggleClass(camBtn, 'disabled', !inRoom || !st.media);
+      D.toggleClass(liveBtn, 'disabled', !inRoom || !st.media);
+      camBtn.innerHTML = Icons.html(v.video ? 'camera' : 'camoff') + '<span>' + (v.video ? 'CAM ON' : 'CAM') + '</span>';
+      liveBtn.innerHTML = Icons.html('live') + '<span>' + (v.stream ? 'IN LIVE' : 'LIVE') + '</span>';
+      D.toggleClass(root, 'dc-off', !ready);
+      if (!ready) {
+        var head = !st || st.status === 'connecting' ? 'Collegamento a Discord…' :
+          st.status === 'setup' ? 'Discord da collegare' :
+          st.status === 'unauthorized' ? 'Manca l\'autorizzazione' : 'Discord è chiuso';
+        var msg = !st || st.status === 'connecting' ? '' :
+          st.status === 'setup' ? 'Sul PC fai doppio clic su Command Dock e segui la sezione Discord del pannello: serve una volta sola.' :
+          st.status === 'unauthorized' ? 'Apri il pannello di controllo sul PC e premi "Autorizza su Discord".' :
+          'Apri Discord sul PC: la dock si collega da sola.';
+        rtitle.innerHTML = 'COMANDI RAPIDI';
+        rsub.innerHTML = 'con le scorciatoie di Discord';
+        members.innerHTML = '';
+        guildsEl.innerHTML = '';
+        ctitle.innerHTML = '';
+        clist.innerHTML = '<div class="dc-setup">' + Icons.html('headset') + '<b>' + D.esc(head) + '</b><p>' + D.esc(msg) + '</p></div>';
+        lastRoom = '';
+        return;
+      }
+      var ch = st.channel;
+      if (!ch) {
+        rtitle.innerHTML = 'NON SEI IN UNA STANZA';
+        rsub.innerHTML = D.esc(st.user ? st.user.name : '');
+        if (lastRoom !== 'none') members.innerHTML = '<div class="empty">Tocca un canale vocale per entrare.</div>';
+        lastRoom = 'none';
+        return;
+      }
+      rtitle.innerHTML = Icons.html('volup') + D.esc(ch.name);
+      rsub.innerHTML = D.esc(ch.guild || '') + ' · ' + ch.members.length + (ch.members.length === 1 ? ' persona' : ' persone');
+      var html = '';
+      for (var i = 0; i < ch.members.length; i++) {
+        var m = ch.members[i];
+        html += '<div class="dc-mem' + (m.speaking ? ' speaking' : '') + (m.localMute ? ' lmuted' : '') + (m.me ? ' me' : '') + '" data-user="' + D.esc(m.id) + '" data-lmute="' + (m.localMute ? 1 : 0) + '">' +
+          av(m, 'dc-av') + '<span class="dc-name">' + D.esc(m.name) + (m.me ? ' <i>(tu)</i>' : '') + '</span>' + flags(m) + '</div>';
+      }
+      // ridisegna solo se cambia qualcosa (il polling è veloce per vedere chi parla)
+      if (html !== lastRoom) { members.innerHTML = html; lastRoom = html; }
+    }
+
+    function renderGuilds() {
+      if (!guilds) return;
+      var html = '';
+      for (var i = 0; i < guilds.length; i++) {
+        var g = guilds[i];
+        html += '<div class="dc-guild' + (g.id === DC.guild ? ' on' : '') + '" data-guild="' + D.esc(g.id) + '">' + av({ avatar: g.icon, name: g.name }, 'dc-gic') + '<span>' + D.esc(g.name) + '</span></div>';
+      }
+      guildsEl.innerHTML = html || '<div class="empty">Nessun server</div>';
+    }
+
+    function renderChans() {
+      var g = null;
+      for (var i = 0; guilds && i < guilds.length; i++) if (guilds[i].id === DC.guild) g = guilds[i];
+      ctitle.innerHTML = g ? D.esc(g.name) + ' · CANALI VOCALI' : 'CANALI VOCALI';
+      if (!chans) { clist.innerHTML = '<div class="empty">Carico…</div>'; return; }
+      var here = st && st.channel ? st.channel.id : '';
+      var html = '';
+      for (var c = 0; c < chans.length; c++) {
+        var ch = chans[c];
+        html += '<div class="dc-chan' + (ch.id === here ? ' here' : '') + '" data-chan="' + D.esc(ch.id) + '">' +
+          '<div class="dc-cname">' + Icons.html('volup') + D.esc(ch.name) + (ch.members.length ? ' <b>' + ch.members.length + '</b>' : '') + '</div>';
+        for (var k = 0; k < ch.members.length; k++) {
+          var m = ch.members[k];
+          html += '<div class="dc-cmem">' + av(m, 'dc-sav') + D.esc(m.name) + flags(m) + '</div>';
+        }
+        html += '</div>';
+      }
+      clist.innerHTML = html || '<div class="empty">Nessun canale vocale</div>';
+    }
+
+    function loadState() {
+      D.api.get('/api/discord/state', function (err, d) {
+        if (!alive) return;
+        if (err) { st = { status: 'offline' }; renderState(); return; }
+        var wasReady = st && st.status === 'ready';
+        var oldChan = st && st.channel ? st.channel.id : '';
+        st = d;
+        renderState();
+        if (st.status === 'ready' && !wasReady) loadGuilds();
+        if (st.status === 'ready' && (st.channel ? st.channel.id : '') !== oldChan) loadChans();
+      });
+    }
+    function loadGuilds(refresh) {
+      D.api.get('/api/discord/guilds' + (refresh ? '?refresh=1' : ''), function (err, list) {
+        if (!alive || err) return;
+        guilds = list;
+        var ok = false;
+        for (var i = 0; i < list.length; i++) if (list[i].id === DC.guild) ok = true;
+        if (!ok) DC.guild = st && st.channel && st.channel.guild_id ? st.channel.guild_id : (list[0] ? list[0].id : '');
+        renderGuilds();
+        loadChans();
+      });
+    }
+    function loadChans() {
+      if (!DC.guild) return;
+      var wanted = DC.guild;
+      D.api.get('/api/discord/channels?guild=' + encodeURIComponent(wanted), function (err, list) {
+        if (!alive || wanted !== DC.guild) return;
+        if (err) { clist.innerHTML = '<div class="empty err">' + D.esc(err.message) + '</div>'; return; }
+        chans = list;
+        renderChans();
+      }, 15000);
+    }
+
+    // ---- tocchi
+    D.bindTap(guildsEl, {
+      scrollable: true,
+      onTap: function (t) {
+        var g = D.closestAttr(t, 'data-guild', guildsEl);
+        if (!g) return;
+        DC.guild = g.getAttribute('data-guild');
+        D.store.set('dc:guild', DC.guild);
+        chans = null;
+        renderGuilds();
+        renderChans();
+        loadChans();
+      }
+    });
+    D.bindTap(clist, {
+      scrollable: true,
+      onTap: function (t) {
+        var c = D.closestAttr(t, 'data-chan', clist);
+        if (!c) return;
+        var id = c.getAttribute('data-chan');
+        if (st && st.channel && st.channel.id === id) return;
+        D.addClass(c, 'joining');
+        D.api.post('/api/discord/join', { channel: id }, function (err, d) {
+          if (err) { D.removeClass(c, 'joining'); return app.toast(err.message, 'err'); }
+          st = d; lastRoom = ''; renderState(); loadChans();
+        }, 15000);
+      }
+    });
+    D.bindTap(members, {
+      scrollable: true,
+      onTap: function (t) {
+        var m = D.closestAttr(t, 'data-user', members);
+        if (!m || D.hasClass(m, 'me')) return;
+        var mute = m.getAttribute('data-lmute') !== '1';
+        D.api.post('/api/discord/user', { user: m.getAttribute('data-user'), mute: mute }, function (err, d) {
+          if (err) return app.toast(err.message, 'err');
+          st = d; renderState();
+          app.toast(mute ? 'Mutato per te' : 'Di nuovo udibile', 'ok');
+        });
+      }
+    });
+    function toggle(what) {
+      D.api.post('/api/discord/toggle', { what: what }, function (err, d) {
+        if (err) return app.toast(err.message, 'err');
+        if (d.message) app.toast(d.message, 'info');
+        st = d; renderState();
+      });
+    }
+    D.bindTap(muteBtn, { onTap: function () { toggle('mute'); } });
+    D.bindTap(deafBtn, { onTap: function () { toggle('deaf'); } });
+    function media(what) {
+      if (st && st.status === 'ready' && !st.media) return app.toast('Per webcam e Go Live: pannello di controllo sul PC > Discord > Riautorizza', 'err');
+      if (!st || !st.channel) return app.toast('Entra prima in un canale vocale', 'err');
+      toggle(what);
+    }
+    D.bindTap(camBtn, { onTap: function () { media('video'); } });
+    D.bindTap(liveBtn, { onTap: function () { media('stream'); } });
+    D.bindTap(leaveBtn, {
+      hold: 700,
+      onTap: function () {
+        if (!st || !st.channel) return;
+        D.api.post('/api/discord/join', { channel: null }, function (err, d) {
+          if (err) return app.toast(err.message, 'err');
+          st = d; lastRoom = ''; renderState(); loadChans();
+          app.toast('Sei uscito dalla stanza', 'ok');
+        });
+      }
+    });
+
+    renderState();
+    loadState();
+    var fast = setInterval(loadState, 1000);           // chi parla, mute
+    var slow = setInterval(function () { if (st && st.status === 'ready') loadChans(); }, 15000);
+    return {
+      update: function () {},
+      resize: function () {},
+      destroy: function () { alive = false; clearInterval(fast); clearInterval(slow); }
+    };
+  }
+
+  // ---------------------------------------------------------------- schermi
+  // A sinistra i monitor come sono sulla scrivania: tocca un monitor, scegli una
+  // disposizione, tocca una zona e poi una finestra a destra per metterla lì
+  // (come Snap di Windows). Sotto: su quale monitor si aprono le app dal tablet.
+  var SC = { mon: D.store.get('sc:mon', ''), layout: D.store.get('sc:layout', 'half'), zone: null, placed: {} };
+  function screensWidget(root, tile, app) {
+    D.addClass(root, 'w-screens');
+    root.innerHTML =
+      '<div class="sc-left">' +
+        '<div class="sc-head"><span class="sc-title">SCHERMI</span><span class="sc-hint"></span></div>' +
+        '<div class="sc-map"></div>' +
+        '<div class="sc-layouts"></div>' +
+        '<div class="sc-open"></div>' +
+      '</div>' +
+      '<div class="sc-right">' +
+        '<div class="sc-whead">FINESTRE APERTE</div>' +
+        '<div class="sc-wins scroll"></div>' +
+      '</div>';
+    function q(c) { return root.querySelector('.' + c); }
+    var map = q('sc-map'), layoutsEl = q('sc-layouts'), openEl = q('sc-open'), winsEl = q('sc-wins'), hint = q('sc-hint');
+    var info = null, wins = null, alive = true, error = '';
+
+    function mon(id) {
+      for (var i = 0; info && i < info.monitors.length; i++) if (info.monitors[i].id === id) return info.monitors[i];
+      return null;
+    }
+    function layout(id) {
+      for (var i = 0; info && i < info.layouts.length; i++) if (info.layouts[i].id === id) return info.layouts[i];
+      return info ? info.layouts[0] : null;
+    }
+    // sui monitor verticali le colonne diventano righe (come fa il server)
+    function zones(l, m) {
+      var out = [];
+      for (var i = 0; i < l.zones.length; i++) {
+        var z = l.zones[i];
+        out.push(m && m.portrait ? [z[1], z[0], z[3], z[2]] : z);
+      }
+      return out;
+    }
+    function pct(v) { return (Math.round(v * 10000) / 100) + '%'; }
+    function short(s, n) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+
+    function setHint() {
+      var m = mon(SC.mon);
+      if (error) { hint.innerHTML = '<b class="err">' + D.esc(error) + '</b>'; return; }
+      if (!m) { hint.innerHTML = ''; return; }
+      hint.innerHTML = SC.zone === null ? 'tocca una zona del monitor ' + m.n : 'ora tocca una finestra a destra';
+    }
+
+    function renderMap() {
+      if (!info) { map.innerHTML = '<div class="empty">' + D.esc(error || 'Carico i monitor…') + '</div>'; return; }
+      var list = info.monitors;
+      var minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9, i;
+      for (i = 0; i < list.length; i++) {
+        minX = Math.min(minX, list[i].x); minY = Math.min(minY, list[i].y);
+        maxX = Math.max(maxX, list[i].x + list[i].w); maxY = Math.max(maxY, list[i].y + list[i].h);
+      }
+      var W = map.offsetWidth - 16, H = map.offsetHeight - 16;
+      if (W < 50 || H < 50) return;
+      var k = Math.min(W / (maxX - minX), H / (maxY - minY));
+      var ox = 8 + (W - (maxX - minX) * k) / 2, oy = 8 + (H - (maxY - minY) * k) / 2;
+      var l = layout(SC.layout), html = '';
+      for (i = 0; i < list.length; i++) {
+        var m = list[i], sel = m.id === SC.mon;
+        var x = Math.round(ox + (m.x - minX) * k) + 3, y = Math.round(oy + (m.y - minY) * k) + 3;
+        var w = Math.round(m.w * k) - 6, h = Math.round(m.h * k) - 6;
+        html += '<div class="sc-mon' + (sel ? ' sel' : '') + '" data-mon="' + D.esc(m.id) + '" style="left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px">';
+        if (sel && l) {
+          var zs = zones(l, m);
+          for (var z = 0; z < zs.length; z++) {
+            var placed = SC.placed[m.id + '|' + l.id + '|' + z];
+            html += '<div class="sc-zone' + (SC.zone === z ? ' on' : '') + '" data-zone="' + z + '" style="left:' + pct(zs[z][0]) + ';top:' + pct(zs[z][1]) + ';width:' + pct(zs[z][2]) + ';height:' + pct(zs[z][3]) + '">' +
+              '<div class="sc-zin"><b>' + (z + 1) + '</b>' + (placed ? '<span>' + D.esc(short(placed, 28)) + '</span>' : '') + '</div></div>';
+          }
+        }
+        html += '<div class="sc-mlabel"><b>' + m.n + '</b> ' + D.esc(m.name || (m.primary ? 'Principale' : 'Monitor')) +
+          '<span>' + m.w + '×' + m.h + (info.target === m.id ? ' · app qui' : '') + '</span></div></div>';
+      }
+      map.innerHTML = html;
+      setHint();
+    }
+
+    function renderLayouts() {
+      if (!info) { layoutsEl.innerHTML = ''; return; }
+      var m = mon(SC.mon), html = '';
+      for (var i = 0; i < info.layouts.length; i++) {
+        var l = info.layouts[i], zs = zones(l, m), inner = '';
+        for (var z = 0; z < zs.length; z++) {
+          inner += '<i style="left:' + pct(zs[z][0]) + ';top:' + pct(zs[z][1]) + ';width:' + pct(zs[z][2]) + ';height:' + pct(zs[z][3]) + '"></i>';
+        }
+        html += '<div class="sc-lay' + (l.id === SC.layout ? ' on' : '') + (m && m.portrait ? ' tall' : '') + '" data-layout="' + l.id + '"><div class="sc-lbox">' + inner + '</div><span>' + D.esc(l.name) + '</span></div>';
+      }
+      layoutsEl.innerHTML = html;
+    }
+
+    function renderOpen() {
+      if (!info) { openEl.innerHTML = ''; return; }
+      var html = '<span class="sc-olabel">APRI LE APP SU</span><div class="sc-opt' + (!info.target ? ' on' : '') + '" data-target="">AUTO</div>';
+      for (var i = 0; i < info.monitors.length; i++) {
+        var m = info.monitors[i];
+        html += '<div class="sc-opt' + (info.target === m.id ? ' on' : '') + '" data-target="' + D.esc(m.id) + '">' + Icons.html('desktop') + m.n + '</div>';
+      }
+      openEl.innerHTML = html;
+    }
+
+    function renderWins() {
+      if (!wins) { winsEl.innerHTML = '<div class="empty">Carico…</div>'; return; }
+      var html = '';
+      for (var i = 0; i < wins.length; i++) {
+        var w = wins[i], m = mon(w.monitor);
+        html += '<div class="sc-win' + (w.active ? ' active' : '') + (w.state === 'min' ? ' min' : '') + '" data-win="' + D.esc(w.id) + '">' +
+          '<span class="sc-wmon">' + (m ? m.n : '?') + '</span>' +
+          '<span class="sc-wtitle">' + D.esc(w.title) + '</span>' +
+          '<span class="sc-wproc">' + D.esc(w.process) + (w.state === 'min' ? ' · ridotta' : w.state === 'max' ? ' · ingrandita' : '') + '</span>' +
+          '<span class="sc-wbtn" data-act="minimize">' + Icons.html('minimize') + '</span>' +
+          '<span class="sc-wbtn" data-act="maximize">' + Icons.html('fullscreen') + '</span>' +
+          '</div>';
+      }
+      winsEl.innerHTML = html || '<div class="empty">Nessuna finestra aperta</div>';
+    }
+
+    function renderAll() { renderMap(); renderLayouts(); renderOpen(); renderWins(); }
+
+    function loadInfo() {
+      D.api.get('/api/screens', function (err, d) {
+        if (!alive) return;
+        if (err) { error = err.message; info = null; renderAll(); return; }
+        error = '';
+        info = d;
+        if (!mon(SC.mon)) {
+          SC.mon = info.target || (info.monitors[0] ? info.monitors[0].id : '');
+          for (var i = 0; i < info.monitors.length; i++) if (!info.target && info.monitors[i].primary) SC.mon = info.monitors[i].id;
+        }
+        renderAll();
+      });
+    }
+    var lastWins = '';
+    function loadWins() {
+      D.api.get('/api/screens/windows', function (err, list) {
+        if (!alive || err) return;
+        var key = JSON.stringify(list);
+        if (key === lastWins) return;
+        lastWins = key;
+        wins = list;
+        renderWins();
+      });
+    }
+
+    // ---- tocchi
+    D.bindTap(map, {
+      onTap: function (t) {
+        var zEl = D.closestAttr(t, 'data-zone', map);
+        var mEl = D.closestAttr(t, 'data-mon', map);
+        if (!mEl) return;
+        var id = mEl.getAttribute('data-mon');
+        if (id !== SC.mon) {
+          SC.mon = id; SC.zone = null;
+          D.store.set('sc:mon', id);
+          renderMap(); renderLayouts();
+          return;
+        }
+        if (zEl) {
+          var z = parseInt(zEl.getAttribute('data-zone'), 10);
+          SC.zone = SC.zone === z ? null : z;
+          renderMap();
+        }
+      }
+    });
+    D.bindTap(layoutsEl, {
+      onTap: function (t) {
+        var l = D.closestAttr(t, 'data-layout', layoutsEl);
+        if (!l) return;
+        SC.layout = l.getAttribute('data-layout');
+        D.store.set('sc:layout', SC.layout);
+        // la prima zona è già pronta: basta toccare una finestra
+        SC.zone = 0;
+        renderMap(); renderLayouts();
+      }
+    });
+    D.bindTap(openEl, {
+      onTap: function (t) {
+        var o = D.closestAttr(t, 'data-target', openEl);
+        if (!o) return;
+        var id = o.getAttribute('data-target');
+        D.api.post('/api/screens/target', { monitor: id || null }, function (err, d) {
+          if (err) return app.toast(err.message, 'err');
+          info = d;
+          var m = mon(d.target);
+          app.toast(m ? 'Le app dal tablet si aprono sul monitor ' + m.n : 'Le app si aprono dove decide Windows', 'ok');
+          renderMap(); renderOpen();
+        });
+      }
+    });
+    D.bindTap(winsEl, {
+      scrollable: true,
+      onTap: function (t) {
+        var row = D.closestAttr(t, 'data-win', winsEl);
+        if (!row) return;
+        var id = row.getAttribute('data-win');
+        var act = D.closestAttr(t, 'data-act', row);
+        if (act) {
+          D.api.post('/api/screens/window', { window: id, action: act.getAttribute('data-act') }, function (err) {
+            if (err) return app.toast(err.message, 'err');
+            lastWins = ''; setTimeout(loadWins, 300);
+          });
+          return;
+        }
+        var title = row.querySelector('.sc-wtitle').textContent;
+        if (SC.zone === null || !mon(SC.mon)) {
+          // nessuna zona scelta: porta la finestra in primo piano
+          D.api.post('/api/screens/window', { window: id, action: 'focus' }, function (err) {
+            if (err) return app.toast(err.message, 'err');
+            app.toast('In primo piano: ' + short(title, 40), 'ok');
+          });
+          return;
+        }
+        var zone = SC.zone, monId = SC.mon, lay = layout(SC.layout);
+        D.addClass(row, 'busy');
+        D.api.post('/api/screens/place', { window: id, monitor: monId, layout: lay.id, zone: zone }, function (err) {
+          D.removeClass(row, 'busy');
+          if (err) return app.toast(err.message, 'err');
+          SC.placed[monId + '|' + lay.id + '|' + zone] = title;
+          // come Snap Assist: passa alla zona successiva
+          SC.zone = zone + 1 < lay.zones.length ? zone + 1 : null;
+          renderMap();
+          lastWins = ''; setTimeout(loadWins, 400);
+        });
+      }
+    });
+
+    renderAll();
+    loadInfo();
+    loadWins();
+    var fast = setInterval(loadWins, 3000);
+    var slow = setInterval(loadInfo, 30000);
+    return {
+      update: function () {},
+      resize: function () { renderMap(); },
+      destroy: function () { alive = false; clearInterval(fast); clearInterval(slow); }
+    };
+  }
+
   var CHAT = {};
-  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget };
+  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, discord: discord, screens: screensWidget };
 
   function create(type, root, tile, app) {
     var fn = TYPES[type];

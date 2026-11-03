@@ -6,6 +6,9 @@
 # una sessione separata e non potrebbero premere tasti o leggere la musica
 # dell'utente. Questa icona parte con il tuo account, come le altre app.
 
+# -Panel: apre anche il pannello di controllo (collegamento sul desktop).
+param([switch]$Panel)
+
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -19,10 +22,19 @@ function Show-Message([string]$text, [string]$icon = 'Information') {
   [void][System.Windows.Forms.MessageBox]::Show($text, 'Command Dock', 'OK', $icon)
 }
 
-# Una sola icona alla volta
+function Get-PortQuick {
+  $envFile = Join-Path $Root '.env'
+  if (Test-Path $envFile) {
+    foreach ($line in Get-Content $envFile) { if ($line -match '^\s*PORT\s*=\s*(\d+)') { return $Matches[1] } }
+  }
+  return '8787'
+}
+function Open-Panel { Start-Process ('http://127.0.0.1:' + (Get-PortQuick) + '/control') }
+
+# Una sola icona alla volta: se la dock e' gia' avviata, apre il pannello di controllo
 $mutex = New-Object System.Threading.Mutex($false, 'Local\CommandDockTray')
 if (-not $mutex.WaitOne(0)) {
-  Show-Message "Command Dock è già in esecuzione.`nLa trovi nell'area di notifica, vicino all'orologio."
+  Open-Panel
   exit 0
 }
 
@@ -129,6 +141,10 @@ $statusItem = $menu.Items.Add('Command Dock')
 $statusItem.Enabled = $false
 [void]$menu.Items.Add('-')
 
+$panelItem = $menu.Items.Add('Pannello di controllo')
+$panelItem.Font = New-Object System.Drawing.Font($panelItem.Font, [System.Drawing.FontStyle]::Bold)
+$panelItem.Add_Click({ Open-Panel })
+
 $openItem = $menu.Items.Add('Apri la dock su questo PC')
 $openItem.Add_Click({ Start-Process ('http://127.0.0.1:' + (Get-Port) + '/?t=' + (Read-EnvValue 'DOCK_TOKEN')) })
 
@@ -159,7 +175,7 @@ $exitItem.Add_Click({
 })
 
 $tray.ContextMenuStrip = $menu
-$tray.Add_DoubleClick({ $openItem.PerformClick() })
+$tray.Add_DoubleClick({ Open-Panel })
 $tray.Visible = $true
 
 # ---------------------------------------------------------------- controllo periodico
@@ -190,7 +206,12 @@ $timer.Add_Tick({
       $url = $rt.urls[0]
       $tray.Text = 'Command Dock - attiva'
       $statusItem.Text = 'Command Dock - attiva su ' + $url
-      $tray.ShowBalloonTip(4000, 'Command Dock attiva', 'Sul tablet: ' + $url + "`nMenu dell'icona per codice, log e chiusura.", 'Info')
+      if ($Panel) {
+        $script:Panel = $false
+        Open-Panel
+      } else {
+        $tray.ShowBalloonTip(4000, 'Command Dock attiva', 'Sul tablet: ' + $url + "`nDoppio clic sull'icona: pannello di controllo.", 'Info')
+      }
     }
   }
 })

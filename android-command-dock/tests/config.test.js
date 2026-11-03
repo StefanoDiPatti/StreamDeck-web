@@ -36,7 +36,7 @@ test('ogni pulsante di default punta ad app, comandi, pagine e tasti esistenti',
   const apps = readDefault('apps').apps;
   const commands = readDefault('commands').commands;
   const pageIds = dock.pages.map(function (p) { return p.id; });
-  const widgets = ['system', 'nowplaying', 'queue', 'github', 'todo', 'chat', 'clock', 'claude'];
+  const widgets = ['system', 'nowplaying', 'queue', 'github', 'todo', 'chat', 'clock', 'claude', 'discord', 'screens'];
   function checkAction(a, where) {
     switch (a.type) {
       case 'launch': assert.ok(apps[a.app], where + ': app ' + a.app); break;
@@ -45,6 +45,7 @@ test('ogni pulsante di default punta ad app, comandi, pagine e tasti esistenti',
       case 'hotkey': keys.parseCombo(a.keys); break;
       case 'key': keys.parseCombo([a.key]); break;
       case 'macro': a.steps.forEach(function (s, i) { checkAction(s, where + ' passo ' + i); }); break;
+      case 'discord': assert.ok(['mute', 'deaf', 'video', 'stream'].indexOf(a.command) >= 0, where + ': discord ' + a.command); break;
       case 'media': case 'open_url': case 'text': case 'wait': case 'open_path': case 'focus': break;
       default: assert.fail(where + ': tipo sconosciuto ' + a.type);
     }
