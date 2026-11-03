@@ -1,4 +1,4 @@
-/* Widget della dock: system, nowplaying, github, todo, chat, clock. ES5.
+/* Widget della dock: system, nowplaying, github, todo, chat, clock, mail... ES5.
  * Ogni widget: create(el, tile, app) -> { update(state), resize(w, h), destroy() } */
 var Widgets = (function () {
   'use strict';
@@ -279,7 +279,7 @@ var Widgets = (function () {
       D.toggleClass(volDown, 'off', noVol); D.toggleClass(volUp, 'off', noVol); D.toggleClass(muteBtn, 'off', noVol);
     }
 
-    timer = setInterval(paintProgress, 1000);
+    timer = D.every(1000, 5000, paintProgress);
 
     return {
       update: function (s) {
@@ -336,7 +336,7 @@ var Widgets = (function () {
         var infoW = w - (showArt && !tall ? size + pad * 3 : pad * 2);
         volDown.style.display = volUp.style.display = infoW > 300 ? '' : 'none';
       },
-      destroy: function () { clearInterval(timer); }
+      destroy: function () { D.stop(timer); }
     };
   }
 
@@ -476,8 +476,8 @@ var Widgets = (function () {
       }, 30000);
     }
     load(false);
-    timer = setInterval(function () { load(false); }, 60000);
-    return { update: function () {}, resize: function () {}, destroy: function () { clearInterval(timer); } };
+    timer = D.every(60000, 300000, function () { load(false); });
+    return { update: function () {}, resize: function () {}, destroy: function () { D.stop(timer); } };
   }
 
   // ------------------------------------------------------------ TODO
@@ -629,8 +629,8 @@ var Widgets = (function () {
     }
     load();
     // le modifiche fatte sul PC compaiono entro qualche secondo
-    var timer = setInterval(load, 10000);
-    return { update: function () {}, resize: function () {}, destroy: function () { clearInterval(timer); } };
+    var timer = D.every(10000, 30000, load);
+    return { update: function () {}, resize: function () {}, destroy: function () { D.stop(timer); } };
   }
 
   // ------------------------------------------------------------ CHAT (Ollama / Claude)
@@ -781,11 +781,11 @@ var Widgets = (function () {
       setText(d, DAYS[n.getDay()] + ' ' + n.getDate() + ' ' + MONTHS[n.getMonth()]);
     }
     paint();
-    var timer = setInterval(paint, 5000);
+    var timer = D.every(5000, 30000, paint);
     return {
       update: function () {},
       resize: function (w, h) { t.style.fontSize = Math.round(Math.min(w / 3.2, h / 2.6)) + 'px'; },
-      destroy: function () { clearInterval(timer); }
+      destroy: function () { D.stop(timer); }
     };
   }
 
@@ -1061,13 +1061,13 @@ var Widgets = (function () {
     renderChat();
     loadList();
     loadChat();
-    pollTimer = setInterval(poll, 2500);
-    var listTimer = setInterval(loadList, 30000);
+    pollTimer = D.every(2500, 10000, poll);
+    var listTimer = D.every(30000, 120000, loadList);
 
     return {
       update: function () {},
       resize: function () { log.scrollTop = log.scrollHeight; },
-      destroy: function () { alive = false; stopListening(); clearInterval(pollTimer); clearInterval(listTimer); }
+      destroy: function () { alive = false; stopListening(); D.stop(pollTimer); D.stop(listTimer); }
     };
   }
 
@@ -1296,12 +1296,12 @@ var Widgets = (function () {
 
     renderState();
     loadState();
-    var fast = setInterval(loadState, 1000);           // chi parla, mute
-    var slow = setInterval(function () { if (st && st.status === 'ready') loadChans(); }, 15000);
+    var fast = D.every(1000, 5000, loadState);           // chi parla, mute
+    var slow = D.every(15000, 60000, function () { if (st && st.status === 'ready') loadChans(); });
     return {
       update: function () {},
       resize: function () {},
-      destroy: function () { alive = false; clearInterval(fast); clearInterval(slow); }
+      destroy: function () { alive = false; D.stop(fast); D.stop(slow); }
     };
   }
 
@@ -1538,17 +1538,170 @@ var Widgets = (function () {
     renderAll();
     loadInfo();
     loadWins();
-    var fast = setInterval(loadWins, 3000);
-    var slow = setInterval(loadInfo, 30000);
+    var fast = D.every(3000, 15000, loadWins);
+    var slow = D.every(30000, 120000, loadInfo);
     return {
       update: function () {},
       resize: function () { renderMap(); },
-      destroy: function () { alive = false; clearInterval(fast); clearInterval(slow); }
+      destroy: function () { alive = false; D.stop(fast); D.stop(slow); }
     };
   }
 
+  // ------------------------------------------------------------ Email
+  // Posta in arrivo in sola lettura. Gli account si aggiungono dal pannello sul PC.
+  var ML = { acc: D.store.get('ml:acc', '') };
+  function mailWidget(root, tile, app) {
+    D.addClass(root, 'w-mail');
+    var tools = el('div', 'ml-tools');
+    var accBtn = smallBtn('', 'mail', function () { nextAccount(); });
+    var webBtn = smallBtn('APRI SUL PC', 'desktop', function () { openWeb(); });
+    var refreshBtn = smallBtn('', 'refresh', function () { load(true); });
+    tools.appendChild(accBtn); tools.appendChild(webBtn); tools.appendChild(refreshBtn);
+    var title = header(root, 'EMAIL', tools);
+    var info = el('div', 'ml-info', '');
+    var list = el('div', 'w-list scroll');
+    root.appendChild(info); root.appendChild(list);
+    var reader = el('div', 'ml-reader');
+    reader.innerHTML =
+      '<div class="ml-rhead"></div>' +
+      '<div class="ml-rtitle"></div><div class="ml-rmeta"></div>' +
+      '<div class="ml-body scroll"></div>';
+    root.appendChild(reader);
+    function q(c) { return reader.querySelector('.' + c); }
+    var rhead = q('ml-rhead'), rtitle = q('ml-rtitle'), rmeta = q('ml-rmeta'), rbody = q('ml-body');
+    rhead.appendChild(smallBtn('INDIETRO', 'back', function () { closeReader(); }));
+    rhead.appendChild(smallBtn('APRI SUL PC', 'desktop', function () { openWeb(); }));
+
+    var accounts = [], data = null, alive = true, timer = null, loading = false, openUid = null;
+
+    function current() {
+      for (var i = 0; i < accounts.length; i++) if (accounts[i].id === ML.acc) return accounts[i];
+      return accounts[0] || null;
+    }
+    function fmtDate(iso) {
+      var t = new Date(Date.parse(iso));
+      if (isNaN(t.getTime())) return '';
+      var now = new Date();
+      if (t.toDateString() === now.toDateString()) return D.pad(t.getHours()) + ':' + D.pad(t.getMinutes());
+      var days = (now.getTime() - t.getTime()) / 86400000;
+      var names = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+      if (days < 6) return names[t.getDay()] + ' ' + D.pad(t.getHours()) + ':' + D.pad(t.getMinutes());
+      return t.getDate() + '/' + (t.getMonth() + 1) + (t.getFullYear() !== now.getFullYear() ? '/' + String(t.getFullYear()).slice(2) : '');
+    }
+    function who(f) { return (f && (f.name || f.address)) || '(sconosciuto)'; }
+
+    function renderHead() {
+      var a = current();
+      D.toggleClass(accBtn, 'hidden', accounts.length < 2);
+      accBtn.innerHTML = Icons.html('mail') + '<span>' + D.esc(accounts.length > 1 ? 'CAMBIA' : '') + '</span>';
+      D.toggleClass(webBtn, 'hidden', !a);
+      setText(title, a ? 'EMAIL · ' + a.label + (a.unread ? ' (' + a.unread + ')' : '') : 'EMAIL');
+    }
+
+    function render() {
+      renderHead();
+      list.innerHTML = '';
+      var a = current();
+      if (!a) {
+        setText(info, '');
+        list.innerHTML = '<div class="empty">Nessun account email.<br>Aggiungilo dal pannello di controllo sul PC<br>(sezione Email).</div>';
+        return;
+      }
+      if (!data || data.account.id !== a.id) {
+        setText(info, a.error ? a.error : 'Caricamento…');
+        D.toggleClass(info, 'err', !!a.error);
+        return;
+      }
+      setText(info, a.email + '   ·   ' + (data.unread ? data.unread + ' da leggere' : 'tutto letto') + '   ·   ' + data.total + ' in arrivo');
+      D.removeClass(info, 'err');
+      if (!data.messages.length) { list.innerHTML = '<div class="empty">La posta in arrivo è vuota.</div>'; return; }
+      for (var i = 0; i < data.messages.length; i++) {
+        var m = data.messages[i];
+        var row = el('div', 'ml-row' + (m.seen ? '' : ' unread'));
+        row.innerHTML =
+          '<div class="ml-when">' + D.esc(fmtDate(m.date)) + '</div>' +
+          '<div class="ml-from">' + (m.seen ? '' : '<span class="ml-dot"></span>') + D.esc(who(m.from)) + '</div>' +
+          '<div class="ml-subj">' + D.esc(m.subject || '(senza oggetto)') + '</div>';
+        bindRow(row, m.uid);
+        list.appendChild(row);
+      }
+    }
+    function bindRow(row, uid) {
+      D.bindTap(row, { scrollable: true, onTap: function () { openMessage(uid); } });
+    }
+
+    function openMessage(uid) {
+      var a = current();
+      if (!a) return;
+      openUid = uid;
+      D.addClass(root, 'ml-open');
+      setText(rtitle, 'Caricamento…');
+      setText(rmeta, '');
+      rbody.innerHTML = '';
+      D.api.get('/api/mail/message?account=' + encodeURIComponent(a.id) + '&uid=' + uid, function (err, m) {
+        if (!alive || openUid !== uid) return;
+        if (err) { setText(rtitle, err.message); return; }
+        setText(rtitle, m.subject || '(senza oggetto)');
+        var from = m.from.name ? m.from.name + ' <' + m.from.address + '>' : m.from.address;
+        setText(rmeta, from + '   ·   ' + fmtDate(m.date) + (m.attachments.length ? '   ·   ' + m.attachments.length + ' allegat' + (m.attachments.length === 1 ? 'o' : 'i') : ''));
+        rbody.innerHTML = D.esc(m.text || '(nessun testo)').replace(/\n/g, '<br>') +
+          (m.truncated ? '<div class="ml-note">Messaggio lungo: il resto è sul PC (APRI SUL PC).</div>' : '') +
+          (m.attachments.length ? '<div class="ml-note">' + Icons.html('attach') + ' ' + D.esc(m.attachments.join(', ')) + '</div>' : '');
+        rbody.scrollTop = 0;
+      }, 30000);
+    }
+    function closeReader() { openUid = null; D.removeClass(root, 'ml-open'); }
+
+    function nextAccount() {
+      if (accounts.length < 2) return;
+      var i = 0;
+      for (var k = 0; k < accounts.length; k++) if (accounts[k].id === (current() || {}).id) i = k;
+      ML.acc = accounts[(i + 1) % accounts.length].id;
+      D.store.set('ml:acc', ML.acc);
+      data = null; closeReader(); render(); load(false);
+    }
+    function openWeb() {
+      var a = current();
+      if (!a) return;
+      D.api.post('/api/mail/open', { account: a.id }, function (err, res) {
+        app.toast(err ? err.message : res.message, err ? 'err' : 'ok');
+      });
+    }
+
+    function load(force) {
+      if (loading) return;
+      loading = true;
+      D.addClass(refreshBtn, 'spin');
+      D.api.get('/api/mail', function (err, st) {
+        if (!alive) return;
+        if (err) { loading = false; D.removeClass(refreshBtn, 'spin'); setText(info, err.message); D.addClass(info, 'err'); return; }
+        accounts = st.accounts || [];
+        var a = current();
+        if (!a) { loading = false; D.removeClass(refreshBtn, 'spin'); data = null; render(); return; }
+        if (data && data.account.id !== a.id) data = null;
+        render();
+        D.api.get('/api/mail/list?account=' + encodeURIComponent(a.id) + (force ? '&refresh=1' : ''), function (err2, d) {
+          loading = false;
+          D.removeClass(refreshBtn, 'spin');
+          if (!alive) return;
+          if (err2) {
+            a.error = err2.message;
+            if (!data) render(); else app.toast(err2.message, 'err');
+            return;
+          }
+          a.unread = d.unread;
+          data = d;
+          render();
+        }, 45000);
+      }, 15000);
+    }
+    load(false);
+    timer = D.every(60000, 300000, function () { if (!openUid) load(false); });
+    return { update: function () {}, resize: function () {}, destroy: function () { alive = false; D.stop(timer); } };
+  }
+
   var CHAT = {};
-  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, discord: discord, screens: screensWidget };
+  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, discord: discord, screens: screensWidget, mail: mailWidget };
 
   function create(type, root, tile, app) {
     var fn = TYPES[type];

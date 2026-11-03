@@ -18,6 +18,10 @@
   let touched = {};         // pagine dei pulsanti modificate (solo queste vanno salvate)
   let btPage = 'apps';      // pagina dei pulsanti mostrata
   let tdrag = null;         // trascinamento di un pulsante
+  let pairSel = 0;          // rete scelta per il QR
+  let mlProvider = '';      // servizio email scelto nel modulo ('' = modulo chiuso)
+  let mlKey = '';           // per ridisegnare la sezione email solo se cambia
+  let pairShown = '';       // link del QR mostrato
 
   async function api(method, url, body) {
     const res = await fetch(url, {
@@ -419,7 +423,128 @@
     $('sub').textContent = 'Pannello di controllo · v' + info.version + (os ? ' · ' + os : '');
     render();
     renderDiscord();
+    renderPairing();
+    renderMail();
   }
+
+  // ------------------------------------------------------------ Email
+
+  const PROVIDER_ICON = { gmail: 'mail', outlook: 'mail', icloud: 'mail', yahoo: 'mail', libero: 'mail', imap: 'link' };
+  function renderMail() {
+    const m = info.mail;
+    if (!m) return;
+    $('ml-count').textContent = m.accounts.length ? m.accounts.length + (m.accounts.length === 1 ? ' ACCOUNT' : ' ACCOUNT') : 'NESSUN ACCOUNT';
+    $('ml-count').className = 'pill' + (m.accounts.length ? ' ok' : '');
+    const st = { ready: 'collegato', loading: 'aggiornamento…', idle: 'collegato', login: 'accesso Microsoft in corso', error: 'errore' };
+    $('ml-accounts').innerHTML = m.accounts.map((a) =>
+      '<div class="ml-acc" data-acc="' + esc(a.id) + '">' +
+        '<span class="ico">' + icon(PROVIDER_ICON[a.provider] || 'mail') + '</span>' +
+        '<span class="txt"><span class="name">' + esc(a.label) + '</span> <span class="hint">' + esc(a.email) + '</span>' +
+          '<span class="desc' + (a.status === 'error' ? ' err' : '') + '">' + esc(a.status === 'error' ? a.error : (st[a.status] || a.status) + (a.unread != null ? ' · ' + a.unread + ' da leggere' : '')) + '</span></span>' +
+        (a.auth === 'oauth' && (a.needsLogin || a.status === 'error') ? '<button class="btn ghost small-btn" type="button" data-mlact="login">Accedi a Microsoft</button>' : '') +
+        '<button class="ibtn rm" type="button" data-mlact="remove" title="Scollega" aria-label="Scollega ' + esc(a.email) + '">' + icon('close') + '</button>' +
+      '</div>' +
+      (a.login ? '<div class="ml-login">Apri <a href="' + esc(a.login.uri) + '" target="_blank" rel="noopener">' + esc(a.login.uri) + '</a>, accedi con <b>' + esc(a.email) + '</b> e scrivi questo codice:<div class="code">' + esc(a.login.code) + '</div><span class="hint small">La pagina si aggiorna da sola quando hai finito.</span></div>' : '')
+    ).join('');
+
+    // il modulo si ridisegna solo se cambia il servizio scelto (non perdere quello che stai scrivendo)
+    const key = mlProvider + '|' + m.providers.length;
+    if (key === mlKey) return;
+    mlKey = key;
+    if (!mlProvider) {
+      $('ml-add').innerHTML = '<button class="btn add-acc" type="button" data-mlact="new">' + icon('add') + ' Aggiungi un account</button>';
+      return;
+    }
+    const p = m.providers.find((x) => x.id === mlProvider);
+    const chips = '<div class="chips ml-providers">' + m.providers.map((x) => '<button class="chip' + (x.id === mlProvider ? ' on' : '') + '" type="button" data-mlprov="' + esc(x.id) + '">' + esc(x.label) + '</button>').join('') + '</div>';
+    const help = '<p class="ml-help">' + esc(p.help) + (p.helpUrl ? ' <a href="' + esc(p.helpUrl) + '" target="_blank" rel="noopener">Apri la pagina</a>' : '') + '</p>';
+    let fields = '<div><label for="ml-email">Indirizzo email</label><input id="ml-email" type="text" autocomplete="off" spellcheck="false" placeholder="nome@esempio.com"></div>' +
+      '<div><label for="ml-label">Nome sul tablet (facoltativo)</label><input id="ml-label" type="text" autocomplete="off" placeholder="' + esc(p.label) + '"></div>';
+    if (p.auth === 'oauth') {
+      fields += '<ol class="steps wide">' +
+        '<li>Sul <a href="' + esc(p.helpUrl) + '" target="_blank" rel="noopener">portale Azure</a> (App registrations) premi <b>New registration</b>: nome a piacere, tipo di account <b>Personal Microsoft accounts</b> (o "any organizational directory and personal").</li>' +
+        '<li>In <b>Authentication</b> attiva <b>Allow public client flows</b> e salva.</li>' +
+        '<li>Copia l\'<b>Application (client) ID</b> dalla pagina Overview e incollalo qui sotto.</li>' +
+      '</ol>' +
+      '<div class="wide"><label for="ml-client">Application (client) ID</label><input id="ml-client" type="text" autocomplete="off" spellcheck="false" placeholder="1a2b3c4d-0000-0000-0000-000000000000"></div>';
+    } else {
+      fields += '<div class="wide"><label for="ml-pass">' + (p.id === 'libero' || p.id === 'imap' ? 'Password' : 'Password per le app') + '</label><input id="ml-pass" type="password" autocomplete="off" spellcheck="false"></div>';
+      if (p.id === 'imap') {
+        fields += '<div><label for="ml-host">Server IMAP</label><input id="ml-host" type="text" autocomplete="off" spellcheck="false" placeholder="imap.example.com"></div>' +
+          '<div><label for="ml-port">Porta</label><input id="ml-port" type="text" inputmode="numeric" value="993"></div>';
+      }
+    }
+    $('ml-add').innerHTML = chips + help + '<div class="ml-form">' + fields + '</div>' +
+      '<div class="row-actions"><button class="btn primary" type="button" data-mlact="add">' + (p.auth === 'oauth' ? 'Continua con Microsoft' : 'Collega') + '</button>' +
+      '<button class="btn ghost" type="button" data-mlact="cancel">Annulla</button></div>' +
+      '<p class="hint small">Le credenziali restano su questo PC, cifrate in <code>data/mail.json</code> (chiave nel portachiavi del sistema), e non vengono mai inviate al tablet.</p>';
+  }
+
+  async function mailAction(act, id, btn) {
+    const val = (x) => ($(x) ? $(x).value : '');
+    if (act === 'new') { mlProvider = 'gmail'; renderMail(); return; }
+    if (act === 'cancel') { mlProvider = ''; renderMail(); return; }
+    if (btn) btn.disabled = true;
+    try {
+      if (act === 'add') {
+        toast(mlProvider === 'outlook' ? 'Chiedo il codice a Microsoft…' : 'Provo l\'accesso alla casella…', '');
+        info = await api('POST', '/api/control/mail', {
+          provider: mlProvider, email: val('ml-email'), label: val('ml-label'), password: val('ml-pass'),
+          host: val('ml-host'), port: val('ml-port'), clientId: val('ml-client')
+        });
+        mlProvider = '';
+        adopt();
+        toast('Account collegato: aggiungi la pagina EMAIL alla barra se non c\'è', 'ok');
+      } else if (act === 'remove') {
+        const a = info.mail.accounts.find((x) => x.id === id);
+        if (!confirm('Scollegare ' + (a ? a.email : 'l\'account') + ' dalla dock?')) { if (btn) btn.disabled = false; return; }
+        info = await api('POST', '/api/control/mail/remove', { id: id });
+        adopt();
+      } else if (act === 'login') {
+        info = await api('POST', '/api/control/mail/login', { id: id });
+        adopt();
+      }
+    } catch (e) { toast(e.message, 'err'); }
+    if (btn) btn.disabled = false;
+  }
+  document.addEventListener('click', (e) => {
+    const prov = e.target.closest('[data-mlprov]');
+    if (prov) { mlProvider = prov.dataset.mlprov; renderMail(); return; }
+    const b = e.target.closest('[data-mlact]');
+    if (!b) return;
+    const row = b.closest('[data-acc]');
+    mailAction(b.dataset.mlact, row ? row.dataset.acc : '', b);
+  });
+
+  // ------------------------------------------------------------ collegamento con QR
+
+  function renderPairing() {
+    const list = info.pairing || [];
+    $('pair-card').hidden = !list.length;
+    if (!list.length) return;
+    if (pairSel >= list.length) pairSel = 0;
+    const p = list[pairSel];
+    $('pair-nets').innerHTML = list.length > 1
+      ? list.map((l, i) => '<button class="chip' + (i === pairSel ? ' on' : '') + '" type="button" data-pair="' + i + '">' + esc(netName(l.name)) + ' · ' + esc(l.url.replace(/^http:\/\//, '')) + '</button>').join('')
+      : '';
+    $('pair-link').textContent = p.link;
+    const m = /[?&]t=([^&]+)/.exec(p.link);
+    $('pair-code').textContent = m ? decodeURIComponent(m[1]) : 'nessuno (DOCK_TOKEN vuoto)';
+    if (pairShown === p.link) return;
+    pairShown = p.link;
+    api('GET', '/api/control/qr?link=' + encodeURIComponent(p.link))
+      .then((d) => { if (pairShown === d.link) $('pair-qr').innerHTML = d.svg; })
+      .catch((e) => { $('pair-qr').textContent = e.message; });
+  }
+  function netName(n) {
+    if (/^(wl|wlan|wi-?fi)/i.test(n)) return 'Wi-Fi';
+    if (/^(en|eth|ethernet)/i.test(n)) return 'Cavo';
+    return n;
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pair]');
+    if (b) { pairSel = parseInt(b.dataset.pair, 10) || 0; renderPairing(); }
+  });
 
   // ------------------------------------------------------------ Discord
 
@@ -490,7 +615,7 @@
         '<div><label for="dc-secret">Client Secret</label><input id="dc-secret" type="password" autocomplete="off" spellcheck="false" placeholder="' + (d.hasSecret && !editing ? 'già salvato' : '') + (d.hasSecret && editing ? 'lascia vuoto per tenere quello salvato' : '') + '"></div>' +
         '<button class="btn discord" id="dc-go" type="button">Collega</button>' +
       '</div>' +
-      '<p class="hint small">Le credenziali restano su questo PC, in <code>data/discord.json</code>.</p>' +
+      '<p class="hint small">Le credenziali restano su questo PC, cifrate in <code>data/discord.json</code>.</p>' +
       ((d.authError || d.message) && d.status !== 'setup' ? '<div class="err-box">' + esc(d.authError || d.message) + '</div>' : '');
     $('dc-go').onclick = () => run('/api/control/discord', { clientId: $('dc-id').value, clientSecret: $('dc-secret').value });
   }

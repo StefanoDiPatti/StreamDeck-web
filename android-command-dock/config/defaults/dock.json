@@ -38,6 +38,7 @@
 //   { "widget": "github" }  { "widget": "todo" }        { "widget": "clock" }
 //   { "widget": "claude" }  { "widget": "chat", "provider": "ollama" }  { "widget": "discord" }
 //   { "widget": "screens" } (monitor e disposizione delle finestre)
+//   { "widget": "mail" }    (posta in arrivo; account dal pannello di controllo)
 //
 // "description" = testo mostrato nel pannello di controllo sul PC, dove scegli
 // quali pagine stanno nella barra del tablet e in che ordine (config/layout.json).
@@ -171,6 +172,14 @@
         { "id": "world_of_tanks", "label": "WORLD OF TANKS", "icon": "tank", "color": "#5b3a1e", "showRunning": "world_of_tanks", "action": { "type": "launch", "app": "world_of_tanks" } },
         { "id": "league_of_legends", "label": "LEAGUE OF LEGENDS", "icon": "sword", "color": "#1d4a5e", "showRunning": "league_of_legends", "action": { "type": "launch", "app": "league_of_legends" } }
       ]
+    },
+    {
+      "id": "mail",
+      "title": "EMAIL",
+      "icon": "mail",
+      "description": "Posta in arrivo di Gmail, Outlook, iCloud e altri (account scelti dal pannello)",
+      "tab": false,
+      "tiles": [ { "widget": "mail", "w": 5, "h": 3 } ]
     },
     {
       "id": "screens",

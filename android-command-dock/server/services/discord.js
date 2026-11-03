@@ -3,7 +3,7 @@
 // Usa l'RPC locale dell'app Discord. Discord lo apre solo alle applicazioni
 // registrate, quindi serve una "applicazione" personale (gratis, 2 minuti):
 // la configurazione si fa dal pannello di controllo sul PC.
-// Credenziali e token stanno in data/discord.json (fuori da git).
+// Credenziali e token stanno in data/discord.json (fuori da git), cifrati (server/secrets.js).
 //
 // Senza configurazione restano mute e silenzia con le scorciatoie di Discord
 // (Ctrl+Shift+M / Ctrl+Shift+D con la finestra di Discord in primo piano).
@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const paths = require('../paths');
 const log = require('../log');
+const secrets = require('../secrets');
 const { DiscordIpc } = require('./discord-ipc');
 
 const FILE = path.join(paths.DATA_DIR, 'discord.json');
@@ -43,14 +44,12 @@ const S = {
 
 function loadCreds() {
   if (creds) return creds;
-  try { creds = JSON.parse(fs.readFileSync(FILE, 'utf8')); } catch (e) { creds = {}; }
+  creds = secrets.loadJson(FILE, log) || {};
   return creds;
 }
 function saveCreds(patch) {
   creds = Object.assign({}, loadCreds(), patch);
-  if (!fs.existsSync(paths.DATA_DIR)) fs.mkdirSync(paths.DATA_DIR, { recursive: true });
-  fs.writeFileSync(FILE + '.tmp', JSON.stringify(creds, null, 2));
-  fs.renameSync(FILE + '.tmp', FILE);
+  secrets.writeJson(FILE, creds);
 }
 function configured() { const c = loadCreds(); return !!(c.clientId && c.clientSecret); }
 

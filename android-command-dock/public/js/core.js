@@ -213,7 +213,63 @@ var D = (function () {
     return html;
   }
 
+  // ------------------------------------------------------------ risparmio energetico
+  // active = toccato da poco; idle = nessun tocco da "idleAfter" ms: aggiornamenti
+  // più lenti; asleep = salvaschermo: nessun aggiornamento. Con la pagina nascosta
+  // (browser in secondo piano) i timer non chiamano il PC.
+  var power = { lastInput: new Date().getTime(), idleAfter: 60000, asleep: false, listeners: [] };
+  function isHidden() { return !!(document.hidden || document.webkitHidden); }
+  function powerState() {
+    if (power.asleep) return 'asleep';
+    return new Date().getTime() - power.lastInput > power.idleAfter ? 'idle' : 'active';
+  }
+  function notifyWake() {
+    for (var i = 0; i < power.listeners.length; i++) {
+      try { power.listeners[i](); } catch (e) { /* ignora */ }
+    }
+  }
+  function onInput() {
+    var was = powerState();
+    power.lastInput = new Date().getTime();
+    if (was === 'idle') notifyWake();   // dal salvaschermo si esce con wake()
+  }
+  document.addEventListener('touchstart', onInput, true);
+  document.addEventListener('mousedown', onInput, true);
+  document.addEventListener('keydown', onInput, true);
+
+  // Ripete fn ogni activeMs (idleMs a riposo). Ritorna un timer da fermare con D.stop().
+  function every(activeMs, idleMs, fn) {
+    var t = { stopped: false, id: null };
+    function tick() {
+      if (t.stopped) return;
+      var st = powerState();
+      if (st !== 'asleep' && !isHidden()) fn();
+      t.id = setTimeout(tick, st === 'active' ? activeMs : idleMs);
+    }
+    t.wake = function () { if (!t.stopped) { clearTimeout(t.id); t.id = setTimeout(tick, 30); } };
+    power.listeners.push(t.wake);
+    t.id = setTimeout(tick, activeMs);
+    return t;
+  }
+  function stop(t) {
+    if (!t) return;
+    t.stopped = true;
+    clearTimeout(t.id);
+    for (var i = power.listeners.length - 1; i >= 0; i--) if (power.listeners[i] === t.wake) power.listeners.splice(i, 1);
+  }
+
+  var Power = {
+    state: powerState,
+    isHidden: isHidden,
+    configure: function (o) { if (o && o.idleAfterSec > 0) power.idleAfter = o.idleAfterSec * 1000; },
+    sleep: function () { power.asleep = true; },
+    wake: function () { power.asleep = false; power.lastInput = new Date().getTime(); notifyWake(); },
+    onWake: function (fn) { power.listeners.push(fn); },
+    lastInput: function () { return power.lastInput; }
+  };
+
   return {
+    every: every, stop: stop, power: Power,
     $: $, el: el, hasClass: hasClass, addClass: addClass, removeClass: removeClass, toggleClass: toggleClass,
     closestClass: closestClass, closestAttr: closestAttr, esc: esc, setText: setText, store: store,
     request: request, api: api, bindTap: bindTap, pad: pad, duration: duration, ago: ago, richText: richText,

@@ -19,6 +19,18 @@
   </header>
 
   <main>
+    <section class="card pair" id="pair-card" hidden>
+      <div class="pair-qr" id="pair-qr" aria-label="QR code per collegare il dispositivo"></div>
+      <div class="pair-txt">
+        <h2>Collega un telefono o un tablet</h2>
+        <p class="hint">Inquadra il QR con la fotocamera: la dock si apre già collegata, senza scrivere il codice. Telefono e PC devono stare sulla stessa rete.</p>
+        <div id="pair-nets" class="chips"></div>
+        <div class="pair-link"><span>Link</span><code id="pair-link"></code></div>
+        <div class="pair-link"><span>Codice</span><code id="pair-code"></code></div>
+        <p class="hint small">Sul telefono: menu del browser &gt; <b>Aggiungi a schermata Home</b> per aprirla a schermo intero.</p>
+      </div>
+    </section>
+
     <section class="card">
       <div class="card-head">
         <div>
@@ -68,6 +80,18 @@
         </div>
         <div id="bt-off" class="bt-hidden" data-blist="hide"></div>
       </div>
+    </section>
+
+    <section class="card" id="mail-card">
+      <div class="card-head">
+        <div>
+          <h2>Email</h2>
+          <p class="hint">Posta in arrivo sul tablet, in sola lettura: la dock non segna come lette, non sposta e non cancella le email. Aggiungi la pagina <b>EMAIL</b> alla barra qui sopra.</p>
+        </div>
+        <span id="ml-count" class="pill"></span>
+      </div>
+      <div id="ml-accounts"></div>
+      <div id="ml-add"></div>
     </section>
 
     <section class="card" id="discord-card">

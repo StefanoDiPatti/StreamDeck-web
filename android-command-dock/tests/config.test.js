@@ -36,7 +36,7 @@ test('ogni pulsante di default punta ad app, comandi, pagine e tasti esistenti',
   const apps = readDefault('apps').apps;
   const commands = readDefault('commands').commands;
   const pageIds = dock.pages.map(function (p) { return p.id; });
-  const widgets = ['system', 'nowplaying', 'queue', 'github', 'todo', 'chat', 'clock', 'claude', 'discord', 'screens'];
+  const widgets = ['system', 'nowplaying', 'queue', 'github', 'todo', 'chat', 'clock', 'claude', 'discord', 'screens', 'mail'];
   function checkAction(a, where) {
     switch (a.type) {
       case 'launch': assert.ok(apps[a.app], where + ': app ' + a.app); break;

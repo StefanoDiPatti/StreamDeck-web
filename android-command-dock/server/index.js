@@ -24,6 +24,8 @@ const voice = require('./services/voice');
 const appsState = require('./services/apps');
 const discord = require('./services/discord');
 const screens = require('./services/screens');
+const pairing = require('./services/pairing');
+const mail = require('./services/mail');
 const pkg = require('../package.json');
 
 const PORT = parseInt(process.env.PORT, 10) || 8787;
@@ -40,7 +42,7 @@ app.use(express.json({ limit: '64kb' }));
 // --- risposte standard { ok, data } / { ok:false, error:{ code, message } } ---
 function ok(res, data) { res.json({ ok: true, data: data === undefined ? null : data }); }
 function sendError(res, e) {
-  const map = { BAD_REQUEST: 400, BAD_CONFIG: 400, UNKNOWN_ACTION: 400, NOT_FOUND: 404, CONFIG_CHANGED: 409, BUSY: 409, TOO_LONG: 409, UNAVAILABLE: 503, UNSUPPORTED: 501 };
+  const map = { UNAUTHORIZED: 409, BAD_REQUEST: 400, BAD_CONFIG: 400, UNKNOWN_ACTION: 400, NOT_FOUND: 404, CONFIG_CHANGED: 409, BUSY: 409, TOO_LONG: 409, UNAVAILABLE: 503, UNSUPPORTED: 501 };
   const code = e.code && map[e.code] ? e.code : 'ACTION_FAILED';
   res.status(map[code] || 500).json({ ok: false, error: { code: code, message: e.message || 'Errore' } });
 }
@@ -150,7 +152,7 @@ app.get(['/control', '/control/'], localPage, function (req, res) {
 app.use('/control', localPage, express.static(paths.CONTROL_DIR, { index: false, setHeaders: function (res) { res.setHeader('Cache-Control', 'no-cache'); } }));
 
 // Riassunto di una pagina per il pannello: cosa contiene.
-const WIDGET_NAMES = { system: 'stato PC', nowplaying: 'musica', queue: 'coda', github: 'GitHub', todo: 'TODO', clock: 'orologio', claude: 'Claude', chat: 'chat', discord: 'Discord', screens: 'schermi e finestre' };
+const WIDGET_NAMES = { mail: 'email', system: 'stato PC', nowplaying: 'musica', queue: 'coda', github: 'GitHub', todo: 'TODO', clock: 'orologio', claude: 'Claude', chat: 'chat', discord: 'Discord', screens: 'schermi e finestre' };
 function pageSummary(p) {
   const widgets = [], buttons = [];
   p.tiles.forEach(function (t) {
@@ -179,10 +181,19 @@ function controlInfo() {
     custom: !!(config.get('layout') || {}).tabs,
     discord: discord.panelInfo(),
     tablet: urls,
+    pairing: pairing.links(PORT),
+    mail: mail.panelInfo(),
     version: pkg.version,
     platform: platform.name
   };
 }
+// QR di uno dei link di collegamento (solo quelli della dock, niente testo libero)
+app.get('/api/control/qr', controlOnly, route(async function (req) {
+  const link = String(req.query.link || '');
+  const ok = pairing.links(PORT).some(function (l) { return l.link === link; });
+  if (!ok) throw Object.assign(new Error('Link sconosciuto'), { code: 'BAD_REQUEST' });
+  return { link: link, svg: await pairing.svg(link) };
+}));
 app.get('/api/control/info', controlOnly, route(async function () { await discord.ensure(); return controlInfo(); }));
 app.post('/api/control/layout', controlOnly, route(function (req) {
   const b = req.body || {};
@@ -197,10 +208,19 @@ app.post('/api/control/discord', controlOnly, route(async function (req) {
   return controlInfo();
 }));
 app.post('/api/control/discord/authorize', controlOnly, route(async function () { await discord.authorize(); return controlInfo(); }));
+app.post('/api/control/mail', controlOnly, route(async function (req) { await mail.addAccount(req.body || {}); return controlInfo(); }));
+app.post('/api/control/mail/remove', controlOnly, route(function (req) { mail.removeAccount(String((req.body || {}).id || '')); return controlInfo(); }));
+app.post('/api/control/mail/login', controlOnly, route(async function (req) { await mail.relogin(String((req.body || {}).id || '')); return controlInfo(); }));
 app.post('/api/control/discord/logout', controlOnly, route(function () { discord.logout(); return controlInfo(); }));
 
 // --- tutto il resto richiede il token ---
 app.use('/api', auth.requireToken);
+
+// --- Email (tablet): solo lettura, gli account si scelgono dal pannello ---
+app.get('/api/mail', route(function () { return mail.state(); }));
+app.get('/api/mail/list', route(function (req) { return mail.list(String(req.query.account || ''), req.query.refresh === '1'); }));
+app.get('/api/mail/message', route(function (req) { return mail.message(String(req.query.account || ''), req.query.uid); }));
+app.post('/api/mail/open', route(function (req) { return mail.openWebmail(String((req.body || {}).account || '')); }));
 
 // --- Discord (tablet) ---
 app.get('/api/discord/state', route(async function () { await discord.ensure(); return discord.state(); }));
@@ -243,11 +263,23 @@ app.post('/api/screens/window', route(function (req) {
   return screens.act(String(b.window || ''), String(b.action || ''));
 }));
 
+// Risparmio energetico del tablet (services.json -> tablet), con limiti sensati.
+function tabletPower() {
+  const t = (config.get('services') || {}).tablet || {};
+  const num = function (v, min, max, def) { const n = Number(v); return isFinite(n) ? Math.max(min, Math.min(max, n)) : def; };
+  return {
+    idleAfterSec: num(t.idleAfterSec, 10, 3600, 60),
+    pollSec: num(t.pollSec, 1, 30, 2),
+    idlePollSec: num(t.idlePollSec, 2, 300, 15),
+    sleepAfterMin: num(t.sleepAfterMin, 0, 240, 10)
+  };
+}
 app.get('/api/config', route(function () {
   return {
     version: config.version(),
     dock: config.tabletDock(),
     capabilities: platform.capabilities(),
+    power: tabletPower(),
     platform: platform.name,
     hostname: os.hostname(),
     claude: claude.info(),
@@ -354,20 +386,10 @@ app.use('/api', function (req, res) {
 });
 
 // --- avvio ---
-function lanAddresses() {
-  const out = [];
-  const ifaces = os.networkInterfaces();
-  Object.keys(ifaces).forEach(function (name) {
-    if (/vEthernet|VirtualBox|VMware|WSL|docker|br-|virbr|veth|Loopback|tailscale|zerotier/i.test(name)) return;
-    (ifaces[name] || []).forEach(function (d) {
-      if ((d.family === 'IPv4' || d.family === 4) && !d.internal && auth.isPrivateIp(d.address)) out.push({ name: name, address: d.address });
-    });
-  });
-  return out;
-}
+const lanAddresses = pairing.lanAddresses;
 
 function banner() {
-  const ips = process.env.SERVER_IP ? [{ name: 'SERVER_IP', address: process.env.SERVER_IP }] : lanAddresses();
+  const ips = lanAddresses();
   const token = (process.env.DOCK_TOKEN || '').trim();
   const line = '─'.repeat(52);
   console.log('\n' + line);
@@ -381,6 +403,13 @@ function banner() {
   if (token) {
     console.log('  Codice di accesso: ' + token);
     if (ips[0]) console.log('  Link diretto (salva il codice):  http://' + ips[0].address + ':' + PORT + '/?t=' + token);
+    // QR del link diretto: lo inquadri con il telefono e la dock si apre già collegata
+    if (ips[0] && process.stdout.isTTY && process.env.DOCK_SERVICE !== '1' && process.env.DOCK_NO_QR !== '1') {
+      try {
+        console.log('\n  Inquadra con il telefono o il tablet:');
+        console.log(pairing.terminal(pairing.links(PORT)[0].link, '  '));
+      } catch (e) { log.debug('server', 'QR non stampato: ' + e.message); }
+    }
   } else {
     console.log('  ATTENZIONE: DOCK_TOKEN vuoto, chiunque in rete può usare la dock.');
   }

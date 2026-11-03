@@ -1,7 +1,19 @@
 // Mini loader per il file .env (evita la dipendenza da dotenv).
 // Non sovrascrive variabili già presenti nell'ambiente.
+//
+// I segreti (token, chiavi API, password) vengono cifrati nel file al primo
+// avvio: GITHUB_TOKEN=ghp_... diventa GITHUB_TOKEN=enc:v1:... e la dock lo
+// decifra in memoria. Per cambiarlo scrivi il valore nuovo in chiaro: al
+// riavvio viene cifrato di nuovo. DOCK_TOKEN resta leggibile: è il codice che
+// il tablet ti chiede e che compare nel pannello e nell'icona di Windows.
 const fs = require('fs');
 const paths = require('./paths');
+const secrets = require('./secrets');
+
+const PLAIN_KEYS = { DOCK_TOKEN: true };
+function isSecretKey(key) {
+  return !PLAIN_KEYS[key] && /(TOKEN|SECRET|PASSWORD|PASS|API_KEY|_KEY)$/i.test(key);
+}
 
 function parseEnv(text) {
   const out = {};
@@ -21,14 +33,52 @@ function parseEnv(text) {
   return out;
 }
 
+// Riscrive il .env con i segreti cifrati (commenti e righe restano come sono).
+// Ritorna i nomi cifrati adesso.
+function sealEnv(file) {
+  file = file || paths.ENV_FILE;
+  if (!fs.existsSync(file)) return [];
+  const text = fs.readFileSync(file, 'utf8');
+  const eol = text.indexOf('\r\n') >= 0 ? '\r\n' : '\n';
+  const sealed = [];
+  const lines = text.split(/\r?\n/).map(function (line) {
+    const m = /^(\s*)([A-Za-z_][A-Za-z0-9_]*)(\s*=\s*)(.*?)\s*$/.exec(line);
+    if (!m || !isSecretKey(m[2])) return line;
+    let value = m[4];
+    if ((value[0] === '"' && value[value.length - 1] === '"') || (value[0] === "'" && value[value.length - 1] === "'")) value = value.slice(1, -1);
+    if (!value || secrets.isEncrypted(value)) return line;
+    sealed.push(m[2]);
+    return m[1] + m[2] + m[3] + secrets.encrypt(value);
+  });
+  if (!sealed.length) return [];
+  fs.writeFileSync(file + '.tmp', lines.join(eol), { mode: 0o600 });
+  fs.renameSync(file + '.tmp', file);
+  return sealed;
+}
+
 function loadEnv(file) {
   file = file || paths.ENV_FILE;
   if (!fs.existsSync(file)) return {};
+  try {
+    // i test leggono il .env vero ma non lo riscrivono
+    const sealed = process.env.NODE_TEST_CONTEXT && file === paths.ENV_FILE ? [] : sealEnv(file);
+    if (sealed.length) console.log('  .env: cifrati ' + sealed.join(', '));
+  } catch (e) {
+    console.error('  .env: cifratura dei segreti non riuscita (' + e.message + '): restano in chiaro');
+  }
   const parsed = parseEnv(fs.readFileSync(file, 'utf8'));
   Object.keys(parsed).forEach(function (key) {
-    if (process.env[key] === undefined) process.env[key] = parsed[key];
+    if (process.env[key] !== undefined) return;
+    let value = parsed[key];
+    if (secrets.isEncrypted(value)) {
+      try { value = secrets.decrypt(value); } catch (e) {
+        console.error('  .env: ' + key + ' non decifrabile (' + e.message + '): scrivilo di nuovo in chiaro');
+        return;
+      }
+    }
+    process.env[key] = value;
   });
   return parsed;
 }
 
-module.exports = { parseEnv: parseEnv, loadEnv: loadEnv };
+module.exports = { parseEnv: parseEnv, loadEnv: loadEnv, sealEnv: sealEnv, isSecretKey: isSecretKey };

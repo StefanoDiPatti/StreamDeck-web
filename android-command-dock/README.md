@@ -12,6 +12,8 @@ Il PC (Windows o Linux) fa girare un piccolo server Node.js. Il tablet apre una 
 - **Schermi**: scegli su quale monitor si aprono le app dal tablet e disponi le finestre nelle zone, come Snap di Windows.
 - **Pannello di controllo sul PC** per scegliere e ordinare con il trascinamento le pagine del tablet e i pulsanti di ogni pagina.
 - **Windows e Linux** riconosciuti da soli: su Linux i pulsanti di Windows diventano i loro equivalenti (PowerShell → Terminale, Task Mgr → Monitor di sistema...).
+- **Email**: posta in arrivo di Gmail, Outlook, iCloud, Yahoo, Libero o qualsiasi IMAP, in sola lettura. Gli account si scelgono dal pannello.
+- **QR code** per collegare un telefono o un tablet: lo inquadri ed è fatta.
 - Ollama, riepilogo GitHub, TODO sulle Memo di Windows, orologio.
 - Pagine di scorciatoie per Blender e DaVinci Resolve (da aggiungere alla barra dal pannello), che mettono in primo piano il programma prima di premere i tasti.
 
@@ -59,6 +61,7 @@ Lo trovi dal menu dell'icona (Windows) o nella finestra del server (Linux / `--c
 
 ## Sul tablet
 
+0. Il modo più veloce: inquadra il **QR code** che compare nel terminale all'avvio o in cima al pannello di controllo.
 1. Apri il **link diretto**: il codice viene salvato e non te lo chiede più. In alternativa apri l'indirizzo e scrivi il codice.
 2. Chrome: menu > *Aggiungi a schermata Home*. Dall'icona la dock si apre a schermo intero.
 3. Per tenere lo schermo acceso: *Opzioni sviluppatore > Rimani attivo* (con il tablet in carica).
@@ -66,6 +69,8 @@ Lo trovi dal menu dell'icona (Windows) o nella finestra del server (Linux / `--c
 5. Per aprire direttamente una pagina aggiungi il suo id all'indirizzo: `http://IP:8787/#media`, `#claude`, `#blender`.
 
 In alto a destra trovi la rete del PC (nome del Wi-Fi e segnale, oppure Ethernet), la velocità di download/upload e la RAM.
+
+**Batteria:** dopo un minuto senza tocchi la dock aggiorna i dati più lentamente (stato del PC ogni 15 secondi invece di 2); dopo 10 minuti parte il salvaschermo, nero con un orologio fioco, e smette del tutto di chiamare il PC. Un tocco la riattiva, senza premere il pulsante sotto. Tempi in `services.json` → `tablet`. Il consumo maggiore resta lo schermo: abbassa la luminosità di Android, e se il tablet resta in carica usa *Rimani attivo* solo quando serve.
 
 Pulsanti con la barra arancione in basso (es. BLOCCA): vanno **tenuti premuti** circa 1 secondo.
 I pulsanti volume e annulla si ripetono se tieni premuto.
@@ -83,6 +88,7 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | CLAUDE | chat, sessioni di Claude Code, dettatura, scrittura sul PC |
 | DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, mutare una persona |
 | GAMES | Hearthstone, World of Tanks, League of Legends (pallino verde se aperti; se già aperto lo porta in primo piano) |
+| EMAIL *(disponibile)* | posta in arrivo degli account scelti dal pannello, lettura dei messaggi, apertura della webmail sul PC |
 | SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app |
 | BLENDER, DAVINCI *(disponibili: aggiungile alla barra dal pannello)* | scorciatoie dei due programmi |
 
@@ -96,6 +102,29 @@ Doppio clic sull'icona **Command Dock** (desktop o vicino all'orologio): si apre
 - **Salva sul tablet**: il tablet si aggiorna da solo. *Predefinite* torna alle pagine e ai pulsanti di `dock.json`.
 
 Le scelte finiscono in `config/layout.json`. I pulsanti aggiunti in seguito a `dock.json` compaiono in fondo alla pagina. Il pannello risponde solo da questo PC (`http://127.0.0.1:8787/control`), non dal tablet né dalla rete. Le pagine disponibili si raggiungono solo dai pulsanti che le aprono (`{ "type": "page" }`): per le scorciatoie di Blender e DaVinci aggiungi le loro pagine alla barra. Il contenuto delle pagine si modifica sempre in `config/dock.json`.
+
+### Collegare un telefono o un tablet (QR)
+
+In cima al pannello c'è un QR code con il link diretto (indirizzo + codice di accesso): inquadralo con la fotocamera e la dock si apre già collegata. Se il PC è collegato sia via cavo sia in Wi-Fi scegli la rete su cui sta il telefono. Lo stesso QR compare nel terminale all'avvio (`DOCK_NO_QR=1` per nasconderlo).
+
+### Email
+
+Nella sezione **Email** del pannello scegli il servizio e collega l'account; poi aggiungi la pagina **EMAIL** alla barra. Sul tablet vedi la posta in arrivo (le non lette in evidenza), apri un messaggio per leggerlo e con **APRI SUL PC** apri la webmail nel browser del PC. Con più account, **CAMBIA** passa da uno all'altro.
+
+La dock legge la posta in **sola lettura**: non segna le email come lette, non le sposta e non le cancella.
+
+| Servizio | Cosa serve |
+|---|---|
+| Gmail | verifica in due passaggi attiva e una [password per le app](https://myaccount.google.com/apppasswords) |
+| iCloud | una password specifica per le app dal tuo Apple ID |
+| Yahoo | una password per le app dalle impostazioni di sicurezza |
+| Libero | la password della casella |
+| Altro (IMAP) | server IMAP, porta (993 con SSL, 143 con STARTTLS) e password |
+| Outlook / Hotmail | Microsoft accetta solo OAuth2: registra un'app gratuita sul [portale Azure](https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade) (*Personal Microsoft accounts*, *Allow public client flows* attivo), incolla il Client ID nel pannello e completa l'accesso con il codice su microsoft.com/devicelogin |
+
+**Account di scuola o di lavoro (Microsoft 365, es. università):** li gestisce l'organizzazione, che di solito non permette di registrare app né di leggere la posta da programmi esterni. L'alternativa più semplice è l'inoltro automatico verso una casella Gmail (in Outlook web: Impostazioni → Posta → Inoltro), se l'organizzazione lo consente, e poi collegare Gmail.
+
+Le credenziali restano in `data/mail.json`, cifrate, solo su questo PC: il tablet non le riceve mai.
 
 ### Discord
 
@@ -282,9 +311,9 @@ Opzioni del pulsante: `"sub"` (seconda riga), `"color"`, `"repeat": true` (ripet
 
 **Tasti:** `CTRL SHIFT ALT WIN`, `A`–`Z`, `0`–`9`, `F1`–`F24`, `ENTER ESC TAB SPACE BACKSPACE DELETE INSERT HOME END PAGEUP PAGEDOWN UP DOWN LEFT RIGHT`, `NUM0`–`NUM9`, `PRINTSCREEN MINUS EQUALS COMMA PERIOD SLASH BACKQUOTE`, `MEDIA_PLAY_PAUSE VOLUME_UP`…
 
-**Widget:** `system`, `nowplaying`, `queue`, `github`, `todo`, `clock`, `claude`, `chat` (con `"provider": "ollama"`), `discord`, `screens`.
+**Widget:** `system`, `nowplaying`, `queue`, `github`, `todo`, `clock`, `claude`, `chat` (con `"provider": "ollama"`), `discord`, `screens`, `mail`.
 
-**Icone:** `home music apps code github chat sparkle check cube film lock play pause stop next prev volup voldown mute shuffle repeat folder terminal cpu camera desktop robot refresh save keyboard undo redo fullscreen cut flag back add close send trash power bolt mic link headset gamepad cards tank sword layout live camoff window target`.
+**Icone:** `home music apps code github chat sparkle check cube film lock play pause stop next prev volup voldown mute shuffle repeat folder terminal cpu camera desktop robot refresh save keyboard undo redo fullscreen cut flag back add close send trash power bolt mic link headset gamepad cards tank sword layout live camoff window target mail attach`.
 
 ### GitHub
 
@@ -322,12 +351,23 @@ sudo apt install playerctl xdotool wtype pulseaudio-utils
 
 ## Sicurezza
 
+### Dati cifrati
+
+Password, token e client secret non stanno in chiaro sul disco:
+
+- `data/mail.json` e `data/discord.json` sono cifrati (AES-256-GCM);
+- nel `.env` i segreti (`GITHUB_TOKEN`, `ANTHROPIC_API_KEY` e ogni variabile che finisce in `TOKEN`, `SECRET`, `PASSWORD`, `_KEY`) vengono cifrati al primo avvio: diventano `enc:v1:...`. Per cambiarne uno scrivi il valore nuovo in chiaro: al riavvio viene cifrato di nuovo. `DOCK_TOKEN` resta leggibile perché è il codice che il tablet ti chiede.
+
+La chiave sta nel **portachiavi del sistema**: su Linux il Secret Service (KWallet su KDE, GNOME Keyring), letto con `secret-tool` (pacchetto `libsecret`); su Windows la DPAPI del tuo account. Se il portachiavi non c'è, la chiave finisce in `data/secret-key` (permessi 600) e il log lo segnala. `data/secret-key.json` dice dove sta.
+
+La cifratura protegge i file copiati, sincronizzati o finiti per sbaglio in un backup o su GitHub; non protegge da un programma che gira con il tuo account mentre la sessione è aperta. Se perdi la chiave (portachiavi azzerato), i dati cifrati non si recuperano: ricollega gli account dal pannello.
+
 - Il server accetta solo connessioni dalla rete locale.
 - Ogni API richiede il codice di accesso (cookie o header `X-Dock-Token`).
 - Il tablet invia solo "ho premuto il pulsante X della pagina Y": l'azione la legge il server da `dock.json`. Dal tablet non si possono lanciare comandi arbitrari.
 - **Attenzione:** "scrivi sul PC" e le sessioni di Claude Code danno al tablet la possibilità di scrivere testo sul PC e di far lavorare Claude Code nelle tue cartelle. Per questo il codice di accesso è importante: non condividerlo.
 - L'estensione del browser è accettata solo da questo PC (`127.0.0.1`) e con un header che i siti web non possono inviare.
-- Token GitHub, chiave API di Claude e Ollama restano sul PC.
+- Token GitHub, chiave API di Claude, Ollama e le credenziali email restano sul PC.
 - Sotto Windows la regola firewall vale solo per le reti **private**. Se la tua rete è "Pubblica", il tablet potrebbe non collegarsi: impostala come privata.
 
 ## Problemi comuni
@@ -341,6 +381,7 @@ sudo apt install playerctl xdotool wtype pulseaudio-utils
 | Coda vuota | La coda c'è solo con l'estensione (Apple Music, YouTube Music, playlist di YouTube) |
 | Scorciatoie ignorate in un programma | Windows blocca i tasti simulati verso programmi avviati come amministratore |
 | "App non trovata" | Correggi il percorso in `config/apps.json` |
+| Errore "Chiave di cifratura non trovata nel portachiavi" | KWallet / GNOME Keyring chiuso: sbloccalo e riavvia la dock |
 | Claude Code non risponde | Prova `claude -p "ciao"` in un terminale: deve funzionare senza login interattivo |
 | Temperatura CPU N/D su Windows | Avvia LibreHardwareMonitor con *Remote Web Server* e imposta `libreHardwareMonitorUrl` |
 
@@ -350,6 +391,7 @@ sudo apt install playerctl xdotool wtype pulseaudio-utils
 npm install     # anche le dipendenze di sviluppo
 npm test        # test di server, musica, azioni, configurazione e compatibilità ES5 del client
 npm run server  # avvia solo il server, senza lo script di avvio
+# DOCK_CONFIG_DIR / DOCK_DATA_DIR: cartelle alternative di configurazione e dati (prove)
 ```
 
 ```text
@@ -357,9 +399,10 @@ server/
   index.js            API Express
   config.js           lettura JSON con commenti e ricarica a caldo
   auth.js             solo rete locale + codice di accesso
+  secrets.js          cifratura dei dati sensibili (chiave nel portachiavi del sistema)
   actions/            motore delle azioni e macro
   platform/           windows.js (+ windows-helper.ps1), linux.js, keys.js
-  services/           system, media, bridge, claude, claudecode, voice, github, ollama, todo
+  services/           system, media, bridge, claude, claudecode, voice, github, ollama, todo, mail, pairing (QR)
 public/               client per il tablet (ES5, niente framework)
 extension/            estensione del browser per Apple Music web e YouTube
 config/defaults/      configurazione predefinita

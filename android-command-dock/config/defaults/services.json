@@ -76,6 +76,18 @@
     "sync": { "enabled": true, "remote": "origin", "branch": "dock-todo", "intervalSec": 120 }
   },
 
+  // Batteria del tablet/telefono
+  "tablet": {
+    // dopo quanti secondi senza tocchi gli aggiornamenti rallentano
+    "idleAfterSec": 60,
+    // stato del PC: ogni quanti secondi da toccato e a riposo
+    "pollSec": 2,
+    "idlePollSec": 15,
+    // dopo quanti minuti senza tocchi parte il salvaschermo (schermo nero, nessun
+    // aggiornamento; un tocco lo riattiva). 0 = mai
+    "sleepAfterMin": 10
+  },
+
   "voice": {
     // Trascrizione sul PC degli audio registrati dal tablet (opzionale).
     // Esempio con whisper.cpp:

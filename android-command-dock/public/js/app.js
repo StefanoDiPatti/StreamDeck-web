@@ -281,9 +281,62 @@
       // Alcuni browser cambiano viewport senza evento resize (barra indirizzi, fullscreen)
       if (app.page && stage.clientWidth + 'x' + stage.clientHeight !== app.lastSize) layout();
       paintTiles(s);
-      app.pollTimer = setTimeout(poll, 2000);
+      schedulePoll();
     }, 6000);
   }
+
+  // ------------------------------------------------------------ risparmio energetico
+  // Stato del PC ogni pollSec se toccato da poco, ogni idlePollSec a riposo,
+  // mai con il salvaschermo o con la pagina in secondo piano.
+  function powerCfg() {
+    return (app.cfg && app.cfg.power) || { idleAfterSec: 60, pollSec: 2, idlePollSec: 15, sleepAfterMin: 10 };
+  }
+  function schedulePoll() {
+    clearTimeout(app.pollTimer);
+    var st = D.power.state();
+    if (st === 'asleep' || D.power.isHidden()) return;   // riparte da wake / visibilitychange
+    var p = powerCfg();
+    app.pollTimer = setTimeout(poll, (st === 'active' ? p.pollSec : p.idlePollSec) * 1000);
+  }
+  // Primo tocco dopo il riposo: aggiorna subito
+  D.power.onWake(function () { if (app.cfg && app.online !== false) { clearTimeout(app.pollTimer); poll(); } });
+
+  // Salvaschermo: nero (sui telefoni OLED i pixel neri sono spenti), orologio fioco
+  // che si sposta ogni minuto. Il tocco che lo chiude non preme il pulsante sotto.
+  var saver = D.el('div', 'saver hidden');
+  saver.innerHTML = '<div class="saver-clock"></div><div class="saver-hint">tocca per riattivare</div>';
+  document.body.appendChild(saver);
+  var saverClock = saver.firstChild;
+  function paintSaver() {
+    var n = new Date();
+    D.setText(saverClock, D.pad(n.getHours()) + ':' + D.pad(n.getMinutes()));
+    var v = { w: window.innerWidth || 800, h: window.innerHeight || 480 };
+    saverClock.style.left = Math.round(Math.random() * Math.max(0, v.w - 220)) + 'px';
+    saverClock.style.top = Math.round(Math.random() * Math.max(0, v.h - 120)) + 'px';
+  }
+  function sleepNow() {
+    if (D.power.state() === 'asleep') return;
+    D.power.sleep();
+    clearTimeout(app.pollTimer);
+    paintSaver();
+    D.removeClass(saver, 'hidden');
+  }
+  function wakeUp(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    if (D.power.state() !== 'asleep') return;
+    D.addClass(saver, 'waking');
+    D.power.wake();
+    // resta sopra ancora un attimo: il "click" che segue il tocco non deve arrivare ai pulsanti
+    setTimeout(function () { D.addClass(saver, 'hidden'); D.removeClass(saver, 'waking'); }, 700);
+  }
+  saver.addEventListener('touchstart', wakeUp, false);
+  saver.addEventListener('mousedown', wakeUp, false);
+  saver.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); }, false);
+  setInterval(function () {
+    var mins = powerCfg().sleepAfterMin;
+    if (D.power.state() === 'asleep') { paintSaver(); return; }
+    if (mins > 0 && app.cfg && !D.$('pair').offsetParent && new Date().getTime() - D.power.lastInput() > mins * 60000) sleepNow();
+  }, 30000);
 
   function loadConfig() {
     D.api.get('/api/config', function (err, cfg) {
@@ -296,6 +349,7 @@
       }
       var first = !app.cfg;
       app.cfg = cfg;
+      D.power.configure(cfg.power);
       app.version = cfg.version;
       document.title = cfg.dock.title;
       buildTabs();
@@ -363,9 +417,11 @@
   document.addEventListener('focusout', function () { setTimeout(layout, 350); }, false);
 
   // Se il browser sospende la pagina (schermo spento), riprende subito al ritorno
-  document.addEventListener('visibilitychange', function () {
-    if (!document.hidden && app.cfg) { app.failures = 0; poll(); }
-  }, false);
+  function onVisibility() {
+    if (!D.power.isHidden() && app.cfg && D.power.state() !== 'asleep') { app.failures = 0; poll(); }
+  }
+  document.addEventListener('visibilitychange', onVisibility, false);
+  document.addEventListener('webkitvisibilitychange', onVisibility, false);
 
   // ------------------------------------------------------------ avvio
   function boot() {
