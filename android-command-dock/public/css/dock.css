@@ -547,3 +547,12 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .sc-wbtn svg.ic { width: 20px; height: 20px; margin-top: 10px; }
 .sc-wbtn[data-act="minimize"] { right: 50px; }
 .sc-wbtn[data-act="maximize"] { right: 6px; }
+
+/* TODO: stato della sincronizzazione con GitHub */
+.todo-sync { display: inline-block; margin-left: 10px; padding: 0 8px; height: 22px; line-height: 22px; border-radius: 11px; background: #1d2732; color: #8b9bab; font-size: 11px; vertical-align: 1px; }
+.todo-sync svg.ic { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; fill: currentColor; }
+.todo-sync i { font-style: normal; font-weight: bold; letter-spacing: .5px; }
+.todo-sync.ok { color: #3fb950; }
+.todo-sync.err { color: #ff7b72; background: #3a1d1d; }
+.todo-sync.hidden { display: none; }
+.todo-sync.pressed { background: #26354a; }

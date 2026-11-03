@@ -70,7 +70,10 @@
     "source": "memo",
     // Memo in cui aggiungere le nuove attività (parte del titolo, cioè la prima riga in grassetto).
     // Vuoto = la memo modificata più di recente. Dal tablet puoi scegliere toccando il titolo.
-    "memo": ""
+    "memo": "",
+    // TODO uguali su tutti i PC: copia su GitHub nel branch "dock-todo" della repo della dock
+    // (stesse credenziali git del push). Su Linux la lista arriva con i gruppi delle Memo.
+    "sync": { "enabled": true, "remote": "origin", "branch": "dock-todo", "intervalSec": 120 }
   },
 
   "voice": {

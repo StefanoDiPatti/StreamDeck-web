@@ -18,6 +18,7 @@ const github = require('./services/github');
 const ollama = require('./services/ollama');
 const claude = require('./services/claude');
 const todo = require('./services/todo');
+const todosync = require('./services/todosync');
 const bridge = require('./services/bridge');
 const voice = require('./services/voice');
 const appsState = require('./services/apps');
@@ -294,7 +295,7 @@ app.post('/api/github/open', route(async function (req) {
 }));
 
 // source "memo" = Memo di Windows, "local" = lista della dock
-function todoState() { return { items: todo.list(), source: todo.source(), notes: todo.notes(), voiceServer: voice.available() }; }
+function todoState() { return { items: todo.list(), source: todo.source(), notes: todo.notes(), voiceServer: voice.available(), sync: todosync.status() }; }
 app.get('/api/todo', route(todoState));
 app.post('/api/todo/add', route(async function (req) {
   const b = req.body || {};
@@ -303,6 +304,7 @@ app.post('/api/todo/add', route(async function (req) {
 }));
 app.post('/api/todo/toggle', route(async function (req) { await todo.toggle((req.body || {}).id); return todoState(); }));
 app.post('/api/todo/remove', route(async function (req) { await todo.remove((req.body || {}).id); return todoState(); }));
+app.post('/api/todo/sync', route(async function () { await todosync.sync(); return todoState(); }));
 app.post('/api/todo/clear', route(async function () { const removed = await todo.clearDone(); return Object.assign(todoState(), { removed: removed }); }));
 
 app.get('/api/ollama/models', route(function () { return ollama.models(); }));
@@ -412,7 +414,7 @@ function start() {
     log.error('platform', 'avvio backend ' + platform.name + ' non riuscito: ' + e.message);
   }).then(function () {
     return new Promise(function (resolve, reject) {
-      const server = app.listen(PORT, HOST, function () { banner(); resolve(server); });
+      const server = app.listen(PORT, HOST, function () { banner(); todosync.start(); resolve(server); });
       server.on('error', function (e) {
         if (e.code === 'EADDRINUSE') log.error('server', 'La porta ' + PORT + ' è già in uso: la dock è già avviata? (cambia PORT nel .env)');
         reject(e);
@@ -423,6 +425,7 @@ function start() {
 
 function shutdown() {
   system.stop();
+  todosync.stop();
   platform.shutdown();
   process.exit(0);
 }

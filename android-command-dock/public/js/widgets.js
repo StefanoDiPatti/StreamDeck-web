@@ -491,6 +491,23 @@ var Widgets = (function () {
       });
     });
     var title = header(root, 'TODO', clearBtn);
+    // nuvoletta: TODO sincronizzati con GitHub (verde ok, rossa errore). Tocco = sincronizza ora
+    var syncEl = el('span', 'todo-sync');
+    title.appendChild(syncEl);
+    function renderSync() {
+      var s = state.sync;
+      syncEl.className = 'todo-sync' + (!s || !s.enabled ? ' hidden' : s.ok === false ? ' err' : s.ok ? ' ok' : '');
+      syncEl.innerHTML = Icons.html('cloud') + '<i>' + (s && s.ok === false ? 'sync' : 'GitHub') + '</i>';
+    }
+    D.bindTap(syncEl, {
+      onTap: function () {
+        if (state.sync && state.sync.ok === false) app.toast('Sincronizzazione: ' + state.sync.message, 'err');
+        send('/api/todo/sync', {}, function (r) {
+          if (r.sync && r.sync.ok) app.toast('TODO sincronizzati con GitHub', 'ok');
+          else if (r.sync && r.sync.ok === false) app.toast(r.sync.message, 'err');
+        });
+      }
+    });
     var form = el('div', 'todo-form');
     var mic = el('div', 'todo-mic');
     mic.innerHTML = Icons.html('mic');
@@ -515,9 +532,10 @@ var Widgets = (function () {
     }
     function render() {
       list.innerHTML = '';
-      var open = 0, group = null, memo = state.source === 'memo';
+      var open = 0, group = null;
       var tn = targetNote();
-      var groups = memo && state.notes.length > 0;
+      // gruppi = le memo di Windows (anche su Linux, arrivano con la sincronizzazione)
+      var groups = state.notes.length > 0;
       for (var i = 0; i < state.items.length; i++) {
         var it = state.items[i];
         if (!it.done) open++;
@@ -586,6 +604,8 @@ var Widgets = (function () {
       state.notes = d.notes || [];
       state.source = d.source || 'local';
       state.voiceServer = !!d.voiceServer;
+      state.sync = d.sync || null;
+      renderSync();
       render();
     }
     function add() {
@@ -595,7 +615,7 @@ var Widgets = (function () {
       input.value = '';
       input.blur();
       send('/api/todo/add', { text: text, note: tn ? tn.id : '' }, function () {
-        app.toast(state.source === 'memo' && tn ? 'Aggiunta a ' + tn.title : 'Aggiunta', 'ok');
+        app.toast(tn ? 'Aggiunta a ' + tn.title : 'Aggiunta', 'ok');
       });
     }
     D.bindTap(addBtn, { onTap: add });

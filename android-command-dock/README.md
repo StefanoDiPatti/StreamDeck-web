@@ -158,6 +158,18 @@ L'app Memo non vede le modifiche fatte da fuori, quindi a ogni modifica dal tabl
 
 Con più memo, tocca un titolo nel TODO per scegliere dove aggiungere. In `services.json` → `todo`: `"memo"` sceglie la memo predefinita (parte del titolo), `"source": "local"` torna alla lista interna della dock (usata anche su Linux).
 
+### TODO uguali su Windows e Linux (GitHub)
+
+I TODO vengono copiati in `todo.json` sul branch **`dock-todo`** della repo della dock (la tua repo privata), con le stesse credenziali git che usi per il push: niente token da configurare e nessun commit nella cronologia del codice.
+
+- La copia si aggiorna pochi secondi dopo ogni modifica dal tablet e ogni 2 minuti. Così prende anche le modifiche fatte direttamente nelle Memo, e quelle arrivate dall'altro PC.
+- Su Windows la fonte restano le Memo: le aggiunte, le spunte e le cancellazioni fatte su Linux vengono scritte nelle Memo (il testo di una riga si cambia solo nell'app Memo). Su Linux la lista locale riceve tutto, divisa per memo come su Windows.
+- Se la stessa attività cambia su entrambi i PC tra una sincronizzazione e l'altra, vince il PC che sincronizza.
+- Al primo avvio su un PC nuovo la dock adotta la lista che trova su GitHub. Su Linux la lista locale precedente viene salvata in `data/todo.prima-della-sync.json`.
+- La nuvoletta **GitHub** nel titolo del TODO è verde quando è tutto sincronizzato e rossa in caso di errore: toccala per sincronizzare subito o leggere l'errore.
+
+Impostazioni in `services.json` → `todo.sync`: `enabled`, `remote` (`origin`), `branch` (`dock-todo`), `intervalSec`.
+
 ### Dettatura vocale
 
 Il pulsante 🎤 accanto al campo di testo (Claude e TODO):

@@ -1,6 +1,8 @@
 // Lista TODO.
 // Fonte "memo" (predefinita su Windows): le Memo di Windows (Sticky Notes), vedi sticky.js.
 // Fonte "local": lista della dock in data/todo.json (scrittura atomica: file temporaneo + rename).
+// La lista locale tiene anche i gruppi (i titoli delle memo), così su Linux i TODO
+// sincronizzati da Windows (todosync.js) restano divisi come nelle Memo.
 // Si sceglie in services.json -> todo.source; senza Memo si usa sempre la lista locale.
 const fs = require('fs');
 const path = require('path');
@@ -12,9 +14,26 @@ const sticky = require('./sticky');
 const FILE = path.join(paths.DATA_DIR, 'todo.json');
 const SEED = path.join(paths.DEFAULTS_DIR, 'todo.json');
 let items = null;
+let groups = null;
+const listeners = [];
 
 function settings() { return (config.get('services') || {}).todo || {}; }
-function useMemo() { return settings().source !== 'local' && sticky.available(); }
+let forced = null; // per i test
+function useMemo() { if (forced) return forced === 'memo'; return settings().source !== 'local' && sticky.available(); }
+
+// Avvisa chi ascolta (la sincronizzazione) che la lista è cambiata da qui.
+function changed() { listeners.forEach(function (fn) { try { fn(); } catch (e) { /* ignora */ } }); }
+
+function clean(i) {
+  return {
+    id: String(i.id || crypto.randomBytes(4).toString('hex')),
+    text: String(i.text).slice(0, 300),
+    done: !!i.done,
+    priority: i.priority === 'high' ? 'high' : 'normal',
+    note: i.note ? String(i.note) : '',
+    group: i.group ? String(i.group) : ''
+  };
+}
 
 function load() {
   if (items) return items;
@@ -22,16 +41,15 @@ function load() {
   try { raw = JSON.parse(fs.readFileSync(FILE, 'utf8')); } catch (e) {
     try { raw = JSON.parse(fs.readFileSync(SEED, 'utf8')); } catch (e2) { raw = { items: [] }; }
   }
-  items = (raw.items || []).filter(function (i) { return i && i.text; }).map(function (i) {
-    return { id: String(i.id || crypto.randomBytes(4).toString('hex')), text: String(i.text), done: !!i.done, priority: i.priority === 'high' ? 'high' : 'normal' };
-  });
+  items = (raw.items || []).filter(function (i) { return i && i.text; }).map(clean);
+  groups = (raw.groups || []).filter(function (g) { return g && g.id; }).map(function (g) { return { id: String(g.id), title: String(g.title || '') }; });
   return items;
 }
 
 function save() {
   if (!fs.existsSync(paths.DATA_DIR)) fs.mkdirSync(paths.DATA_DIR, { recursive: true });
   const tmp = FILE + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify({ items: items }, null, 2));
+  fs.writeFileSync(tmp, JSON.stringify({ groups: groups || [], items: items }, null, 2));
   fs.renameSync(tmp, FILE);
 }
 
@@ -43,29 +61,99 @@ function find(id) {
   throw err;
 }
 
+function groupTitle(noteId) {
+  load();
+  const g = (groups || []).filter(function (x) { return x.id === noteId; })[0];
+  return g ? g.title : '';
+}
+
 const local = {
   list: function () { return load(); },
-  add: function (text, priority) {
+  notes: function () { load(); return (groups || []).slice(); },
+  add: function (text, priority, noteId, id) {
     text = String(text || '').trim().slice(0, 200);
     if (!text) throw Object.assign(new Error('Testo vuoto'), { code: 'BAD_REQUEST' });
-    const item = { id: crypto.randomBytes(4).toString('hex'), text: text, done: false, priority: priority === 'high' ? 'high' : 'normal' };
-    load().push(item);
+    load();
+    if (!noteId && groups && groups.length) noteId = groups[0].id;
+    const item = clean({ id: id, text: text, priority: priority, note: noteId || '', group: groupTitle(noteId) });
+    items.push(item);
     save();
     return item;
   },
   toggle: function (id) { const it = find(id); it.done = !it.done; save(); return it; },
   remove: function (id) { find(id); items = load().filter(function (i) { return i.id !== String(id); }); save(); return true; },
-  clearDone: function () { const before = load().length; items = load().filter(function (i) { return !i.done; }); save(); return before - items.length; }
+  clearDone: function () { const before = load().length; items = load().filter(function (i) { return !i.done; }); save(); return before - items.length; },
+  // Sostituisce tutto (prima sincronizzazione su un PC: si adotta la lista condivisa)
+  replace: function (snap) {
+    items = (snap.items || []).filter(function (i) { return i && i.text; }).map(clean);
+    groups = (snap.groups || []).map(function (g) { return { id: String(g.id), title: String(g.title || '') }; });
+    save();
+  },
+  setGroups: function (list) { load(); groups = list.map(function (g) { return { id: String(g.id), title: String(g.title || '') }; }); save(); },
+  setText: function (id, text) { const it = find(id); it.text = String(text).slice(0, 300); save(); }
 };
+
+// Stato attuale in formato neutro, uguale per Memo e lista locale (per la sincronizzazione).
+function snapshot() {
+  const memo = useMemo();
+  const list = memo ? sticky.list() : local.list();
+  return {
+    groups: memo ? sticky.notes() : local.notes(),
+    items: list.map(function (i) { return { id: i.id, text: i.text, done: !!i.done, note: i.note || '', group: i.group || '' }; })
+  };
+}
+
+// Applica una modifica arrivata dall'altro PC: { type: add|toggle|remove|text, item }
+async function applyRemote(op) {
+  const it = op.item;
+  if (useMemo()) {
+    if (op.type === 'add') {
+      const target = sticky.notes().filter(function (n) { return n.id === it.note; })[0];
+      const added = await sticky.add(it.text, target ? target.id : '', target ? '' : (it.group || settings().memo));
+      if (it.done) await sticky.toggle(added.id);
+      return;
+    }
+    if (op.type === 'toggle') {
+      const cur = sticky.list().filter(function (x) { return x.id === it.id; })[0];
+      if (cur && cur.done !== it.done) await sticky.toggle(it.id);
+      return;
+    }
+    if (op.type === 'remove') { await sticky.remove(it.id); return; }
+    return; // il testo di una riga delle Memo si cambia solo nell'app Memo
+  }
+  if (op.type === 'add') {
+    const item = local.add(it.text, 'normal', it.note, it.id);
+    if (it.done) local.toggle(item.id);
+    return;
+  }
+  if (op.type === 'toggle') { const cur = find(it.id); if (cur.done !== it.done) local.toggle(it.id); return; }
+  if (op.type === 'remove') { local.remove(it.id); return; }
+  if (op.type === 'text') local.setText(it.id, it.text);
+}
+
+function wrap(fn) {
+  return async function () {
+    const r = await fn.apply(null, arguments);
+    changed();
+    return r;
+  };
+}
 
 module.exports = {
   source: function () { return useMemo() ? 'memo' : 'local'; },
-  notes: function () { return useMemo() ? sticky.notes() : []; },
+  notes: function () { return useMemo() ? sticky.notes() : local.notes(); },
   list: function () { return useMemo() ? sticky.list() : local.list(); },
   // Le operazioni sulle Memo sono asincrone (chiudono e riaprono l'app): ritornano sempre una Promise.
-  add: async function (text, priority, noteId) { return useMemo() ? sticky.add(text, noteId, settings().memo) : local.add(text, priority); },
-  toggle: async function (id) { return useMemo() ? sticky.toggle(id) : local.toggle(id); },
-  remove: async function (id) { return useMemo() ? sticky.remove(id) : local.remove(id); },
-  clearDone: async function () { return useMemo() ? sticky.clearDone() : local.clearDone(); },
-  _reset: function () { items = null; }
+  add: wrap(async function (text, priority, noteId) { return useMemo() ? sticky.add(text, noteId, settings().memo) : local.add(text, priority, noteId); }),
+  toggle: wrap(async function (id) { return useMemo() ? sticky.toggle(id) : local.toggle(id); }),
+  remove: wrap(async function (id) { return useMemo() ? sticky.remove(id) : local.remove(id); }),
+  clearDone: wrap(async function () { return useMemo() ? sticky.clearDone() : local.clearDone(); }),
+  snapshot: snapshot,
+  applyRemote: applyRemote,
+  // prima sincronizzazione su un PC con la lista locale
+  replaceLocal: function (snap) { if (!useMemo()) local.replace(snap); },
+  setLocalGroups: function (list) { if (!useMemo()) local.setGroups(list); },
+  onChange: function (fn) { listeners.push(fn); },
+  _reset: function () { items = null; groups = null; },
+  _setSource: function (src) { forced = src; }
 };
