@@ -608,6 +608,119 @@ function Get-MonitorNames {
   return $out
 }
 
+# --- App desktop di Claude via UI Automation (accessibilità di Windows).
+#     Non serve il primo piano: scrive nel campo e preme i pulsanti come un
+#     lettore di schermo. I nomi cambiano con la lingua dell'app: liste IT/EN.
+$script:uia = $false
+$script:SEND = @('Invia', 'Send', 'Envoyer', 'Senden', 'Enviar')
+$script:STOP = @('Interrompi', 'Stop', 'Arrêter', 'Stoppen', 'Detener')
+$script:TRUST_CANCEL = @('Annulla', 'Cancel')
+function Use-Uia {
+  if (-not $script:uia) { Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes; $script:uia = $true }
+}
+function Get-ClaudeWin {
+  Use-Uia
+  $p = Get-Process claude -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+  if ($null -eq $p) { return $null }
+  return [System.Windows.Automation.AutomationElement]::FromHandle($p.MainWindowHandle)
+}
+function Find-Uia($root, [string]$prop, $value, [string]$type) {
+  $AE = [System.Windows.Automation.AutomationElement]
+  $conds = @()
+  if ($prop -eq 'name') { $conds += New-Object System.Windows.Automation.PropertyCondition ($AE::NameProperty, [string]$value) }
+  if ($type) { $conds += New-Object System.Windows.Automation.PropertyCondition ($AE::ControlTypeProperty, [System.Windows.Automation.ControlType]::$type) }
+  $cond = if ($conds.Count -eq 1) { $conds[0] } else { New-Object System.Windows.Automation.AndCondition ([System.Windows.Automation.Condition[]]$conds) }
+  return $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)
+}
+function First-Button($win, $names) {
+  foreach ($n in $names) {
+    $b = Find-Uia $win 'name' $n 'Button'
+    if ($b.Count -gt 0) { return $b[0] }
+  }
+  return $null
+}
+# Cosa mostra l'app: titolo della sessione aperta, campo di scrittura, Invia/Interrompi.
+function Get-ClaudeView {
+  $win = Get-ClaudeWin
+  if ($null -eq $win) { return @{ app = $false } }
+  $titles = @()
+  foreach ($tb in (Find-Uia $win '' $null 'ToolBar')) {
+    foreach ($t in $tb.FindAll([System.Windows.Automation.TreeScope]::Children, (New-Object System.Windows.Automation.PropertyCondition ([System.Windows.Automation.AutomationElement]::ControlTypeProperty, [System.Windows.Automation.ControlType]::Text)))) {
+      if ($t.Current.Name) { $titles += [string]$t.Current.Name }
+    }
+  }
+  $ed = Find-Uia $win 'name' 'Prompt' 'Edit'
+  $draft = ''
+  if ($ed.Count -gt 0) { try { $draft = [string]$ed[0].GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value } catch { } }
+  return @{
+    app = $true
+    titles = $titles
+    composer = ($ed.Count -gt 0)
+    draft = $draft.Trim()
+    canSend = ($null -ne (First-Button $win $script:SEND))
+    busy = ($null -ne (First-Button $win $script:STOP))
+    trustDialog = ($null -ne (First-Button $win @("Considera attendibile l'area di lavoro", 'Trust workspace')))
+  }
+}
+function Assert-ClaudeTitle($win, [string]$title) {
+  if (-not $title) { return }
+  foreach ($tb in (Find-Uia $win '' $null 'ToolBar')) {
+    if ((Find-Uia $tb 'name' $title 'Text').Count -gt 0) { return }
+  }
+  throw 'sull''app di Claude e'' aperta un''altra sessione'
+}
+# Scrive il testo nel campo e preme Invia. title = sessione attesa ('' = nuova sessione).
+function Send-ClaudeText($req) {
+  $win = Get-ClaudeWin
+  if ($null -eq $win) { throw 'app di Claude chiusa' }
+  Assert-ClaudeTitle $win ([string]$req.title)
+  $ed = Find-Uia $win 'name' 'Prompt' 'Edit'
+  if ($ed.Count -eq 0) { throw 'campo di scrittura non trovato' }
+  $vp = $ed[0].GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern)
+  if (([string]$vp.Current.Value).Trim()) { throw 'sul PC c''e'' gia'' del testo scritto in questa sessione' }
+  # Invia compare solo con del testo; Interrompi vuol dire che Claude sta lavorando
+  if ($null -ne (First-Button $win $script:STOP)) { throw 'occupata' }
+  $vp.SetValue([string]$req.text)
+  $send = $null
+  for ($i = 0; $i -lt 8 -and $null -eq $send; $i++) { Start-Sleep -Milliseconds 200; $send = First-Button $win $script:SEND }
+  if ($null -eq $send) { $vp.SetValue(''); throw 'pulsante Invia non disponibile' }
+  $send.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+  return @{ sent = $true }
+}
+function Stop-ClaudeTurn($req) {
+  $win = Get-ClaudeWin
+  if ($null -eq $win) { throw 'app di Claude chiusa' }
+  Assert-ClaudeTitle $win ([string]$req.title)
+  $b = First-Button $win $script:STOP
+  if ($null -eq $b) { return @{ stopped = $false } }
+  $b.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+  return @{ stopped = $true }
+}
+# Preme "Nuova sessione in <progetto>[, aggiunta a <sezione>]" nella barra laterale:
+# lo stesso pulsante che si usa sul PC, solo per progetti già nell'app.
+function New-ClaudeSessionIn($req) {
+  $win = Get-ClaudeWin
+  if ($null -eq $win) { throw 'app di Claude chiusa' }
+  $group = [string]$req.group; $project = [string]$req.project
+  foreach ($b in (Find-Uia $win '' $null 'Button')) {
+    $n = [string]$b.Current.Name
+    $ok = $false
+    if ($group) { $ok = ($n -match '^(Nuova sessione|New session) in .+, (aggiunta a|added to) (.+)$') -and ($Matches[3] -eq $group) }
+    else { $ok = ($n -eq ('Nuova sessione in ' + $project)) -or ($n -eq ('New session in ' + $project)) }
+    if ($ok) { $b.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke(); return @{ clicked = $n } }
+  }
+  throw 'pulsante per la nuova sessione non trovato nella barra laterale'
+}
+
+# Chiude la richiesta "area di lavoro attendibile" senza accettarla.
+function Close-ClaudeTrust {
+  $win = Get-ClaudeWin
+  if ($null -eq $win) { return @{ closed = $false } }
+  $b = First-Button $win $script:TRUST_CANCEL
+  if ($null -ne $b) { $b.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke(); return @{ closed = $true } }
+  return @{ closed = $false }
+}
+
 function Open-Target($req) {
   $psi = New-Object System.Diagnostics.ProcessStartInfo
   $psi.FileName = [string]$req.file
@@ -646,6 +759,11 @@ while ($true) {
       'netinfo' { $data = Get-NetInfo }
       'windows' { $data = @{ list = @([DockWindows]::List()) } }
       'closewin' { $data = @{ closed = [DockWindows]::Close([string]$req.process, [string]$req.title) } }
+      'claudeview' { $data = Get-ClaudeView }
+      'claudesend' { $data = Send-ClaudeText $req }
+      'claudestop' { $data = Stop-ClaudeTurn $req }
+      'claudetrust' { $data = Close-ClaudeTrust }
+      'claudenew' { $data = New-ClaudeSessionIn $req }
       'monitors' {
         if (-not $script:screens) { throw 'schermi non disponibili' }
         $data = @{ list = @([DockScreens]::Monitors()); names = @(Get-MonitorNames) }

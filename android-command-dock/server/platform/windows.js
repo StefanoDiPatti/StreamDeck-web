@@ -9,6 +9,8 @@ const common = require('./common');
 
 const input = new PsHelper('input');
 const query = new PsHelper('query');
+// App desktop di Claude (UI Automation, lenta): parte solo al primo uso
+const ui = new PsHelper('ui');
 
 const MEDIA_VK = {
   play_pause: 0xB3, next: 0xB0, previous: 0xB1, stop: 0xB2,
@@ -214,8 +216,15 @@ module.exports = {
     return input.call('winact', { hwnd: Number(id), action: String(action) }, 5000);
   },
 
+  // ---- App desktop di Claude
+  claudeView: function () { return ui.call('claudeview', {}, 15000); },
+  claudeSend: function (title, text) { return ui.call('claudesend', { title: title || '', text: String(text) }, 20000); },
+  claudeStop: function (title) { return ui.call('claudestop', { title: title || '' }, 15000); },
+  claudeCloseTrust: function () { return ui.call('claudetrust', {}, 15000); },
+  claudeNewIn: function (group, project) { return ui.call('claudenew', { group: group || '', project: project || '' }, 15000); },
+
   cpuTemp: function () { return Promise.resolve(null); },
   gpuFallback: function () { return Promise.resolve(null); },
 
-  shutdown: function () { input.stop(); query.stop(); }
+  shutdown: function () { input.stop(); query.stop(); ui.stop(); }
 };

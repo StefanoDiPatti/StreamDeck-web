@@ -191,4 +191,28 @@ function readTranscript(f, st, bytes, max) {
   return compact.slice(-(max || 60));
 }
 
-module.exports = { list: list, get: get, transcript: transcript, _internals: { messageText: messageText, cleanUserText: cleanUserText } };
+// "busy" se Claude sta lavorando sulla sessione (ultimo messaggio non concluso e file
+// scritto da poco), altrimenti "idle". Legge solo la coda del file.
+const stateCache = {};
+function state(id) {
+  const f = findFile(id);
+  if (!f) return 'idle';
+  let st;
+  try { st = fs.statSync(f); } catch (e) { return 'idle'; }
+  const hit = stateCache[f];
+  const age = Date.now() - st.mtimeMs;
+  if (hit && hit.mtime === st.mtimeMs) return hit.open && age < 10 * 60000 ? 'busy' : 'idle';
+  const lines = parseLines(readSlice(f, Math.max(0, st.size - 64 * 1024), Math.min(64 * 1024, st.size)), st.size > 64 * 1024);
+  let open = false;
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const e = lines[i];
+    if (e.isSidechain || (e.type !== 'user' && e.type !== 'assistant')) continue;
+    // turno concluso: risposta finale di Claude; aperto: messaggio dell'utente o strumenti in corso
+    open = !(e.type === 'assistant' && e.message && e.message.stop_reason === 'end_turn');
+    break;
+  }
+  stateCache[f] = { mtime: st.mtimeMs, open: open };
+  return open && age < 10 * 60000 ? 'busy' : 'idle';
+}
+
+module.exports = { list: list, get: get, transcript: transcript, state: state, _internals: { messageText: messageText, cleanUserText: cleanUserText } };

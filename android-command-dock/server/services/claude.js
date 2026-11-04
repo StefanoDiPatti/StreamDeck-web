@@ -168,7 +168,10 @@ function runCli(opts) {
   const args = ['-p', '--output-format', 'json'];
   if (opts.appendSystem) args.push('--append-system-prompt', s.system);
   if (s.cliModel) args.push('--model', s.cliModel);
-  if (s.cliPermissionMode) args.push('--permission-mode', s.cliPermissionMode);
+  // In -p nessuno può approvare i permessi: senza una modalità le scritture vengono negate.
+  // Per una sessione esistente vale la sua modalità (es. "auto" dell'app desktop).
+  const mode = opts.permissionMode || s.cliPermissionMode || (opts.resumeId || opts.cwd ? 'auto' : '');
+  if (mode) args.push('--permission-mode', mode);
   if (opts.resumeId) args.push('--resume', opts.resumeId);
   const cwd = common.expandPath(opts.cwd || s.cliCwd) || os.homedir();
   if (!fs.existsSync(cwd)) return Promise.reject(new Error('La cartella della sessione non esiste più: ' + cwd));
@@ -274,12 +277,32 @@ function sendCode(id, text, cwd) {
   busy[lock] = true;
   const job = makeJob('code', id || null);
   job.prompt = text;
-  runCli({ text: text, resumeId: id || null, cwd: cwd }).then(function (r) {
+  runCli({ text: text, resumeId: id || null, cwd: cwd, permissionMode: desktopMode(id) }).then(function (r) {
     finish(job, null, r.reply, r.sessionId);
   }).catch(function (e) {
     finish(job, e);
   }).then(function () { delete busy[lock]; });
   return { jobId: job.id, kind: 'code', chatId: id || null };
+}
+
+// Modalità dei permessi scelta nell'app desktop per questa sessione (se c'è)
+function desktopMode(cliId) {
+  if (!cliId) return '';
+  try {
+    const all = require('./desktopcode').list().sections || [];
+    for (const sec of all) for (const x of sec.sessions) if (x.cli === cliId) return x.permissionMode || '';
+  } catch (e) { /* app non installata */ }
+  return '';
+}
+
+// Continua una sessione dalla riga di comando (app desktop chiusa). Ritorna una Promise.
+function resumeCode(cliId, text, cwd, permissionMode) {
+  if (!hasCli()) return Promise.reject(bad('Claude Code non è installato su questo PC', 'UNAVAILABLE'));
+  const lock = 'code:' + cliId;
+  if (busy[lock]) return Promise.reject(bad('Claude Code sta ancora lavorando su questa sessione', 'BUSY'));
+  busy[lock] = true;
+  return runCli({ text: text, resumeId: cliId, cwd: cwd, permissionMode: permissionMode || '' })
+    .finally(function () { delete busy[lock]; });
 }
 
 function getJob(id) {
@@ -359,6 +382,7 @@ async function chatSync(sessionId, text) {
 module.exports = {
   info: info,
   send: send,
+  resumeCode: resumeCode,
   getJob: getJob,
   listChats: listChats,
   getChat: getChat,

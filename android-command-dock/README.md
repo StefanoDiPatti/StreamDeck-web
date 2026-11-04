@@ -5,7 +5,7 @@ Il PC (Windows o Linux) fa girare un piccolo server Node.js. Il tablet apre una 
 
 - Pulsanti configurabili da JSON: avvio app, scorciatoie, testo, macro, comandi.
 - **Musica**: copertina, coda dei brani, salto a un punto del brano, shuffle e ripeti, volume dell'app (non di sistema). Funziona con Apple Music web e YouTube tramite un'estensione del browser, e con le app desktop (Spotify, VLC, ...). Giochi e launcher (es. Riot Client) vengono ignorati.
-- **Claude**: chat della dock e sessioni di Claude Code del PC, continuabili dal tablet, con dettatura vocale. Il tablet può anche fare da tastiera remota e scrivere nella finestra scelta sul PC.
+- **Claude**: le sessioni di Claude Code dell'app desktop, divise per le sezioni del PC. Scrivi (o detti) dal tablet e il messaggio parte dall'app sul PC, con i permessi della sessione.
 - Monitor PC: CPU, RAM, GPU NVIDIA (uso, temperatura, VRAM), rete.
 - **Discord**: server, canali vocali, chi c'è in stanza e chi parla, mute e audio, webcam e Go Live.
 - **Games**: avvio di Hearthstone, World of Tanks e League of Legends (se il gioco è già aperto lo porta in primo piano).
@@ -171,13 +171,20 @@ Il volume **di sistema** sta nella pagina APP (VOL -, MUTE, VOL +).
 
 ## Claude
 
-La pagina CLAUDE ha due elenchi:
+La pagina CLAUDE ha due elenchi.
 
-- **CHAT**: conversazioni create dalla dock. Usano Claude Code (il tuo abbonamento) oppure la Claude API se metti `ANTHROPIC_API_KEY` nel `.env`. Restano salvate in `data/claude-chats.json`. Per eliminarne una tieni premuto il cestino.
-- **CLAUDE CODE**: le sessioni di Claude Code salvate sul PC (anche quelle avviate dal terminale o dall'app). Le apri, le leggi e le continui dal tablet. Con **NUOVA** ne avvii una in una cartella di progetto.
+**CLAUDE CODE**: le sessioni dell'app desktop di Claude, raggruppate per le sezioni della barra laterale del PC (le tue cartelle, come UNIMI o Personal Projects). Le sessioni fuori dalle sezioni sono raggruppate per progetto, come nell'app. Il pallino arancione indica che Claude sta lavorando.
 
-Le risposte possono richiedere minuti: puoi cambiare pagina, la risposta arriva lo stesso.
-Per far modificare file a Claude Code dal tablet senza conferme imposta `cliPermissionMode: "acceptEdits"` in `config/services.json`. Di default gli strumenti che chiedono conferma vengono negati.
+- **Scrivere**: quello che scrivi (o detti) parte dall'**app sul PC**, nella sessione vera. La dock apre la sessione nell'app, mette il testo nel campo e preme Invia tramite l'accessibilità di Windows: lo vedi comparire subito sul PC, senza riavviare l'app, e valgono i permessi scelti per quella sessione (es. *Auto*).
+- Se Claude sta lavorando, il messaggio resta **in coda** e parte quando ha finito.
+- Se sul PC c'è già del testo scritto in quella sessione, la dock non lo sovrascrive e te lo dice.
+- **STOP** (tieni premuto) ferma Claude; **SUL PC** apre la sessione nell'app.
+- **+** accanto a una sezione apre una nuova sessione lì, con lo stesso pulsante "Nuova sessione in …" della barra laterale. Le nuove sessioni da link esterno chiederebbero ogni volta di confermare la cartella sul PC, e quella conferma resta tua.
+- Mentre la dock scrive, l'app sul PC passa a quella sessione.
+
+Senza l'app aperta (e su Linux) la dock continua la sessione con `claude -p --resume`, usando la modalità di permessi della sessione (`auto` se non ne ha una). Prima le scritture venivano negate. Le modifiche fatte così compaiono nell'app quando riapri la sessione.
+
+**CHAT**: le conversazioni fatte dal tablet (Claude Code con il tuo abbonamento, o la Claude API con `ANTHROPIC_API_KEY` nel `.env`), salvate in `data/claude-chats.json`. Le chat di claude.ai e della scheda Chat dell'app stanno sul tuo account, non sul PC: la dock non le può leggere senza entrare nel tuo account.
 
 ### TODO e Memo di Windows
 
@@ -206,10 +213,6 @@ Il pulsante 🎤 accanto al campo di testo (Claude e TODO):
 1. usa il riconoscimento vocale del browser, se presente;
 2. altrimenti, se hai configurato una trascrizione sul PC (`services.json` → `voice`, ad esempio whisper.cpp), apre il registratore di Android e il PC trascrive l'audio;
 3. altrimenti apre la tastiera: tocca il microfono della tastiera di Android (Google voice typing), che è il modo più affidabile su Android 4.
-
-### Tablet come tastiera remota
-
-Con **SCRIVI SUL PC** il testo (scritto o dettato) viene digitato nella finestra scelta: finestra attiva, app Claude, VS Code, Terminale o PowerShell. Con **INVIO ↵** attivo, dopo il testo preme anche Invio. Così puoi dettare un messaggio a Claude Code aperto in un terminale, o a qualsiasi chat sul PC. L'elenco delle finestre si modifica in `services.json` → `claude.remoteTargets`.
 
 ## Configurazione
 

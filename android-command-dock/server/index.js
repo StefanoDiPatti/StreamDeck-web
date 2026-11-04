@@ -19,6 +19,7 @@ const ollama = require('./services/ollama');
 const claude = require('./services/claude');
 const todo = require('./services/todo');
 const todosync = require('./services/todosync');
+const desktopcode = require('./services/desktopcode');
 const bridge = require('./services/bridge');
 const voice = require('./services/voice');
 const appsState = require('./services/apps');
@@ -349,6 +350,14 @@ app.post('/api/ollama/chat', route(function (req) {
 app.get('/api/claude/info', route(function () {
   return Object.assign(claude.info(), { voiceServer: voice.available() });
 }));
+// Sessioni dell'app desktop di Claude (come nella barra laterale del PC)
+app.get('/api/claude/desktop', route(function () { return desktopcode.list(); }));
+app.get('/api/claude/desktop/session', route(function (req) { return desktopcode.get(String(req.query.id || '')); }));
+app.post('/api/claude/desktop/send', route(function (req) { const b = req.body || {}; return desktopcode.send(String(b.id || ''), b.text); }));
+app.post('/api/claude/desktop/cancel', route(function (req) { return desktopcode.cancel(String((req.body || {}).id || '')); }));
+app.post('/api/claude/desktop/stop', route(function (req) { return desktopcode.stop(String((req.body || {}).id || '')); }));
+app.post('/api/claude/desktop/open', route(function (req) { return desktopcode.openOnPc(String((req.body || {}).id || '')); }));
+app.post('/api/claude/desktop/new', route(function (req) { const b = req.body || {}; return desktopcode.create(String(b.section || ''), b.text); }));
 app.get('/api/claude/chats', route(function () { return claude.listChats(); }));
 app.get('/api/claude/chat', route(function (req) { return claude.getChat(String(req.query.kind || ''), String(req.query.id || '')); }));
 app.post('/api/claude/send', route(function (req) {

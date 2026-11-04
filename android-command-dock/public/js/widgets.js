@@ -790,78 +790,96 @@ var Widgets = (function () {
   }
 
   // ------------------------------------------------------------ CLAUDE
-  // Elenco chat (della dock e sessioni di Claude Code del PC), conversazione,
-  // dettatura vocale e modalità "scrivi sul PC" (tablet come tastiera remota).
-  var CL = { mode: D.store.get('cl:mode', 'dock'), sel: D.store.get('cl:sel', null), jobs: {}, info: null };
+  // CLAUDE CODE: le sessioni dell'app desktop di Claude, raggruppate per le
+  // sezioni della barra laterale del PC. Scrivi qui e il messaggio parte
+  // dall'app sul PC (lo vedi comparire lì), come se scrivessi alla tastiera.
+  // CHAT: le chat fatte dal tablet (quelle di claude.ai restano sul tuo account).
+  var CL = { mode: D.store.get('cl:mode2', 'code'), sel: D.store.get('cl:sel2', null), info: null, closed: {} };
 
   function claudeWidget(root, tile, app) {
     D.addClass(root, 'w-claude');
     root.innerHTML =
       '<div class="cl-side">' +
-        '<div class="cl-tabs"><div class="cl-tab" data-mode="dock">CHAT</div><div class="cl-tab" data-mode="code">CLAUDE CODE</div></div>' +
-        '<div class="cl-new">' + Icons.html('add') + '<span>NUOVA</span></div>' +
+        '<div class="cl-tabs"><div class="cl-tab" data-mode="code">CLAUDE CODE</div><div class="cl-tab" data-mode="dock">CHAT</div></div>' +
         '<div class="cl-list scroll"></div>' +
       '</div>' +
       '<div class="cl-main">' +
         '<div class="cl-head"><div class="cl-title"></div><div class="cl-sub"></div>' +
-          '<div class="cl-tools"><div class="sbtn cl-refresh">' + Icons.html('refresh') + '</div><div class="sbtn cl-del">' + Icons.html('trash') + '</div></div></div>' +
+          '<div class="cl-tools">' +
+            '<div class="sbtn cl-stop">' + Icons.html('stop') + '<span>STOP</span></div>' +
+            '<div class="sbtn cl-open">' + Icons.html('desktop') + '<span>SUL PC</span></div>' +
+            '<div class="sbtn cl-refresh">' + Icons.html('refresh') + '</div>' +
+            '<div class="sbtn cl-del">' + Icons.html('trash') + '</div>' +
+          '</div></div>' +
         '<div class="cl-log scroll"></div>' +
         '<div class="cl-compose">' +
-          '<div class="cl-bar">' +
-            '<div class="cl-dest on" data-dest="claude">' + Icons.html('sparkle') + '<span>A CLAUDE</span></div>' +
-            '<div class="cl-dest" data-dest="pc">' + Icons.html('keyboard') + '<span>SCRIVI SUL PC</span></div>' +
-            '<select class="cl-target"></select>' +
-            '<select class="cl-project"></select>' +
-            '<div class="cl-enter on">INVIO ↵</div>' +
-          '</div>' +
           '<div class="cl-mic">' + Icons.html('mic') + '</div>' +
-          '<textarea class="cl-input" rows="2"></textarea>' +
+          '<textarea class="cl-input" rows="3"></textarea>' +
           '<div class="cl-send">' + Icons.html('send') + '</div>' +
         '</div>' +
       '</div>';
 
     function q(cls) { return root.querySelector('.' + cls); }
     var list = q('cl-list'), log = q('cl-log'), input = q('cl-input'), send = q('cl-send'), mic = q('cl-mic');
-    var titleEl = q('cl-title'), subEl = q('cl-sub'), del = q('cl-del'), targetSel = q('cl-target'), projSel = q('cl-project');
-    var enterBtn = q('cl-enter');
-    var tabs = root.querySelectorAll('.cl-tab'), dests = root.querySelectorAll('.cl-dest');
-    var data = null, chat = null, dest = 'claude', sendEnter = true, alive = true, pollTimer = null;
+    var titleEl = q('cl-title'), subEl = q('cl-sub'), del = q('cl-del'), stopBtn = q('cl-stop'), openBtn = q('cl-open');
+    var tabs = root.querySelectorAll('.cl-tab');
+    var desk = null, dock = null, chat = null, alive = true, lastLog = '', pendingNew = null;
 
-    function persist() { D.store.set('cl:mode', CL.mode); D.store.set('cl:sel', CL.sel); }
+    function persist() { D.store.set('cl:mode2', CL.mode); D.store.set('cl:sel2', CL.sel); }
+    function ago(ms) { return ms ? D.ago(new Date(ms).toISOString()) : ''; }
 
     // ---- elenco
+    function sectionOf(id) {
+      for (var i = 0; desk && i < desk.sections.length; i++) if (desk.sections[i].id === id) return desk.sections[i];
+      return null;
+    }
     function renderList() {
       for (var t = 0; t < tabs.length; t++) D.toggleClass(tabs[t], 'on', tabs[t].getAttribute('data-mode') === CL.mode);
-      list.innerHTML = '';
-      if (!data) return;
-      var items = CL.mode === 'dock' ? data.dock : data.code;
-      if (!items.length) {
-        list.appendChild(el('div', 'empty', CL.mode === 'dock' ? 'Nessuna chat. Premi NUOVA.' : 'Nessuna sessione di Claude Code trovata sul PC.'));
+      var html = '';
+      if (CL.mode === 'code') {
+        if (!desk) html = '<div class="empty">Carico le sessioni…</div>';
+        else if (!desk.available) html = '<div class="empty">App desktop di Claude non trovata su questo PC.</div>';
+        else {
+          for (var s = 0; s < desk.sections.length; s++) {
+            var sec = desk.sections[s], closed = !!CL.closed[sec.id];
+            html += '<div class="cl-sec' + (closed ? ' closed' : '') + '" data-sec="' + D.esc(sec.id) + '"><span class="cl-sec-n">' + D.esc(sec.name) + '</span>' +
+              (desk.appUi ? '<span class="cl-sec-add" data-add="' + D.esc(sec.id) + '">' + Icons.html('add') + '</span>' : '') + '</div>';
+            if (closed) continue;
+            for (var i = 0; i < sec.sessions.length; i++) {
+              var it = sec.sessions[i];
+              var on = CL.sel && CL.sel.kind === 'code' && CL.sel.id === it.id;
+              html += '<div class="cl-row' + (on ? ' on' : '') + (it.busy ? ' busy' : '') + '" data-code="' + D.esc(it.id) + '">' +
+                '<div class="cl-row-t">' + (it.busy ? '<i class="cl-dot"></i>' : '') + D.esc(it.title) + '</div>' +
+                '<div class="cl-row-m">' + D.esc((sec.project ? '' : it.project + ' · ') + (it.queued ? 'messaggio in coda' : it.busy ? 'al lavoro…' : ago(it.updatedAt))) + '</div></div>';
+            }
+          }
+        }
+      } else {
+        html = '<div class="cl-row cl-newchat' + (CL.sel && CL.sel.kind === 'dock' && !CL.sel.id ? ' on' : '') + '" data-dock="">' + Icons.html('add') + '<b>NUOVA CHAT</b></div>';
+        var items = dock ? dock.dock : [];
+        for (var k = 0; k < items.length; k++) {
+          var c = items[k];
+          html += '<div class="cl-row' + (CL.sel && CL.sel.kind === 'dock' && CL.sel.id === c.id ? ' on' : '') + (c.busy ? ' busy' : '') + '" data-dock="' + D.esc(c.id) + '">' +
+            '<div class="cl-row-t">' + D.esc(c.title) + '</div><div class="cl-row-m">' + D.esc(c.busy ? 'sta rispondendo…' : ago(c.updatedAt)) + '</div></div>';
+        }
+        html += '<div class="cl-note">Qui ci sono le chat fatte dal tablet. Quelle di claude.ai e dell\'app restano sul tuo account e non sono leggibili dal PC.</div>';
       }
-      for (var i = 0; i < items.length; i++) (function (it) {
-        var row = el('div', 'cl-row' + (CL.sel && CL.sel.id === it.id ? ' on' : '') + (it.busy ? ' busy' : ''));
-        row.innerHTML = '<div class="cl-row-t">' + D.esc(it.title) + '</div>' +
-          '<div class="cl-row-m">' + D.esc((it.project ? it.project + ' · ' : '') + D.ago(new Date(it.updatedAt).toISOString())) +
-          (it.busy ? ' · al lavoro…' : '') + '</div>';
-        D.bindTap(row, { scrollable: true, onTap: function () { select({ kind: CL.mode, id: it.id }); } });
-        list.appendChild(row);
-      })(items[i]);
-      // progetti per una nuova sessione di Claude Code
-      projSel.innerHTML = '';
-      for (var p = 0; p < data.projects.length; p++) {
-        var o = el('option', '', data.projects[p].name);
-        o.value = data.projects[p].cwd;
-        projSel.appendChild(o);
-      }
-      var lastProj = D.store.get('cl:proj', '');
-      for (var k = 0; k < projSel.options.length; k++) if (projSel.options[k].value === lastProj) projSel.selectedIndex = k;
+      list.innerHTML = html;
     }
     function loadList() {
-      D.api.get('/api/claude/chats', function (err, d) {
-        if (err || !alive) return;
-        data = d;
-        renderList();
-      }, 15000);
+      if (CL.mode === 'code') {
+        D.api.get('/api/claude/desktop', function (err, d) {
+          if (err || !alive) return;
+          desk = d;
+          if (CL.mode === 'code') renderList();
+        }, 15000);
+      } else {
+        D.api.get('/api/claude/chats', function (err, d) {
+          if (err || !alive) return;
+          dock = d;
+          if (CL.mode === 'dock') renderList();
+        }, 15000);
+      }
     }
 
     // ---- conversazione
@@ -869,172 +887,178 @@ var Widgets = (function () {
       if (m.role === 'user') return D.esc(m.text).replace(/\n/g, '<br>');
       return D.richText(m.text).replace(/(^|<br>)\[ ([^\]<]{1,80}) \](?=<br>|$)/g, '$1<span class="tool">$2</span>');
     }
-    function renderChat() {
-      log.innerHTML = '';
-      var isNew = !CL.sel;
-      D.toggleClass(root, 'cl-newcode', isNew && CL.mode === 'code' && dest === 'claude');
-      if (isNew) {
-        setText(titleEl, CL.mode === 'dock' ? 'Nuova chat' : 'Nuova sessione di Claude Code');
-        setText(subEl, CL.mode === 'dock'
-          ? (CL.info && CL.info.available ? (CL.info.backend === 'api' ? 'Claude API · ' + CL.info.model : 'Claude Code (il tuo abbonamento)') : 'Claude non configurato')
-          : 'Scegli il progetto qui sotto: Claude Code lavorerà in quella cartella');
-        del.style.display = 'none';
-        var pending = CL.jobs[CL.mode + ':new'];
-        if (pending && CL.pendingText) {
-          var u = el('div', 'msg user');
-          u.innerHTML = D.esc(CL.pendingText).replace(/\n/g, '<br>');
-          log.appendChild(u);
-          var w = el('div', 'msg assistant typing');
-          w.innerHTML = '<i></i><i></i><i></i>' + (pending.elapsed ? '<span class="cl-elapsed">' + pending.elapsed + 's</span>' : '');
-          log.appendChild(w);
-          return;
-        }
-        log.appendChild(el('div', 'empty', CL.mode === 'dock'
-          ? 'Scrivi o detta un messaggio. Con "SCRIVI SUL PC" il testo viene digitato nella finestra scelta, come da una tastiera.'
-          : 'Puoi anche aprire una sessione esistente dall\'elenco e continuarla dal tablet.'));
-        return;
-      }
-      if (!chat) { log.appendChild(el('div', 'empty', 'Caricamento…')); return; }
-      setText(titleEl, chat.title);
-      setText(subEl, chat.subtitle || '');
-      del.style.display = chat.kind === 'dock' ? '' : 'none';
-      for (var i = 0; i < chat.messages.length; i++) {
-        var m = chat.messages[i];
-        var b = el('div', 'msg ' + m.role + (m.error ? ' error' : ''));
-        b.innerHTML = bubbleHtml(m);
-        log.appendChild(b);
-      }
-      var job = CL.jobs[CL.sel.kind + ':' + CL.sel.id];
-      if (chat.busy || job) {
-        var t = el('div', 'msg assistant typing');
-        t.innerHTML = '<i></i><i></i><i></i>' + (job && job.elapsed ? '<span class="cl-elapsed">' + job.elapsed + 's</span>' : '');
-        log.appendChild(t);
-      }
-      if (chat.kind === 'code' && chat.canSend === false) log.appendChild(el('div', 'empty err', 'La cartella di questa sessione non esiste più: si può solo leggere.'));
-      log.scrollTop = log.scrollHeight;
-    }
-    function loadChat() {
-      if (!CL.sel) { chat = null; renderChat(); return; }
+    function renderChat(force) {
       var sel = CL.sel;
-      D.api.get('/api/claude/chat?kind=' + encodeURIComponent(sel.kind) + '&id=' + encodeURIComponent(sel.id), function (err, d) {
+      var busy = !!(chat && chat.busy);
+      var queued = chat && chat.queue && chat.queue.state === 'waiting' ? chat.queue : null;
+      D.toggleClass(stopBtn, 'hidden', !(sel && sel.kind === 'code' && busy && desk && desk.appUi));
+      D.toggleClass(openBtn, 'hidden', !(sel && sel.kind === 'code'));
+      D.toggleClass(del, 'hidden', !(sel && sel.kind === 'dock' && sel.id));
+      var html = '';
+      if (!sel) {
+        setText(titleEl, CL.mode === 'code' ? 'Claude Code' : 'Chat');
+        setText(subEl, '');
+        html = '<div class="empty">' + (CL.mode === 'code' ? 'Scegli una sessione a sinistra: quello che scrivi qui arriva nella sessione aperta nell\'app sul PC. Con + accanto a una sezione ne apri una nuova.' : 'Scegli una chat o premi NUOVA CHAT.') + '</div>';
+      } else if (sel.kind === 'new') {
+        var sec = sectionOf(sel.section);
+        setText(titleEl, 'Nuova sessione');
+        setText(subEl, sec ? 'in ' + sec.name + (sec.sessions[0] ? ' · ' + sec.sessions[0].project : '') : '');
+        html = pendingNew ? '<div class="msg user">' + D.esc(pendingNew).replace(/\n/g, '<br>') + '</div><div class="msg assistant typing"><i></i><i></i><i></i></div>'
+          : '<div class="empty">Scrivi il primo messaggio: la sessione si apre nell\'app sul PC, nella stessa cartella delle altre di questa sezione.</div>';
+      } else if (sel.kind === 'dock' && !sel.id) {
+        setText(titleEl, 'Nuova chat');
+        setText(subEl, CL.info && CL.info.available ? (CL.info.backend === 'api' ? 'Claude API · ' + CL.info.model : 'Claude Code (il tuo abbonamento)') : '');
+        html = '<div class="empty">Scrivi o detta un messaggio.</div>';
+      } else if (!chat) {
+        html = '<div class="empty">Caricamento…</div>';
+      } else {
+        setText(titleEl, chat.title);
+        var sub = sel.kind === 'code'
+          ? chat.project + (queued ? ' · messaggio in coda: parte quando Claude finisce' : busy ? ' · Claude sta lavorando…' : '')
+          : (chat.subtitle || '');
+        setText(subEl, sub);
+        for (var i = 0; i < chat.messages.length; i++) {
+          var m = chat.messages[i];
+          html += '<div class="msg ' + m.role + (m.error ? ' error' : '') + '">' + bubbleHtml(m) + '</div>';
+        }
+        if (queued) html += '<div class="msg user queued">' + D.esc(queued.text).replace(/\n/g, '<br>') + '<span class="cl-q">in coda</span></div>';
+        if (busy || queued) html += '<div class="msg assistant typing"><i></i><i></i><i></i></div>';
+        if (chat.queue && chat.queue.state === 'error') html += '<div class="msg assistant error">Non inviato: ' + D.esc(chat.queue.error) + '</div>';
+      }
+      if (force || html !== lastLog) {
+        var atEnd = log.scrollTop + log.clientHeight >= log.scrollHeight - 40;
+        log.innerHTML = html;
+        lastLog = html;
+        if (force || atEnd) log.scrollTop = log.scrollHeight;
+      }
+    }
+    function loadChat(force) {
+      var sel = CL.sel;
+      if (!sel || sel.kind === 'new' || (sel.kind === 'dock' && !sel.id)) { chat = null; renderChat(force); return; }
+      var url = sel.kind === 'code' ? '/api/claude/desktop/session?id=' + encodeURIComponent(sel.id)
+        : '/api/claude/chat?kind=dock&id=' + encodeURIComponent(sel.id);
+      D.api.get(url, function (err, d) {
         if (!alive || CL.sel !== sel) return;
-        if (err) { chat = null; CL.sel = null; persist(); renderChat(); app.toast(err.message, 'err'); return; }
+        if (err) { chat = null; CL.sel = null; persist(); renderChat(true); app.toast(err.message, 'err'); return; }
+        var wasBusy = chat && (chat.busy || (chat.queue && chat.queue.state === 'waiting'));
         chat = d;
-        renderChat();
+        renderChat(force);
+        if (wasBusy && !d.busy) loadList();
       }, 15000);
     }
     function select(sel) {
       CL.sel = sel;
-      if (sel) CL.mode = sel.kind;
+      if (sel) CL.mode = sel.kind === 'dock' ? 'dock' : 'code';
       chat = null;
+      pendingNew = null;
       persist();
       renderList();
-      renderChat();
-      loadChat();
+      renderChat(true);
+      loadChat(true);
     }
 
     // ---- invio
-    function watchJob(key, jobId) {
-      CL.jobs[key] = { id: jobId, elapsed: 0 };
-      renderChat();
-    }
-    function poll() {
-      var keys = [];
-      for (var k in CL.jobs) if (CL.jobs.hasOwnProperty(k)) keys.push(k);
-      for (var i = 0; i < keys.length; i++) (function (key) {
-        var j = CL.jobs[key];
-        D.api.get('/api/claude/job?id=' + j.id, function (err, r) {
-          if (!alive) return;
-          if (err) { delete CL.jobs[key]; return; }
-          j.elapsed = r.elapsed;
-          if (r.status === 'running') {
-            if (CL.sel ? key === CL.sel.kind + ':' + CL.sel.id : key === CL.mode + ':new') renderChat();
-            return;
-          }
-          delete CL.jobs[key];
-          if (r.status === 'error') app.toast(r.error, 'err');
-          // Claude Code può restituire un nuovo id di sessione: si passa a quello
-          // se l'utente sta ancora guardando quella conversazione.
-          var watching = CL.sel ? key === 'code:' + CL.sel.id : (key === 'code:new' && CL.mode === 'code');
-          if (r.kind === 'code' && r.chatId && watching) {
-            CL.sel = { kind: 'code', id: r.chatId };
-            persist();
-          }
-          if (key === 'code:new') CL.pendingText = null;
-          loadList();
-          loadChat();
-        });
-      })(keys[i]);
-    }
-    function sendToClaude(text) {
-      var body = { kind: CL.mode, id: CL.sel ? CL.sel.id : null, text: text };
-      if (!CL.sel && CL.mode === 'code') {
-        if (!projSel.value) { app.toast('Scegli un progetto', 'err'); return false; }
-        body.cwd = projSel.value;
-        D.store.set('cl:proj', projSel.value);
-      }
+    function post(url, body, done) {
       D.addClass(send, 'busy');
-      D.api.post('/api/claude/send', body, function (err, r) {
+      D.api.post(url, body, function (err, r) {
         D.removeClass(send, 'busy');
-        if (err) { app.toast(err.message, 'err'); input.value = text; return; }
-        var key = r.kind + ':' + (r.chatId || 'new');
-        if (!CL.sel || CL.sel.id !== r.chatId) {
-          CL.sel = r.chatId ? { kind: r.kind, id: r.chatId } : null;
-          persist();
-        }
-        if (chat && CL.sel) chat.messages.push({ role: 'user', text: text });
-        if (!CL.sel) CL.pendingText = text;
-        watchJob(key, r.jobId);
-        loadList();
-        if (CL.sel) loadChat();
-      }, 20000);
-      return true;
-    }
-    function sendToPc(text) {
-      var focus = targetSel.value;
-      D.addClass(send, 'busy');
-      D.api.post('/api/remote/type', { text: text, focus: focus, enter: sendEnter }, function (err, r) {
-        D.removeClass(send, 'busy');
-        if (err) { app.toast(err.message, 'err'); input.value = text; return; }
-        app.toast(r.message, 'ok');
-      }, 20000);
-      return true;
+        done(err, r);
+      }, 60000);
     }
     function submit() {
       var text = input.value.replace(/^\s+|\s+$/g, '');
+      var sel = CL.sel;
       if (!text) { input.focus(); return; }
-      stopListening();
+      if (!sel) { app.toast(CL.mode === 'code' ? 'Scegli prima una sessione' : 'Scegli una chat', 'err'); return; }
+      voice.stop();
       input.value = '';
       input.blur();
-      if (dest === 'pc') sendToPc(text); else sendToClaude(text);
+      if (sel.kind === 'code') {
+        post('/api/claude/desktop/send', { id: sel.id, text: text }, function (err) {
+          if (err) { input.value = text; return app.toast(err.message, 'err'); }
+          app.toast('Inviato alla sessione sul PC', 'ok');
+          loadChat(true);
+          loadList();
+        });
+      } else if (sel.kind === 'new') {
+        pendingNew = text;
+        renderChat(true);
+        post('/api/claude/desktop/new', { section: sel.section, text: text }, function (err) {
+          pendingNew = null;
+          if (err) { input.value = text; renderChat(true); return app.toast(err.message, 'err'); }
+          app.toast('Sessione aperta sul PC', 'ok');
+          // la nuova sessione compare nell'elenco dopo pochi secondi
+          var tries = 0;
+          var known = {};
+          var sec = sectionOf(sel.section);
+          for (var i = 0; sec && i < sec.sessions.length; i++) known[sec.sessions[i].id] = true;
+          (function look() {
+            D.api.get('/api/claude/desktop', function (e2, d) {
+              if (!alive || CL.sel !== sel) return;
+              if (!e2) {
+                desk = d;
+                var s2 = sectionOf(sel.section);
+                for (var j = 0; s2 && j < s2.sessions.length; j++) if (!known[s2.sessions[j].id]) return select({ kind: 'code', id: s2.sessions[j].id });
+              }
+              if (++tries < 10) setTimeout(look, 1500); else renderList();
+            });
+          })();
+        });
+      } else {
+        post('/api/claude/send', { kind: 'dock', id: sel.id || null, text: text }, function (err, r) {
+          if (err) { input.value = text; return app.toast(err.message, 'err'); }
+          if (!sel.id && r.chatId) { CL.sel = { kind: 'dock', id: r.chatId }; persist(); }
+          loadList();
+          loadChat(true);
+        });
+      }
     }
 
     // ---- voce
     var voice = dictation({ mic: mic, input: input, app: app, serverVoice: function () { return !!(CL.info && CL.info.voiceServer); } });
-    function stopListening() { voice.stop(); }
 
-    // ---- controlli
+    // ---- tocchi
     for (var t = 0; t < tabs.length; t++) (function (tab) {
-      D.bindTap(tab, { onTap: function () { CL.mode = tab.getAttribute('data-mode'); CL.sel = null; chat = null; persist(); renderList(); renderChat(); } });
+      D.bindTap(tab, { onTap: function () { CL.mode = tab.getAttribute('data-mode'); CL.sel = null; chat = null; persist(); renderList(); renderChat(true); loadList(); } });
     })(tabs[t]);
-    for (var d2 = 0; d2 < dests.length; d2++) (function (b) {
-      D.bindTap(b, {
-        onTap: function () {
-          dest = b.getAttribute('data-dest');
-          for (var i = 0; i < dests.length; i++) D.toggleClass(dests[i], 'on', dests[i] === b);
-          D.toggleClass(root, 'cl-pc', dest === 'pc');
-          input.placeholder = dest === 'pc' ? 'Testo da scrivere sul PC…' : 'Scrivi o detta a Claude…';
-          renderChat();
-        }
-      });
-    })(dests[d2]);
-    D.bindTap(enterBtn, { onTap: function () { sendEnter = !sendEnter; D.toggleClass(enterBtn, 'on', sendEnter); } });
-    D.bindTap(q('cl-new'), { onTap: function () { select(null); input.focus(); } });
-    D.bindTap(q('cl-refresh'), { onTap: function () { loadList(); loadChat(); } });
+    D.bindTap(list, {
+      scrollable: true,
+      onTap: function (target) {
+        var add = D.closestAttr(target, 'data-add', list);
+        if (add) return select({ kind: 'new', section: add.getAttribute('data-add') });
+        var sec = D.closestAttr(target, 'data-sec', list);
+        if (sec) { var id = sec.getAttribute('data-sec'); CL.closed[id] = !CL.closed[id]; return renderList(); }
+        var row = D.closestAttr(target, 'data-code', list);
+        if (row) return select({ kind: 'code', id: row.getAttribute('data-code') });
+        row = D.closestAttr(target, 'data-dock', list);
+        if (row) select({ kind: 'dock', id: row.getAttribute('data-dock') || null });
+      }
+    });
+    D.bindTap(send, { onTap: submit });
+    D.bindTap(q('cl-refresh'), { onTap: function () { loadList(); loadChat(true); } });
+    D.bindTap(openBtn, {
+      onTap: function () {
+        if (!CL.sel || CL.sel.kind !== 'code') return;
+        D.api.post('/api/claude/desktop/open', { id: CL.sel.id }, function (err) {
+          app.toast(err ? err.message : 'Aperta nell\'app sul PC', err ? 'err' : 'ok');
+        });
+      }
+    });
+    D.bindTap(stopBtn, {
+      hold: 600,
+      onTap: function () {
+        if (!CL.sel || CL.sel.kind !== 'code') return;
+        D.api.post('/api/claude/desktop/stop', { id: CL.sel.id }, function (err, r) {
+          if (err) return app.toast(err.message, 'err');
+          app.toast(r.stopped ? 'Claude fermato' : 'Claude non stava lavorando', 'ok');
+          loadChat(true);
+        }, 30000);
+      }
+    });
     D.bindTap(del, {
       hold: 900,
       onTap: function () {
-        if (!CL.sel || CL.sel.kind !== 'dock') return;
+        if (!CL.sel || CL.sel.kind !== 'dock' || !CL.sel.id) return;
         D.api.post('/api/claude/delete', { id: CL.sel.id }, function (err) {
           if (err) return app.toast(err.message, 'err');
           app.toast('Chat eliminata', 'ok');
@@ -1043,31 +1067,21 @@ var Widgets = (function () {
         });
       }
     });
-    D.bindTap(send, { onTap: submit });
     input.placeholder = 'Scrivi o detta a Claude…';
 
-    D.api.get('/api/claude/info', function (err, inf) {
-      if (err || !alive) return;
-      CL.info = inf;
-      targetSel.innerHTML = '';
-      for (var i = 0; i < inf.remoteTargets.length; i++) {
-        var o = el('option', '', inf.remoteTargets[i].label);
-        o.value = inf.remoteTargets[i].focus;
-        targetSel.appendChild(o);
-      }
-      if (!CL.sel) renderChat();
-    });
+    D.api.get('/api/claude/info', function (err, inf) { if (!err && alive) CL.info = inf; });
     renderList();
-    renderChat();
+    renderChat(true);
     loadList();
-    loadChat();
-    pollTimer = D.every(2500, 10000, poll);
-    var listTimer = D.every(30000, 120000, loadList);
+    loadChat(true);
+    // conversazione aperta: aggiornata spesso, così vedi le risposte mentre arrivano
+    var chatTimer = D.every(2500, 10000, function () { loadChat(false); });
+    var listTimer = D.every(8000, 60000, loadList);
 
     return {
       update: function () {},
       resize: function () { log.scrollTop = log.scrollHeight; },
-      destroy: function () { alive = false; stopListening(); D.stop(pollTimer); D.stop(listTimer); }
+      destroy: function () { alive = false; voice.stop(); D.stop(chatTimer); D.stop(listTimer); }
     };
   }
 
