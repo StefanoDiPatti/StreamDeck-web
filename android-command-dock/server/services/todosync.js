@@ -50,7 +50,9 @@ function git(args, input, cwd) {
       windowsHide: true,
       maxBuffer: 4 * 1024 * 1024,
       // mai chiedere password in background: se mancano le credenziali, fallisce e basta
-      env: Object.assign({}, process.env, { GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' })
+      // messaggi di git in inglese: gli errori vengono riconosciuti dal testo
+      // (su un sistema in italiano "couldn't find remote ref" sarebbe tradotto)
+      env: Object.assign({}, process.env, { GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never', LC_ALL: 'C', LANGUAGE: 'C' })
     }, function (err, stdout, stderr) {
       if (err) return reject(Object.assign(new Error(String(stderr || err.message).trim().split('\n').slice(-1)[0] || 'git fallito'), { stderr: String(stderr || '') }));
       resolve(String(stdout));
