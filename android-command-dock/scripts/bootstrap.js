@@ -168,22 +168,10 @@ const windowsSetup = {
 };
 
 const linuxSetup = {
-  desktopEntry: function (target, extra) {
-    const dir = path.dirname(target);
-    fs.mkdirSync(dir, { recursive: true });
-    const text = [
-      '[Desktop Entry]',
-      'Type=Application',
-      'Name=Command Dock',
-      'Comment=Server per la Stream Deck sul tablet',
-      'Exec=bash -c \'cd "' + ROOT.replace(/'/g, '') + '" && ./start.sh\'',
-      'Icon=utilities-terminal',
-      'Terminal=true',
-      'Categories=Utility;'
-    ].concat(extra || []).join('\n') + '\n';
-    fs.writeFileSync(target, text);
-    try { fs.chmodSync(target, 0o755); } catch (e) { /* ignora */ }
-    return target;
+  // Icona e voci di menu: le crea scripts/linux/command-dock.sh (dock in background, senza terminale)
+  install: function (what) {
+    const r = spawnSync('bash', [path.join(ROOT, 'scripts', 'linux', 'command-dock.sh'), 'install'].concat(what), { stdio: 'inherit' });
+    return r.status === 0;
   },
   missingTools: function () {
     const tools = ['playerctl', 'xdotool', 'wtype', 'wpctl', 'pactl'];
@@ -231,14 +219,13 @@ async function firstRunSetup(force) {
         say('(playerctl = musica/now playing, xdotool/wtype = scorciatoie da tastiera)');
       }
       say('Se usi un firewall:  sudo ufw allow ' + port + '/tcp');
-      const apps = path.join(os.homedir(), '.local', 'share', 'applications', 'command-dock.desktop');
-      if (await ask(rl, 'Aggiungo "Command Dock" al menu delle applicazioni?', true)) {
-        answers.desktop = linuxSetup.desktopEntry(apps);
-        say('Voce di menu creata.');
+      if (await ask(rl, 'Creo l\'icona "Command Dock" sul desktop e nel menu delle app? (avvia la dock in background e apre il pannello)', true)) {
+        answers.desktop = linuxSetup.install(['desktop', 'menu']);
+        say(answers.desktop ? 'Icona creata: doppio clic per avviare, tasto destro per fermare o aprire il log.' : 'Icona non creata.');
       }
-      if (await ask(rl, 'Avvio la dock in automatico quando accedi?', false)) {
-        answers.autostart = linuxSetup.desktopEntry(path.join(os.homedir(), '.config', 'autostart', 'command-dock.desktop'), ['X-GNOME-Autostart-enabled=true']);
-        say('Avvio automatico attivo.');
+      if (await ask(rl, 'Avvio la dock in automatico (in background) quando accedi?', false)) {
+        answers.autostart = linuxSetup.install(['autostart']);
+        say(answers.autostart ? 'Avvio automatico attivo.' : 'Avvio automatico non configurato.');
       }
       try { fs.chmodSync(path.join(ROOT, 'start.sh'), 0o755); } catch (e) { /* ignora */ }
     }
