@@ -17,6 +17,8 @@ const MEDIA_VK = {
   volume_up: 0xAF, volume_down: 0xAE, mute: 0xAD
 };
 
+function muteArg(m) { return m === 'toggle' ? 2 : m === true ? 1 : m === false ? 0 : -1; }
+
 function checkSent(result, what) {
   if (!result || !result.sent) {
     throw new Error(what + ' bloccato da Windows (la finestra attiva è forse avviata come amministratore?)');
@@ -214,6 +216,42 @@ module.exports = {
 
   windowAction: function (id, action) {
     return input.call('winact', { hwnd: Number(id), action: String(action) }, 5000);
+  },
+
+  // ---- Mixer: dispositivi (uscita/ingresso) e volume per app. Valori 0..1.
+  mixer: function () {
+    return query.call('mixer', {}, 8000).then(function (r) {
+      const num = function (v) { const n = parseFloat(v); return isNaN(n) || n < 0 ? null : Math.round(n * 100); };
+      return {
+        devices: (r.devices || []).map(function (l) {
+          const f = String(l).split('\t');
+          return { flow: f[0], id: f[1], name: f[2] || 'Dispositivo', default: f[3] === '1', volume: num(f[4]), mute: f[5] === '1' };
+        }),
+        apps: (r.sessions || []).map(function (l) {
+          const f = String(l).split('\t');
+          return { id: f[0], pid: Number(f[0]), process: f[1], name: f[2] || f[1] || 'App', volume: num(f[3]), mute: f[4] === '1', active: f[5] === '1', device: f[6] || '' };
+        })
+      };
+    });
+  },
+  // volume: 0..100 o null; mute: true/false/'toggle'/null
+  // In un processo a parte: dentro l'helper la chiamata a Windows può durare molti secondi
+  setDefaultDevice: function (id) {
+    return new Promise(function (resolve, reject) {
+      require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+        '-File', require('path').join(__dirname, 'windows-setdefault.ps1'), '-Id', String(id)],
+      { windowsHide: true, timeout: 30000 }, function (err, stdout, stderr) {
+        if (err) return reject(new Error('Cambio dispositivo non riuscito: ' + (String(stderr).trim().split('\n')[0] || err.message)));
+        resolve({ done: true });
+      });
+    });
+  },
+  setDeviceVolume: function (id, volume, mute) {
+    return input.call('mixdevice', { id: String(id), level: volume === null || volume === undefined ? -1 : volume / 100, mute: muteArg(mute) }, 6000);
+  },
+  setAppVolume: function (pid, volume, mute) {
+    return input.call('mixapp', { pid: Number(pid), level: volume === null || volume === undefined ? -1 : volume / 100, mute: muteArg(mute) }, 6000)
+      .then(function (r) { if (!r.done) throw new Error('L\'app non sta più usando l\'audio'); return r; });
   },
 
   // ---- App desktop di Claude

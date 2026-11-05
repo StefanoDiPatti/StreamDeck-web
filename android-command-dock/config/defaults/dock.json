@@ -37,7 +37,7 @@
 //   { "widget": "system" }  { "widget": "nowplaying" }  { "widget": "queue" }
 //   { "widget": "github" }  { "widget": "todo" }        { "widget": "clock" }
 //   { "widget": "claude" }  { "widget": "chat", "provider": "ollama" }  { "widget": "discord" }
-//   { "widget": "screens" } (monitor e disposizione delle finestre)
+//   { "widget": "screens" } (monitor e disposizione delle finestre)  { "widget": "audio" } (dispositivi e volume delle app)
 //   { "widget": "mail" }    (posta in arrivo; account dal pannello di controllo)
 //
 // "description" = testo mostrato nel pannello di controllo sul PC, dove scegli
@@ -189,6 +189,14 @@
       "os": "windows",
       "tab": false,
       "tiles": [ { "widget": "screens", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "audio",
+      "title": "AUDIO",
+      "icon": "volup",
+      "description": "Uscite e microfoni (predefinito, volume, mute) e volume di ogni app",
+      "tab": false,
+      "tiles": [ { "widget": "audio", "w": 5, "h": 3 } ]
     },
     {
       "id": "blender",
