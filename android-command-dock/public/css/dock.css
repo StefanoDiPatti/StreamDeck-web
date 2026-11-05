@@ -620,3 +620,18 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .au-pct { position: absolute; right: 0; top: 2px; width: 48px; line-height: 40px; text-align: right; font-size: 14px; font-weight: bold; }
 .au-ctl.muted .au-mute { background: #8b1d1d; }
 .au-ctl.muted .au-bar i { background: #4d5d70; }
+
+/* ---- GitHub: guida ai comandi git */
+.gh-tools { position: absolute; right: 0; top: 0; white-space: nowrap; }
+.gh-tools .sbtn { position: static; display: inline-block; margin-left: 6px; }
+.gh-tools .sbtn.on { background: #1f3b63; }
+.w-gh .gg { top: 40px; }
+.gg-sec { font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #6cb6ff; margin: 14px 4px 6px; }
+.gg-sec:first-child { margin-top: 2px; }
+.gg-note { font-size: 13px; color: #8b9bab; margin: 0 4px 8px; }
+.gg-row { background: #1d2835; border-radius: 10px; padding: 9px 12px; margin-bottom: 6px; border-left: 4px solid #3d8bfd; }
+.gg-row code { display: block; font-family: Consolas, "DejaVu Sans Mono", monospace; font-size: 16px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gg-row span { display: block; font-size: 14px; color: #b6c4d2; margin-top: 3px; line-height: 1.35; }
+.gg-row.warn { border-left-color: #d29922; }
+.gg-row.danger { border-left-color: #e5534b; background: #2a1c1f; }
+.gg-row.danger code { color: #ff9c94; }
