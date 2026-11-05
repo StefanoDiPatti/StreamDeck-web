@@ -42,6 +42,22 @@
       "windows": { "path": "C:\\Program Files\\Epic Games\\UE_*\\Engine\\Binaries\\Win64\\UnrealEditor.exe" },
       "linux": { "path": "~/UnrealEngine/Engine/Binaries/Linux/UnrealEditor" }
     },
+    // Radio Monte Carlo: lo stream ufficiale (server Mediaset di Segrate) in una finestra di Brave
+    // a parte (--app), così il pulsante la spegne chiudendo solo quella finestra.
+    "radio_montecarlo": {
+      "label": "Radio Monte Carlo",
+      "toggle": true,
+      "process": "brave",
+      "title": "unitedradio\\.it/RMC",
+      "windows": {
+        "path": "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+        "args": ["--profile-directory=Default", "--app=https://icy.unitedradio.it/RMC.mp3"]
+      },
+      "linux": [
+        { "path": "brave-browser", "args": ["--app=https://icy.unitedradio.it/RMC.mp3"] },
+        { "path": "xdg-open", "args": ["https://icy.unitedradio.it/RMC.mp3"] }
+      ]
+    },
     "apple_music": {
       "label": "Apple Music",
       "toggle": true,

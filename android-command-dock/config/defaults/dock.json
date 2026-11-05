@@ -89,6 +89,7 @@
         // Windows: app Claude. Linux: la web app di Claude (vedi apps.json)
         { "id": "claude", "label": "CLAUDE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_desktop" } },
         { "id": "apple_music", "label": "APPLE MUSIC", "icon": "music", "color": "#c2334d", "action": { "type": "launch", "app": "apple_music" } },
+        { "id": "radio_montecarlo", "label": "RADIO MC", "sub": "Monte Carlo", "icon": "radio", "color": "#14427a", "action": { "type": "launch", "app": "radio_montecarlo" } },
         { "id": "unreal", "label": "UNREAL", "icon": "cube", "color": "#444b55", "action": { "type": "launch", "app": "unreal" } },
         { "id": "discord", "label": "DISCORD", "icon": "chat", "color": "#4752c4", "action": { "type": "launch", "app": "discord" } },
         { "id": "terminal", "label": "POWERSHELL", "icon": "terminal", "color": "#1f3b63", "linux": { "label": "TERMINALE" }, "action": { "type": "launch", "app": "powershell" } },
