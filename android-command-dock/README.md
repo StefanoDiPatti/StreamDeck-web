@@ -363,7 +363,24 @@ sudo apt install playerctl xdotool wtype pulseaudio-utils
 - **xdotool** (X11) o **wtype** (Wayland con KDE/Sway/Hyprland): scorciatoie, testo e "scrivi sul PC". Su GNOME Wayland le scorciatoie simulate non sono permesse dal sistema.
 - La temperatura CPU si legge da `/sys/class/hwmon`; le GPU AMD da sysfs.
 - Firewall: `sudo ufw allow 8787/tcp`.
-- Su Linux la dock gira nel terminale (`./start.sh`); l'avvio automatico si attiva dalle domande del primo avvio.
+
+### Icona sul desktop (Linux)
+
+Come su Windows, la dock può girare **in background**, senza terminale:
+
+```bash
+scripts/linux/command-dock.sh install            # icona sul desktop + menu delle app
+scripts/linux/command-dock.sh install autostart  # avvio automatico all'accesso (facoltativo)
+```
+
+(o rispondi sì alle domande di `./start.sh --setup`).
+
+- **Doppio clic** sull'icona: avvia la dock se è spenta e apre il pannello di controllo.
+- **Tasto destro**: *Avvia senza aprire il pannello*, *Riavvia*, *Ferma*, *Apri il log* (`data/dock.log`).
+- Funziona anche con una dock avviata da terminale: *Ferma* chiude anche quella.
+- Da terminale: `scripts/linux/command-dock.sh status|start|stop|restart|log`; `uninstall` toglie icona e voci.
+
+Se sposti la cartella del progetto, rilancia `install`: l'icona punta al percorso attuale.
 
 ## Sicurezza
 
@@ -424,6 +441,7 @@ extension/            estensione del browser per Apple Music web e YouTube
 config/defaults/      configurazione predefinita
 scripts/bootstrap.js  avvio automatico (uguale su Windows e Linux)
 scripts/windows/      icona nell'area di notifica e avvio nascosto
+scripts/linux/        avvio in background, icona sul desktop e nel menu delle app
 ```
 
 **Aggiungere un tipo di azione:** aggiungi una funzione a `HANDLERS` in `server/actions/index.js`. Se serve il sistema operativo, aggiungi il metodo sia in `server/platform/windows.js` sia in `server/platform/linux.js`.
