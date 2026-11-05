@@ -441,6 +441,10 @@ public static class DockAudio {
   $script:appAudio = $true
 } catch { }
 
+# --- Mixer (dispositivi audio e volume per app): vedi windows-mixer.ps1 ---
+$script:mixer = $false
+. (Join-Path $PSScriptRoot 'windows-mixer.ps1')
+
 # --- WinRT (Now Playing). Se non disponibile il resto continua a funzionare. ---
 $script:winrt = $false
 $script:mgr = $null
@@ -755,6 +759,13 @@ while ($true) {
         $data = @{ level = [DockAudio]::Adjust([string[]]@($req.names), [float]$req.delta, [int]$req.mute) }
       }
       'audiosessions' { $data = @{ processes = @([DockAudio]::ListProcesses()) } }
+      'mixer' {
+        if (-not $script:mixer) { throw 'mixer non disponibile' }
+        $data = @{ devices = @([DockMixer]::Devices()); sessions = @([DockMixer]::Sessions()) }
+      }
+      'mixdefault' { [DockMixer]::SetDefault([string]$req.dev); $data = @{ done = $true } }
+      'mixdevice' { [DockMixer]::SetDevice([string]$req.dev, [float]$req.level, [int]$req.mute); $data = @{ done = $true } }
+      'mixapp' { $data = @{ done = [DockMixer]::SetApp([uint32]$req.pid, [float]$req.level, [int]$req.mute) } }
       'net' { $data = Get-Net }
       'netinfo' { $data = Get-NetInfo }
       'windows' { $data = @{ list = @([DockWindows]::List()) } }

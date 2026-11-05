@@ -11,6 +11,7 @@ const os = require('os');
 const path = require('path');
 const keys = require('./keys');
 const common = require('./common');
+const mixer = require('./linux-mixer');
 
 const SEP = '\u001f';
 
@@ -206,6 +207,12 @@ module.exports = {
   },
 
   audioProcesses: function () { return Promise.resolve([]); },
+
+  // Mixer: dispositivi e volume per app (pactl)
+  mixer: mixer.mixer,
+  setDefaultDevice: mixer.setDefaultDevice,
+  setDeviceVolume: mixer.setDeviceVolume,
+  setAppVolume: mixer.setAppVolume,
 
   netBytes: async function () {
     try {

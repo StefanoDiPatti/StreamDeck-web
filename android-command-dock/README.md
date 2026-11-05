@@ -9,6 +9,7 @@ Il PC (Windows o Linux) fa girare un piccolo server Node.js. Il tablet apre una 
 - Monitor PC: CPU, RAM, GPU NVIDIA (uso, temperatura, VRAM), rete.
 - **Discord**: server, canali vocali, chi c'è in stanza e chi parla, mute e audio, webcam e Go Live.
 - **Games**: avvio di Hearthstone, World of Tanks e League of Legends (se il gioco è già aperto lo porta in primo piano).
+- **Audio**: scegli uscita (casse, cuffie, monitor) e microfono predefiniti, con volume e mute, e regola il volume di ogni app.
 - **Schermi**: scegli su quale monitor si aprono le app dal tablet e disponi le finestre nelle zone, come Snap di Windows.
 - **Pannello di controllo sul PC** per scegliere e ordinare con il trascinamento le pagine del tablet e i pulsanti di ogni pagina.
 - **Windows e Linux** riconosciuti da soli: su Linux i pulsanti di Windows diventano i loro equivalenti (PowerShell → Terminale, Task Mgr → Monitor di sistema...).
@@ -90,6 +91,7 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | GAMES | Hearthstone, World of Tanks, League of Legends (pallino verde se aperti; se già aperto lo porta in primo piano) |
 | EMAIL *(disponibile)* | posta in arrivo degli account scelti dal pannello, lettura dei messaggi, apertura della webmail sul PC |
 | SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app |
+| AUDIO | uscite e microfoni (predefinito, volume, mute), volume e mute di ogni app che usa l'audio |
 | BLENDER, DAVINCI *(disponibili: aggiungile alla barra dal pannello)* | scorciatoie dei due programmi |
 
 ## Pannello di controllo (sul PC)
@@ -269,6 +271,17 @@ e in `config/apps.json`:
 
 Nei percorsi puoi usare `%USERPROFILE%`, `%LOCALAPPDATA%`, `~`, `$HOME` e `*` per la versione (`Blender *\blender.exe`). Funzionano anche i collegamenti `.lnk` (così si apre Apple Music dal collegamento sul desktop).
 Le app dello Store di Windows si avviano con `shell:AppsFolder\<AppID>`; l'AppID lo trovi in PowerShell con `Get-StartApps`.
+
+## Audio
+
+Nella pagina **AUDIO**:
+
+- a sinistra le **uscite** (casse, cuffie, monitor) e gli **ingressi** (microfoni): tocca il nome per renderlo predefinito; sotto quello predefinito ci sono mute, −, barra del volume (tocca un punto per impostarlo) e +;
+- a destra le **app** che usano l'audio (pallino verde = sta suonando), ognuna con il suo volume e il suo mute, come il Mixer volume di Windows.
+
+I pulsanti VOL+ / VOL− / MUTE della pagina APP restano: comandano sempre il volume di sistema.
+
+Su Windows usa Core Audio (il cambio di dispositivo predefinito usa la stessa interfaccia del pannello Audio di Windows, come SoundSwitch o EarTrumpet). Su Linux usa `pactl` (PulseAudio o PipeWire con pipewire-pulse, versione 15 o successiva): cambiando l'uscita predefinita anche le app che stanno suonando passano lì.
 
 ## Schermi (Windows)
 

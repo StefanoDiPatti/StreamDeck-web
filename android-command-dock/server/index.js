@@ -20,6 +20,7 @@ const claude = require('./services/claude');
 const todo = require('./services/todo');
 const todosync = require('./services/todosync');
 const desktopcode = require('./services/desktopcode');
+const mixer = require('./services/mixer');
 const bridge = require('./services/bridge');
 const voice = require('./services/voice');
 const appsState = require('./services/apps');
@@ -153,7 +154,7 @@ app.get(['/control', '/control/'], localPage, function (req, res) {
 app.use('/control', localPage, express.static(paths.CONTROL_DIR, { index: false, setHeaders: function (res) { res.setHeader('Cache-Control', 'no-cache'); } }));
 
 // Riassunto di una pagina per il pannello: cosa contiene.
-const WIDGET_NAMES = { mail: 'email', system: 'stato PC', nowplaying: 'musica', queue: 'coda', github: 'GitHub', todo: 'TODO', clock: 'orologio', claude: 'Claude', chat: 'chat', discord: 'Discord', screens: 'schermi e finestre' };
+const WIDGET_NAMES = { mail: 'email', system: 'stato PC', nowplaying: 'musica', queue: 'coda', github: 'GitHub', todo: 'TODO', clock: 'orologio', claude: 'Claude', chat: 'chat', discord: 'Discord', screens: 'schermi e finestre', audio: 'audio' };
 function pageSummary(p) {
   const widgets = [], buttons = [];
   p.tiles.forEach(function (t) {
@@ -247,6 +248,12 @@ app.get('/api/discord/img', function (req, res) {
     res.type(im.type).send(im.body);
   }).catch(function () { res.status(404).end(); });
 });
+
+// --- Audio: dispositivi e volume delle app ---
+app.get('/api/audio', route(function () { return mixer.state(); }));
+app.post('/api/audio/default', route(function (req) { return mixer.setDefault(String((req.body || {}).id || '')); }));
+app.post('/api/audio/device', route(function (req) { const b = req.body || {}; return mixer.device(String(b.id || ''), b); }));
+app.post('/api/audio/app', route(function (req) { const b = req.body || {}; return mixer.app(String(b.id || ''), b); }));
 
 // --- Schermi: monitor, finestre e disposizioni ---
 app.get('/api/screens', route(function () { return screens.info(); }));
