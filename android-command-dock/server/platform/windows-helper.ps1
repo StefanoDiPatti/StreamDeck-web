@@ -763,8 +763,9 @@ while ($true) {
         if (-not $script:mixer) { throw 'mixer non disponibile' }
         $data = @{ devices = @([DockMixer]::Devices()); sessions = @([DockMixer]::Sessions()) }
       }
-      'mixdevice' { [DockMixer]::SetDeviceSafe([string]$req.id, [float]$req.level, [int]$req.mute); $data = @{ done = $true } }
-      'mixapp' { $data = @{ done = [DockMixer]::SetAppSafe([uint32]$req.pid, [float]$req.level, [int]$req.mute) } }
+      'mixdefault' { [DockMixer]::SetDefault([string]$req.dev); $data = @{ done = $true } }
+      'mixdevice' { [DockMixer]::SetDevice([string]$req.dev, [float]$req.level, [int]$req.mute); $data = @{ done = $true } }
+      'mixapp' { $data = @{ done = [DockMixer]::SetApp([uint32]$req.pid, [float]$req.level, [int]$req.mute) } }
       'net' { $data = Get-Net }
       'netinfo' { $data = Get-NetInfo }
       'windows' { $data = @{ list = @([DockWindows]::List()) } }

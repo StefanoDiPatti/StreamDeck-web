@@ -235,19 +235,10 @@ module.exports = {
     });
   },
   // volume: 0..100 o null; mute: true/false/'toggle'/null
-  // In un processo a parte: dentro l'helper la chiamata a Windows può durare molti secondi
-  setDefaultDevice: function (id) {
-    return new Promise(function (resolve, reject) {
-      require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
-        '-File', require('path').join(__dirname, 'windows-setdefault.ps1'), '-Id', String(id)],
-      { windowsHide: true, timeout: 30000 }, function (err, stdout, stderr) {
-        if (err) return reject(new Error('Cambio dispositivo non riuscito: ' + (String(stderr).trim().split('\n')[0] || err.message)));
-        resolve({ done: true });
-      });
-    });
-  },
+  // "dev" e non "id": id è il numero della richiesta all'helper
+  setDefaultDevice: function (id) { return input.call('mixdefault', { dev: String(id) }, 8000); },
   setDeviceVolume: function (id, volume, mute) {
-    return input.call('mixdevice', { id: String(id), level: volume === null || volume === undefined ? -1 : volume / 100, mute: muteArg(mute) }, 6000);
+    return input.call('mixdevice', { dev: String(id), level: volume === null || volume === undefined ? -1 : volume / 100, mute: muteArg(mute) }, 6000);
   },
   setAppVolume: function (pid, volume, mute) {
     return input.call('mixapp', { pid: Number(pid), level: volume === null || volume === undefined ? -1 : volume / 100, mute: muteArg(mute) }, 6000)

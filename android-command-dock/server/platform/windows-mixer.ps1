@@ -1,4 +1,4 @@
-﻿# Command Dock - mixer audio (classe C# DockMixer), caricato dall'helper e da windows-setdefault.ps1.
+﻿# Command Dock - mixer audio (classe C# DockMixer), caricato da windows-helper.ps1.
 # --- Mixer: dispositivi audio (uscita/ingresso, predefinito, volume) e volume
 #     di ogni app. IPolicyConfig e' l'interfaccia non documentata usata dal
 #     pannello Audio di Windows e da programmi come SoundSwitch/EarTrumpet. ---
@@ -133,21 +133,6 @@ public static class DockMixer {
       if (hr != 0) throw new Exception("SetDefaultEndpoint 0x" + hr.ToString("X"));
     }
   }
-
-  // Le modifiche girano su un thread MTA: sul thread STA dell'helper (che non
-  // smaltisce i messaggi di Windows mentre aspetta comandi) restano appese.
-  static T OnMta<T>(Func<T> fn) {
-    T result = default(T); Exception err = null;
-    var t = new System.Threading.Thread(() => { try { result = fn(); } catch (Exception e) { err = e; } });
-    t.SetApartmentState(System.Threading.ApartmentState.MTA);
-    t.IsBackground = true;
-    t.Start();
-    if (!t.Join(5000)) throw new Exception("Windows non risponde (audio)");
-    if (err != null) throw err;
-    return result;
-  }
-  public static void SetDeviceSafe(string id, float level, int mute) { OnMta<int>(() => { SetDevice(id, level, mute); return 0; }); }
-  public static int SetAppSafe(uint pid, float level, int mute) { return OnMta<int>(() => SetApp(pid, level, mute)); }
 
   // level: 0..1 o -1 = invariato; mute: -1 invariato, 0/1, 2 inverte
   public static void SetDevice(string id, float level, int mute) {

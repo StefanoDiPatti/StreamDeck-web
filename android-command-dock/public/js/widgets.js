@@ -1732,7 +1732,8 @@ var Widgets = (function () {
 
     function ctl(kind, it, mic) {
       var v = it.volume === null ? 0 : it.volume;
-      var muteIcon = mic ? (it.mute ? 'micoff' : 'mic') : (it.mute ? 'mute' : 'volup');
+      // pulsante mute: sempre l'icona barrata (rossa quando è muto), così non si confonde con +
+      var muteIcon = mic ? 'micoff' : 'mute';
       return '<div class="au-ctl' + (it.mute ? ' muted' : '') + '" data-kind="' + kind + '" data-id="' + D.esc(it.id) + '">' +
         '<span class="au-b au-mute" data-act="mute">' + Icons.html(muteIcon) + '</span>' +
         '<span class="au-b" data-act="down">' + Icons.html('voldown') + '</span>' +

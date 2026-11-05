@@ -90,7 +90,9 @@ PsHelper.prototype.call = function (cmd, args, timeoutMs) {
         reject(new Error('timeout (' + cmd + ')'));
       }, timeoutMs || 6000);
       self.pending[id] = { resolve: resolve, reject: reject, timer: timer };
-      self.proc.stdin.write(JSON.stringify(Object.assign({ id: id, cmd: cmd }, args || {})) + '\n');
+      // id e cmd per ultimi: un argomento con lo stesso nome non deve sovrascriverli
+      // (succedeva con l'id dei dispositivi audio: risposta mai riconosciuta, timeout)
+      self.proc.stdin.write(JSON.stringify(Object.assign({}, args || {}, { id: id, cmd: cmd })) + '\n');
     });
   });
 };
