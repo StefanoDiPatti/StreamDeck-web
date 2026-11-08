@@ -82,10 +82,16 @@ function requireToken(req, res, next) {
   res.status(401).json({ ok: false, error: { code: 'UNAUTHORIZED', message: 'Token mancante o errato' } });
 }
 
-// GET /?t=TOKEN -> salva il cookie e ripulisce l'URL
+// GET /?t=TOKEN -> salva il cookie e ripulisce l'URL. Se il codice è giusto
+// lo passa al client nel frammento (#codice=...), che non arriva al server né
+// ai log: il tablet lo aggiunge ai codici che ricorda (vedi public/js/app.js).
 function tokenFromQuery(req, res, next) {
   if (req.path !== '/' || !req.query.t) return next();
-  if (token() && safeEqual(String(req.query.t), token())) setCookie(res);
+  const given = String(req.query.t).trim();
+  if (token() && safeEqual(given, token())) {
+    setCookie(res);
+    return res.redirect(302, '/#codice=' + encodeURIComponent(given));
+  }
   res.redirect(302, '/');
 }
 

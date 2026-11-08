@@ -53,6 +53,11 @@ test('/?t=CODICE salva il cookie e ripulisce l\'URL', async function () {
   const r = await call('GET', '/?t=TESTCODE');
   assert.strictEqual(r.status, 302);
   assert.match(r.headers.get('set-cookie') || '', /dock_token=TESTCODE/);
+  assert.strictEqual(r.headers.get('location'), '/#codice=TESTCODE');
+  const bad = await call('GET', '/?t=SBAGLIATO');
+  assert.strictEqual(bad.status, 302);
+  assert.strictEqual(bad.headers.get('location'), '/');
+  assert.ok(!bad.headers.get('set-cookie'));
 });
 
 test('config con token', async function () {
