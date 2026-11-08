@@ -368,15 +368,70 @@
     D.removeClass(D.$('pair'), 'hidden');
     if (msg) D.setText(D.$('pair-msg'), msg);
   }
-  D.setUnauthorizedHandler(function () { showPair('Codice non più valido: inseriscilo di nuovo'); });
+  // Il tablet ricorda tutti i codici con cui si è collegato (es. Windows e
+  // Linux sullo stesso PC, stesso indirizzo ma codici diversi): quando quello
+  // in uso non vale più li riprova da solo prima di chiederne uno.
+  var MAX_CODES = 6;
+  var autoPairing = false;
+
+  function knownCodes() {
+    var list = D.store.get('tokens', []);
+    if (!(list instanceof Array)) list = [];
+    var cur = D.store.get('token', '');
+    if (cur && list.indexOf(cur) < 0) list.unshift(cur);
+    return list;
+  }
+  function rememberCode(code) {
+    var list = knownCodes(), out = [code], i;
+    for (i = 0; i < list.length && out.length < MAX_CODES; i++) if (list[i] !== code) out.push(list[i]);
+    D.store.set('tokens', out);
+    D.store.set('token', code);
+  }
+
+  // Prova i codici ricordati uno alla volta; done(true) se uno è valido.
+  function tryKnownCodes(done) {
+    var list = knownCodes(), i = 0;
+    if (autoPairing) return;
+    autoPairing = true;
+    function next() {
+      if (i >= list.length) { autoPairing = false; done(false); return; }
+      var code = list[i++];
+      D.api.post('/api/pair', { token: code }, function (err) {
+        if (!err) { autoPairing = false; rememberCode(code); done(true); return; }
+        if (err.status === 401) { next(); return; } // codice dell'altro sistema: tienilo
+        autoPairing = false; done(false); // rete o troppi tentativi: riprova più tardi
+      });
+    }
+    next();
+  }
+
+  D.setUnauthorizedHandler(function () {
+    if (autoPairing) return;
+    clearTimeout(app.pollTimer);
+    tryKnownCodes(function (ok) {
+      if (ok) window.location.reload();
+      else showPair('Codice non più valido: inseriscilo di nuovo');
+    });
+  });
+
+  // Link diretto /?t=CODICE: il server rimanda a /#codice=CODICE
+  function codeFromHash() {
+    var m = /^#codice=([^&]+)/.exec(window.location.hash || '');
+    if (!m) return;
+    try { rememberCode(decodeURIComponent(m[1])); } catch (e) { /* ignora */ }
+    if (window.history && window.history.replaceState) window.history.replaceState(null, '', window.location.pathname);
+    else window.location.hash = '';
+  }
 
   function submitPair() {
     var input = D.$('pair-code');
     var code = input.value.replace(/\s+/g, '').toUpperCase();
     if (!code) return;
+    autoPairing = true; // un codice sbagliato non deve far ripartire i tentativi automatici
     D.api.post('/api/pair', { token: code }, function (err) {
+      autoPairing = false;
       if (err) { D.setText(D.$('pair-msg'), err.message); return; }
-      D.store.set('token', code);
+      rememberCode(code);
       window.location.reload();
     });
   }

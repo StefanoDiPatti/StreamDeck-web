@@ -64,6 +64,7 @@ Lo trovi dal menu dell'icona (Windows) o nella finestra del server (Linux / `--c
 
 0. Il modo più veloce: inquadra il **QR code** che compare nel terminale all'avvio o in cima al pannello di controllo.
 1. Apri il **link diretto**: il codice viene salvato e non te lo chiede più. In alternativa apri l'indirizzo e scrivi il codice.
+   Il tablet ricorda tutti i codici con cui si è collegato (fino a 6): se sullo stesso PC alterni Windows e Linux, ognuno con il suo codice, lo inserisci una volta per sistema e poi passa da uno all'altro da solo.
 2. Chrome: menu > *Aggiungi a schermata Home*. Dall'icona la dock si apre a schermo intero.
 3. Per tenere lo schermo acceso: *Opzioni sviluppatore > Rimani attivo* (con il tablet in carica).
 4. Tocca l'orologio in alto a destra per il fullscreen, se il browser lo supporta.
