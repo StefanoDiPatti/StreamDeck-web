@@ -88,7 +88,7 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | GITHUB | PR, issue, CI e ultimo commit dei tuoi repository |
 | OLLAMA | chat con i modelli locali |
 | CLAUDE | chat, sessioni di Claude Code, dettatura, scrittura sul PC |
-| DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, mutare una persona |
+| DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, volume e muto di una persona solo per te |
 | GAMES | Hearthstone, World of Tanks, League of Legends (pallino verde se aperti; se già aperto lo porta in primo piano) |
 | EMAIL *(disponibile)* | posta in arrivo degli account scelti dal pannello, lettura dei messaggi, apertura della webmail sul PC |
 | SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app, **desktop virtuali** (passa, crea, chiudi) e pulsante **GUIDA** con le scorciatoie |
@@ -138,7 +138,7 @@ Usa il collegamento locale dell'app Discord (lo stesso delle Stream Deck): nient
 2. in *OAuth2* copia **Client ID** e **Client Secret**; sotto *Redirects* premi *Add Redirect*, scrivi `http://localhost` (senza barra finale) e premi **Save Changes**. Se manca, Discord risponde *"invalid_request: missing redirect_uri"*;
 3. incollali nel pannello e premi **Collega**: Discord chiede di autorizzare la dock.
 
-Dal tablet: tocca un server, poi un canale per entrarci; tocca una persona nella tua stanza per mutarla solo per te; **MIC** e **AUDIO** per mutarti o silenziare; **CAM** accende la webcam; **LIVE** avvia il Go Live del gioco aperto (Hearthstone, World of Tanks, LoL, o qualsiasi app con `"game": true`); **ESCI** (tieni premuto) per lasciare la stanza.
+Dal tablet: tocca un server, poi un canale per entrarci; tocca una persona nella tua stanza per aprire il suo menu: **volume per te** da 0 a 200% (barra, − e +, 50/100/150/200%) e **MUTA PER ME**, come il tasto destro su Discord (gli altri non lo vedono); **MIC** e **AUDIO** per mutarti o silenziare; **CAM** accende la webcam; **LIVE** avvia il Go Live del gioco aperto (Hearthstone, World of Tanks, LoL, o qualsiasi app con `"game": true`); **ESCI** (tieni premuto) per lasciare la stanza.
 
 Webcam e Go Live usano due comandi di Discord non documentati (`TOGGLE_VIDEO`, `TOGGLE_SCREENSHARE`) e un permesso in più: se avevi già collegato la dock, premi **Riautorizza** nel pannello. Se Discord non concede quel permesso, l'autorizzazione prosegue senza, e CAM e LIVE restano spenti. Senza configurazione MIC e AUDIO funzionano lo stesso, con le scorciatoie predefinite di Discord (Ctrl+Shift+M / Ctrl+Shift+D). Le credenziali stanno in `data/discord.json`, solo su questo PC.
 
