@@ -1448,7 +1448,7 @@ var Widgets = (function () {
       { title: 'TRUCCHI', items: [
         ['Nome e sfondo', 'In Win + Tab, tasto destro su un desktop: "Rinomina" e "Scegli sfondo". Es. LAVORO, GIOCO, STREAM.'],
         ['Barra delle applicazioni', 'Impostazioni → Sistema → Multitasking → Desktop: scegli se la barra mostra le finestre di tutti i desktop.'],
-        ['Dal tablet', 'La pagina SCHERMI sposta le finestre tra i monitor (non tra i desktop virtuali).']
+        ['Dal tablet', 'Qui in SCHERMI, sotto le finestre: tocca un desktop per passarci, NUOVO per crearne uno, tieni premuto CHIUDI ATTIVO per chiuderlo.']
       ] }
     ],
     linux: [
@@ -1482,13 +1482,14 @@ var Widgets = (function () {
     ]
   };
 
-  function vdeskWidget(root, tile, app) {
-    D.addClass(root, 'w-vdesk');
+  // Guida dentro root (intestazione + elenco). onClose: pulsante X (guida sopra SCHERMI).
+  function vdeskGuide(root, sys, onClose) {
     var btns = {};
     var tools = el('span', 'gh-tools');
     btns.windows = smallBtn('WINDOWS', 'desktop', function () { show('windows'); });
     btns.linux = smallBtn('LINUX', 'terminal', function () { show('linux'); });
     tools.appendChild(btns.windows); tools.appendChild(btns.linux);
+    if (onClose) tools.appendChild(smallBtn('', 'close', onClose));
     var title = header(root, 'DESKTOP VIRTUALI', tools);
     var guide = el('div', 'w-list scroll gg');
     root.appendChild(guide);
@@ -1500,7 +1501,14 @@ var Widgets = (function () {
       D.toggleClass(btns.linux, 'on', sys === 'linux');
       setText(title, 'DESKTOP VIRTUALI · ' + (sys === 'linux' ? 'LINUX' : 'WINDOWS'));
     }
-    show(tile && tile.system);
+    show(sys);
+    return { show: show };
+  }
+
+  // Pagina a sé (su Linux, dove SCHERMI non c'è)
+  function vdeskWidget(root, tile, app) {
+    D.addClass(root, 'w-vdesk');
+    vdeskGuide(root, tile && tile.system);
     return { update: function () {}, resize: function () {}, destroy: function () {} };
   }
 
@@ -1521,9 +1529,80 @@ var Widgets = (function () {
       '<div class="sc-right">' +
         '<div class="sc-whead">FINESTRE APERTE</div>' +
         '<div class="sc-wins scroll"></div>' +
-      '</div>';
+        '<div class="sc-dhead">DESKTOP VIRTUALI<span class="sc-dsub">tocca per passare</span></div>' +
+        '<div class="sc-desks scroll"></div>' +
+        '<div class="sc-dctl">' +
+          '<div class="sc-dbtn sc-dadd">' + Icons.html('add') + '<span>NUOVO</span></div>' +
+          '<div class="sc-dbtn sc-ddel">' + Icons.html('trash') + '<span>CHIUDI ATTIVO</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sc-guide w-vdesk hidden"></div>';
     function q(c) { return root.querySelector('.' + c); }
     var map = q('sc-map'), layoutsEl = q('sc-layouts'), openEl = q('sc-open'), winsEl = q('sc-wins'), hint = q('sc-hint');
+    var desksEl = q('sc-desks'), addBtn = q('sc-dadd'), delBtn = q('sc-ddel'), guideEl = q('sc-guide');
+    var desks = null, deskBusy = false;
+
+    // GUIDA: scorciatoie dei desktop virtuali, sopra tutta la pagina
+    var helpBtn = smallBtn('GUIDA', 'info', function () { D.removeClass(guideEl, 'hidden'); });
+    D.addClass(helpBtn, 'sc-help');
+    q('sc-left').appendChild(helpBtn);
+    vdeskGuide(guideEl, 'windows', function () { D.addClass(guideEl, 'hidden'); });
+
+    function renderDesks() {
+      if (!desks) { desksEl.innerHTML = '<div class="empty">Carico…</div>'; return; }
+      if (!desks.supported) { desksEl.innerHTML = '<div class="empty">Solo su Windows</div>'; return; }
+      var html = '';
+      for (var i = 0; i < desks.desktops.length; i++) {
+        var d = desks.desktops[i];
+        html += '<div class="sc-desk' + (d.current ? ' on' : '') + '" data-desk="' + D.esc(d.id) + '"><b>' + d.n + '</b><span>' + D.esc(d.name) + '</span></div>';
+      }
+      desksEl.innerHTML = html;
+      D.toggleClass(delBtn, 'disabled', desks.desktops.length < 2);
+      D.toggleClass(root, 'sc-dbusy', deskBusy);
+    }
+    var lastDesks = '';
+    function loadDesks() {
+      if (deskBusy) return;
+      D.api.get('/api/screens/desktops', function (err, d) {
+        if (!alive || err || deskBusy) return;
+        var key = JSON.stringify(d);
+        if (key === lastDesks) return;
+        lastDesks = key; desks = d; renderDesks();
+      });
+    }
+    function deskAction(body, msg) {
+      if (deskBusy) return;
+      deskBusy = true; renderDesks();
+      D.api.post('/api/screens/desktops', body, function (err, d) {
+        deskBusy = false;
+        if (err) { app.toast(err.message, 'err'); lastDesks = ''; renderDesks(); loadDesks(); return; }
+        desks = d; lastDesks = JSON.stringify(d); renderDesks();
+        if (msg) app.toast(msg(d), 'ok');
+        lastWins = ''; setTimeout(loadWins, 300);   // le finestre visibili cambiano col desktop
+      }, 15000);
+    }
+    function curDesk(d) {
+      for (var i = 0; d && i < d.desktops.length; i++) if (d.desktops[i].current) return d.desktops[i];
+      return null;
+    }
+    D.bindTap(desksEl, {
+      scrollable: true,
+      onTap: function (t) {
+        var c = D.closestAttr(t, 'data-desk', desksEl);
+        if (!c || D.hasClass(c, 'on')) return;
+        D.addClass(c, 'busy');
+        deskAction({ action: 'switch', desktop: c.getAttribute('data-desk') });
+      }
+    });
+    D.bindTap(addBtn, { onTap: function () {
+      deskAction({ action: 'create' }, function (d) { var c = curDesk(d); return 'Creato ' + (c ? c.name : 'un desktop nuovo'); });
+    } });
+    // chiudere è delicato: va tenuto premuto (le finestre passano al desktop vicino)
+    D.bindTap(delBtn, { hold: 700, onTap: function () {
+      if (!desks || desks.desktops.length < 2) return app.toast('C\'è un solo desktop', 'err');
+      var c = curDesk(desks);
+      deskAction({ action: 'delete', desktop: c ? c.id : '' }, function () { return 'Desktop chiuso: le sue finestre sono sul desktop vicino'; });
+    } });
     var info = null, wins = null, alive = true, error = '';
 
     function mon(id) {
@@ -1735,9 +1814,11 @@ var Widgets = (function () {
     });
 
     renderAll();
+    renderDesks();
     loadInfo();
     loadWins();
-    var fast = D.every(3000, 15000, loadWins);
+    loadDesks();
+    var fast = D.every(3000, 15000, function () { loadWins(); loadDesks(); });
     var slow = D.every(30000, 120000, loadInfo);
     return {
       update: function () {},

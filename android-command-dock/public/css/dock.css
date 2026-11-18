@@ -527,7 +527,31 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .sc-opt.pressed { -webkit-transform: scale(0.95); transform: scale(0.95); }
 .sc-right { position: absolute; right: 0; top: 0; bottom: 0; width: 40%; background: #141c25; border-left: 1px solid #222e3b; }
 .sc-whead { position: absolute; left: 12px; right: 12px; top: 8px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; }
-.sc-wins { position: absolute; left: 6px; right: 6px; top: 36px; bottom: 6px; overflow: auto; -webkit-overflow-scrolling: touch; }
+.sc-wins { position: absolute; left: 6px; right: 6px; top: 36px; height: 228px; overflow: auto; -webkit-overflow-scrolling: touch; }
+/* desktop virtuali: sotto le finestre (4 visibili, il resto scorre) */
+.sc-dhead { position: absolute; left: 12px; right: 12px; top: 274px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; white-space: nowrap; overflow: hidden; border-top: 1px solid #222e3b; padding-top: 6px; }
+.sc-dsub { font-size: 11px; font-weight: normal; letter-spacing: 0; color: #6e7f90; margin-left: 8px; }
+.sc-desks { position: absolute; left: 6px; right: 6px; top: 308px; bottom: 68px; overflow: auto; -webkit-overflow-scrolling: touch; }
+.sc-desk { float: left; width: 48.5%; margin: 0 3% 6px 0; position: relative; height: 48px; line-height: 48px; padding: 0 8px 0 44px; border-radius: 10px; background: #172029; font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-box-sizing: border-box; box-sizing: border-box; }
+.sc-desk:nth-child(2n) { margin-right: 0; }
+.sc-desk b { position: absolute; left: 8px; top: 11px; width: 26px; height: 26px; line-height: 26px; text-align: center; border-radius: 7px; background: #2a3746; font-size: 13px; }
+.sc-desk.on { background: #2d3576; }
+.sc-desk.on b { background: #3d8bfd; }
+.sc-desk.pressed, .sc-desk.busy { background: #26354a; }
+.sc-dbusy .sc-desks, .sc-dbusy .sc-dctl { opacity: 0.55; }
+.sc-dctl { position: absolute; left: 6px; right: 6px; bottom: 6px; height: 54px; }
+.sc-dbtn { float: left; width: 48.5%; margin-right: 3%; height: 54px; line-height: 54px; border-radius: 12px; background: #243142; text-align: center; font-size: 13px; font-weight: bold; letter-spacing: .5px; white-space: nowrap; overflow: hidden; }
+.sc-dbtn:last-child { margin-right: 0; }
+.sc-dbtn svg.ic { width: 22px; height: 22px; vertical-align: -6px; margin-right: 6px; }
+.sc-dadd { background: #2f6b3a; }
+.sc-ddel { background: #5a1f24; }
+.sc-ddel.holding { background: #8b1d1d; }
+.sc-dbtn.disabled { opacity: 0.35; }
+.sc-dbtn.pressed { -webkit-transform: scale(0.96); transform: scale(0.96); }
+/* GUIDA ai desktop virtuali, sopra tutta la pagina */
+.sc-left .sc-help { position: absolute; right: 10px; top: 4px; z-index: 3; }
+.sc-head { right: 110px; }
+.sc-guide { position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 6; background: #18212c; padding: 10px 12px; }
 .sc-win { position: relative; height: 54px; padding: 7px 92px 0 40px; border-radius: 10px; margin-bottom: 3px; background: #172029; }
 .sc-win.active { -webkit-box-shadow: inset 3px 0 0 #3d8bfd; box-shadow: inset 3px 0 0 #3d8bfd; }
 .sc-win.min { opacity: 0.6; }

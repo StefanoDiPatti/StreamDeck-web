@@ -91,9 +91,9 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, mutare una persona |
 | GAMES | Hearthstone, World of Tanks, League of Legends (pallino verde se aperti; se già aperto lo porta in primo piano) |
 | EMAIL *(disponibile)* | posta in arrivo degli account scelti dal pannello, lettura dei messaggi, apertura della webmail sul PC |
-| SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app |
+| SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app, **desktop virtuali** (passa, crea, chiudi) e pulsante **GUIDA** con le scorciatoie |
 | AUDIO | uscite e microfoni (predefinito, volume, mute), volume e mute di ogni app che usa l'audio |
-| DESKTOP VIRTUALI | guida alle scorciatoie dei desktop virtuali: Windows, KDE Plasma e GNOME (parte dal sistema del PC, pulsanti per cambiare) |
+| DESKTOP VIRTUALI *(solo Linux)* | guida alle scorciatoie dei desktop virtuali (KDE Plasma, GNOME, anche Windows); su Windows la stessa guida è nella pagina SCHERMI |
 | BLENDER, DAVINCI *(disponibili: aggiungile alla barra dal pannello)* | scorciatoie dei due programmi |
 
 ## Pannello di controllo (sul PC)
@@ -292,6 +292,8 @@ Nella pagina **SCHERMI** del tablet vedi i monitor come sono disposti sulla scri
 - **Disporre le finestre**: tocca un monitor, scegli una disposizione (metà, terzi, 2/3 + 1/3, quarti, ...), tocca una zona e poi una finestra nella lista a destra. La zona successiva si seleziona da sola, come lo Snap Assist di Windows. Sui monitor verticali le colonne diventano righe.
 - Senza una zona scelta, toccare una finestra la porta in primo piano. I due pulsanti di ogni riga la riducono a icona o la ingrandiscono.
 - **Apri le app su**: AUTO lascia decidere a Windows; con un monitor scelto, le app avviate dal tablet (pulsanti *launch*) vengono spostate lì appena compare la loro finestra, mantenendo dimensioni e posizione relative.
+
+A destra le finestre aperte (se sono più di quattro, la lista scorre) e sotto i **desktop virtuali**: tocca un desktop per passarci, **NUOVO** ne crea uno e ci entra, **CHIUDI ATTIVO** (da tenere premuto) chiude quello su cui sei: le sue finestre non si chiudono, passano al desktop vicino. L'elenco si legge dal registro di Windows e i comandi sono le scorciatoie Win+Ctrl+←/→, Win+Ctrl+D e Win+Ctrl+F4. Il pulsante **GUIDA** in alto mostra tutte le scorciatoie dei desktop virtuali di Windows e Linux.
 
 Le finestre dei programmi avviati come amministratore non si possono spostare (limite di Windows). I giochi a schermo intero esclusivo non si spostano. La scelta del monitor sta in `data/screens.json`.
 

@@ -26,6 +26,7 @@ const voice = require('./services/voice');
 const appsState = require('./services/apps');
 const discord = require('./services/discord');
 const screens = require('./services/screens');
+const vdesk = require('./services/vdesk');
 const pairing = require('./services/pairing');
 const mail = require('./services/mail');
 const pkg = require('../package.json');
@@ -269,6 +270,12 @@ app.post('/api/screens/place', route(function (req) {
 app.post('/api/screens/window', route(function (req) {
   const b = req.body || {};
   return screens.act(String(b.window || ''), String(b.action || ''));
+}));
+// desktop virtuali: elenco, passa a uno, crea, chiudi
+app.get('/api/screens/desktops', route(function () { return vdesk.list(); }));
+app.post('/api/screens/desktops', route(function (req) {
+  const b = req.body || {};
+  return vdesk.action(String(b.action || ''), b.desktop ? String(b.desktop) : '');
 }));
 
 // Risparmio energetico del tablet (services.json -> tablet), con limiti sensati.
