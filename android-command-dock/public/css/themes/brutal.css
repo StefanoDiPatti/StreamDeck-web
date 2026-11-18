@@ -173,6 +173,7 @@ svg.ic.dc-flag { fill: #c4271a; }
 .dc-btn { background: #efe8d8; }
 .dc-btn.on { background: #2bd96b; }
 .dc-live.on { background: #ff6b5b; }
+.dc-onair { background: #ff6b5b; color: #111111; }
 .dc-livebadge { background: #ff6b5b; color: #111111; }
 svg.ic.dc-camflag { fill: #127a3a; }
 .dc-btn.off { background: #ff6b5b; }
