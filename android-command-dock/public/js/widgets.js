@@ -1303,7 +1303,9 @@ var Widgets = (function () {
       D.toggleClass(camBtn, 'disabled', !inRoom || !st.media);
       D.toggleClass(liveBtn, 'disabled', !inRoom || !st.media);
       camBtn.innerHTML = Icons.html(v.video ? 'camera' : 'camoff') + '<span>' + (v.video ? 'CAM ON' : 'CAM') + '</span>';
-      liveBtn.innerHTML = Icons.html('live') + '<span>' + (v.stream ? 'IN LIVE' : 'LIVE') + '</span>';
+      // in live: pallino rosso che lampeggia sul pulsante e nell'intestazione della stanza
+      liveBtn.innerHTML = Icons.html('live') + (v.stream ? '<i class="dc-livedot"></i>' : '') + '<span>' + (v.stream ? 'SEI IN LIVE' : 'LIVE') + '</span>';
+      D.toggleClass(root, 'dc-streaming', !!v.stream);
       D.toggleClass(root, 'dc-off', !ready);
       if (!ready) {
         var head = !st || st.status === 'connecting' ? 'Collegamento a Discord…' :
@@ -1330,7 +1332,7 @@ var Widgets = (function () {
         lastRoom = 'none';
         return;
       }
-      rtitle.innerHTML = Icons.html('volup') + D.esc(ch.name);
+      rtitle.innerHTML = (v.stream ? '<span class="dc-onair"><i class="dc-livedot"></i>IN LIVE</span>' : '') + Icons.html('volup') + D.esc(ch.name);
       rsub.innerHTML = D.esc(ch.guild || '') + ' · ' + ch.members.length + (ch.members.length === 1 ? ' persona' : ' persone');
       var html = '';
       for (var i = 0; i < ch.members.length; i++) {

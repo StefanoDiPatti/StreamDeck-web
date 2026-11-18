@@ -33,6 +33,9 @@ const S = {
   message: '',
   user: null,
   voice: { mute: false, deaf: false },
+  // webcam e Go Live accesi dalla dock: via RPC Discord non manda self_video/self_stream,
+  // quindi li ricordiamo noi (si azzerano cambiando stanza)
+  media: { video: false, stream: false },
   channel: null,     // { id, name, guild_id, members: { id -> membro } }
   speaking: {},
   guilds: null,      // cache { at, list }
@@ -99,6 +102,8 @@ function member(vs) {
     deaf: !!(st.deaf || st.self_deaf),
     video: !!st.self_video,
     stream: !!st.self_stream,
+    // Discord li manda? (se sì valgono loro, altrimenti quello che ricorda la dock)
+    mediaKnown: 'self_video' in st || 'self_stream' in st,
     localMute: !!vs.mute,
     volume: typeof vs.volume === 'number' ? vs.volume : 100,
     bot: !!u.bot
@@ -149,10 +154,11 @@ async function followChannel(ch) {
   if (old && (!ch || ch.id !== old.id)) {
     CHANNEL_EVENTS.forEach(function (evt) { ipc.request('UNSUBSCRIBE', { channel_id: old.id }, evt).catch(function () {}); });
   }
-  if (!ch) { reset(); return; }
+  if (!ch) { S.media = { video: false, stream: false }; reset(); return; }
   const members = {};
   (ch.voice_states || []).forEach(function (vs) { const m = member(vs); if (m.id) members[m.id] = m; });
   const same = old && old.id === ch.id;
+  if (!same) S.media = { video: false, stream: false };
   S.channel = { id: ch.id, name: ch.name, guild_id: ch.guild_id, members: members };
   if (!same) {
     S.speaking = {};
@@ -326,7 +332,11 @@ function state() {
     const list = Object.keys(S.channel.members).map(function (id) {
       const m = S.channel.members[id];
       // SPEAKING_STOP a volte non arriva: dopo 4 s senza conferme non parla più
-      return Object.assign({}, m, { speaking: !!(S.speaking[id] && now - S.speaking[id] < 4000) || false, me: !!(S.user && S.user.id === id) });
+      const isMe = !!(S.user && S.user.id === id);
+      const extra = { speaking: !!(S.speaking[id] && now - S.speaking[id] < 4000) || false, me: isMe };
+      // tu: cam e live come le ricorda la dock, se Discord non li manda
+      if (isMe && !m.mediaKnown) { extra.video = S.media.video; extra.stream = S.media.stream; }
+      return Object.assign({}, m, extra);
     });
     list.sort(function (a, b) { return (b.me - a.me) || a.name.localeCompare(b.name); });
     channel = { id: S.channel.id, name: S.channel.name, guild_id: S.channel.guild_id, guild: S.guildNames[S.channel.guild_id] || '', members: list };
@@ -337,7 +347,11 @@ function state() {
     message: S.message,
     configured: configured(),
     user: S.user,
-    voice: { mute: S.voice.mute, deaf: S.voice.deaf, video: !!(me && me.video), stream: !!(me && me.stream) },
+    voice: {
+      mute: S.voice.mute, deaf: S.voice.deaf,
+      video: me && me.mediaKnown ? !!me.video : !!(S.channel && S.media.video),
+      stream: me && me.mediaKnown ? !!me.stream : !!(S.channel && S.media.stream)
+    },
     media: mediaAllowed(),
     channel: channel
   };
@@ -423,6 +437,7 @@ async function toggleMedia(what, pid) {
       log.debug('discord', 'Go Live con pid ' + args.pid + ': ' + e.message);
       await ipc.request(cmd, {});
     }
+    S.media[what] = !S.media[what];
   } catch (e) {
     if (/scope|authenticated/i.test(e.message)) {
       throw Object.assign(new Error('Discord non ha concesso questo permesso alla dock: riautorizza dal pannello di controllo'), { code: 'UNAVAILABLE' });

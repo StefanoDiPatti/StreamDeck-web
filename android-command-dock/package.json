@@ -11,7 +11,8 @@
     "start": "node scripts/bootstrap.js",
     "server": "node server/index.js",
     "setup": "node scripts/bootstrap.js --setup",
-    "test": "node --test"
+    "test": "node --test",
+    "themes": "node scripts/build-themes.js"
   },
   "license": "MIT",
   "dependencies": {
