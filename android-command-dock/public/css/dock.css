@@ -531,23 +531,31 @@ svg.ic.dc-camflag { fill: #3fb950; }
 /* desktop virtuali: sotto le finestre (4 visibili, il resto scorre) */
 .sc-dhead { position: absolute; left: 12px; right: 12px; top: 274px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; white-space: nowrap; overflow: hidden; border-top: 1px solid #222e3b; padding-top: 6px; }
 .sc-dsub { font-size: 11px; font-weight: normal; letter-spacing: 0; color: #6e7f90; margin-left: 8px; }
-.sc-desks { position: absolute; left: 6px; right: 6px; top: 308px; bottom: 68px; overflow: auto; -webkit-overflow-scrolling: touch; }
-.sc-desk { float: left; width: 48.5%; margin: 0 3% 6px 0; position: relative; height: 48px; line-height: 48px; padding: 0 8px 0 44px; border-radius: 10px; background: #172029; font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-box-sizing: border-box; box-sizing: border-box; }
-.sc-desk:nth-child(2n) { margin-right: 0; }
-.sc-desk b { position: absolute; left: 8px; top: 11px; width: 26px; height: 26px; line-height: 26px; text-align: center; border-radius: 7px; background: #2a3746; font-size: 13px; }
-.sc-desk.on { background: #2d3576; }
-.sc-desk.on b { background: #3d8bfd; }
-.sc-desk.pressed, .sc-desk.busy { background: #26354a; }
-.sc-dbusy .sc-desks, .sc-dbusy .sc-dctl { opacity: 0.55; }
-.sc-dctl { position: absolute; left: 6px; right: 6px; bottom: 6px; height: 54px; }
-.sc-dbtn { float: left; width: 48.5%; margin-right: 3%; height: 54px; line-height: 54px; border-radius: 12px; background: #243142; text-align: center; font-size: 13px; font-weight: bold; letter-spacing: .5px; white-space: nowrap; overflow: hidden; }
-.sc-dbtn:last-child { margin-right: 0; }
-.sc-dbtn svg.ic { width: 22px; height: 22px; vertical-align: -6px; margin-right: 6px; }
-.sc-dadd { background: #2f6b3a; }
-.sc-ddel { background: #5a1f24; }
-.sc-ddel.holding { background: #8b1d1d; }
-.sc-dbtn.disabled { opacity: 0.35; }
-.sc-dbtn.pressed { -webkit-transform: scale(0.96); transform: scale(0.96); }
+.sc-desks { position: absolute; left: 6px; right: 6px; top: 308px; bottom: 6px; overflow: auto; -webkit-overflow-scrolling: touch; }
+/* una scheda per desktop: miniatura dei monitor con le finestre, come Win+Tab */
+.sc-dk { float: left; width: 48.5%; margin: 0 3% 8px 0; position: relative; padding: 5px; border-radius: 10px; background: #172029; border: 2px solid transparent; -webkit-box-sizing: border-box; box-sizing: border-box; }
+.sc-dk:nth-child(2n) { margin-right: 0; }
+.sc-dk.on { border-color: #3d8bfd; background: #0f1a2a; }
+.sc-dk.pressed, .sc-dk.busy { background: #26354a; }
+.sc-dkscr { position: relative; height: 0; overflow: hidden; }
+.sc-dkmon { position: absolute; -webkit-box-sizing: border-box; box-sizing: border-box; border: 1px solid #0b0f14; background: #0d141c; border-radius: 3px; }
+.sc-dk.on .sc-dkmon { background: #10203a; }
+.sc-dkwin { position: absolute; -webkit-box-sizing: border-box; box-sizing: border-box; border: 1px solid #0b0f14; border-top: 5px solid #3b5170; background: #2a3746; border-radius: 2px; overflow: hidden; }
+.sc-dk.on .sc-dkwin { border-top-color: #3d8bfd; background: #2d3d55; }
+.sc-dkwin em { display: block; font-style: normal; font-size: 9px; line-height: 11px; color: #c6d1dc; padding: 1px 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-dkempty { position: absolute; left: 0; right: 0; top: 40%; text-align: center; font-size: 11px; color: #4d5d70; }
+.sc-dklabel { position: relative; height: 34px; padding: 5px 0 0 26px; font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 15px; }
+.sc-dklabel b { position: absolute; left: 0; top: 7px; width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 6px; background: #2a3746; font-size: 11px; }
+.sc-dk.on .sc-dklabel b { background: #3d8bfd; }
+.sc-dklabel span { display: block; font-size: 10px; font-weight: normal; color: #8b9bab; }
+.sc-dkx { position: absolute; right: -2px; top: -2px; width: 34px; height: 34px; line-height: 34px; text-align: center; border-radius: 0 9px 0 10px; background: rgba(90, 31, 36, 0.92); z-index: 2; }
+.sc-dkx svg.ic { width: 18px; height: 18px; vertical-align: -4px; }
+.sc-dkx.holding { background: #c0392b; }
+.sc-dknew { background: #131a22; border: 2px dashed #2a3746; }
+.sc-dknew .sc-dklabel { padding-left: 0; text-align: center; color: #8b9bab; }
+.sc-dkplus { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: #243142; text-align: center; line-height: 40px; }
+.sc-dkplus svg.ic { width: 24px; height: 24px; vertical-align: -6px; }
+.sc-dbusy .sc-desks { opacity: 0.55; }
 /* GUIDA ai desktop virtuali, sopra tutta la pagina */
 .sc-left .sc-help { position: absolute; right: 10px; top: 4px; z-index: 3; }
 .sc-head { right: 110px; }

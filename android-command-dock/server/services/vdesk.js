@@ -89,9 +89,30 @@ async function waitFor(test, ms) {
   return list;
 }
 
+// Per l'anteprima (come Win+Tab): ogni desktop con le sue finestre e i monitor in scala.
+async function preview(desktops) {
+  const out = { supported: true, desktops: desktops, monitors: [] };
+  try {
+    const screens = require('./screens');
+    out.monitors = (await screens.monitors()).map(function (m) { return { id: m.id, n: m.n, x: m.x, y: m.y, w: m.w, h: m.h }; });
+  } catch (e) { log.debug('vdesk', 'monitor: ' + e.message); }
+  let wins = [];
+  if (typeof platform.deskWindows === 'function') {
+    try { wins = await platform.deskWindows(); } catch (e) { log.debug('vdesk', 'finestre: ' + e.message); }
+  }
+  const by = {};
+  desktops.forEach(function (d) { d.windows = []; by[d.id] = d; });
+  wins.forEach(function (w) {
+    const d = by[w.desktop];
+    if (!d || w.pid === process.pid) return;
+    d.windows.push({ title: w.title, process: w.process, state: w.state, x: w.x, y: w.y, w: w.w, h: w.h });
+  });
+  return out;
+}
+
 async function list() {
-  if (!supported()) return { supported: false, desktops: [] };
-  return { supported: true, desktops: await read() };
+  if (!supported()) return { supported: false, desktops: [], monitors: [] };
+  return preview(await read());
 }
 
 async function go(list, index) {
@@ -135,7 +156,7 @@ async function action(act, id) {
   } else {
     throw err('Azione non valida');
   }
-  return { supported: true, desktops: desktops };
+  return preview(desktops);
 }
 
 module.exports = { list: list, action: action, _parse: parse, _guidFromHex: guidFromHex };

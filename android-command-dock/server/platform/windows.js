@@ -206,6 +206,17 @@ module.exports = {
     });
   },
 
+  // Finestre di tutti i desktop virtuali: [{ id, desktop (GUID), state, monitor, x, y, w, h, process, title }]
+  deskWindows: function () {
+    return query.call('deskwins', {}, 6000).then(function (r) {
+      return (r.list || []).map(function (l) {
+        const f = String(l).split('\t');
+        const b = f[4].split(' ').map(Number);
+        return { id: f[0], desktop: f[1], state: f[2] === 'm' ? 'min' : f[2] === 'M' ? 'max' : 'normal', monitor: f[3], x: b[0], y: b[1], w: b[2], h: b[3], process: f[5], title: f.slice(6).join(' ') };
+      });
+    });
+  },
+
   // rect = area visibile voluta; max = massimizza dopo lo spostamento
   placeWindow: function (id, rect, max, focus) {
     return input.call('place', { hwnd: Number(id), x: Math.round(rect.x), y: Math.round(rect.y), w: Math.round(rect.w), h: Math.round(rect.h), max: !!max, focus: !!focus }, 6000).then(function (r) {
