@@ -1198,12 +1198,15 @@ var Widgets = (function () {
           '<div class="dc-btn dc-live">' + Icons.html('live') + '<span>LIVE</span></div>' +
           '<div class="dc-btn dc-leave">' + Icons.html('hangup') + '<span>ESCI</span></div>' +
         '</div>' +
+        '<div class="dc-pop hidden"></div>' +
       '</div>';
     function q(c) { return root.querySelector('.' + c); }
     var guildsEl = q('dc-guilds'), ctitle = q('dc-ctitle'), clist = q('dc-clist'), members = q('dc-members');
     var rtitle = q('dc-rtitle'), rsub = q('dc-rsub'), muteBtn = q('dc-mute'), deafBtn = q('dc-deaf'), leaveBtn = q('dc-leave');
-    var camBtn = q('dc-cam'), liveBtn = q('dc-live');
+    var camBtn = q('dc-cam'), liveBtn = q('dc-live'), pop = q('dc-pop');
     var st = null, guilds = null, chans = null, alive = true, lastRoom = '';
+    // menu di una persona: volume e muto solo per te (come il tasto destro su Discord)
+    var popUser = null, popBusy = 0, popLast = '';
 
     function av(m, cls) {
       return m.avatar ? '<img class="' + cls + '" src="' + D.esc(m.avatar) + '" alt="">' : '<span class="' + cls + ' noav">' + D.esc((m.name || '?').charAt(0).toUpperCase()) + '</span>';
@@ -1212,10 +1215,79 @@ var Widgets = (function () {
       return (m.stream ? '<span class="dc-livebadge">LIVE</span>' : '') +
         (m.video ? Icons.html('camera', 'dc-flag dc-camflag') : '') +
         (m.deaf ? Icons.html('headsetoff', 'dc-flag') : m.mute ? Icons.html('micoff', 'dc-flag') : '') +
-        (m.localMute ? '<span class="dc-local">muto per te</span>' : '');
+        (m.localMute ? '<span class="dc-local">muto per te</span>' :
+          (!m.me && typeof m.volume === 'number' && m.volume !== 100 ? '<span class="dc-local">' + m.volume + '%</span>' : ''));
     }
 
+    function findMem(id) {
+      var ch = st && st.channel;
+      for (var i = 0; ch && i < ch.members.length; i++) if (ch.members[i].id === id) return ch.members[i];
+      return null;
+    }
+    function openPop(id) { popUser = id; popLast = ''; D.removeClass(pop, 'hidden'); renderPop(); }
+    function closePop() { popUser = null; popLast = ''; D.addClass(pop, 'hidden'); pop.innerHTML = ''; }
+    function renderPop() {
+      if (!popUser) return;
+      var m = findMem(popUser);
+      if (!m) return closePop();            // è uscito dalla stanza
+      if (popBusy) return;                   // non sovrascrivere mentre parte un cambio
+      var v = typeof m.volume === 'number' ? m.volume : 100, pre = [50, 100, 150, 200], ph = '';
+      for (var i = 0; i < pre.length; i++) ph += '<span class="dc-ppre' + (pre[i] === v ? ' on' : '') + '" data-vol="' + pre[i] + '">' + pre[i] + '%</span>';
+      var html =
+        '<div class="dc-phead">' + av(m, 'dc-av') + '<span class="dc-pname">' + D.esc(m.name) + '</span>' +
+          '<span class="dc-pclose" data-act="close">' + Icons.html('close') + '</span></div>' +
+        '<div class="dc-plabel">VOLUME PER TE<b>' + (m.localMute ? 'MUTO' : v + '%') + '</b></div>' +
+        '<div class="dc-pvol' + (m.localMute ? ' muted' : '') + '">' +
+          '<span class="dc-pb" data-act="down">' + Icons.html('voldown') + '</span>' +
+          '<span class="dc-pbar" data-act="bar"><i style="width:' + (v / 2) + '%"></i><em></em></span>' +
+          '<span class="dc-pb dc-pup" data-act="up">' + Icons.html('volup') + '</span>' +
+        '</div>' +
+        '<div class="dc-pres">' + ph + '</div>' +
+        '<div class="dc-pmute' + (m.localMute ? ' on' : '') + '" data-act="mute">' + Icons.html(m.localMute ? 'volup' : 'mute') +
+          '<span>' + (m.localMute ? 'TOGLI IL MUTO' : 'MUTA PER ME') + '</span></div>' +
+        '<div class="dc-pnote">Vale solo per te, gli altri non lo vedono.</div>';
+      if (html !== popLast) { pop.innerHTML = html; popLast = html; }
+    }
+    function setUser(patch, msg) {
+      var m = findMem(popUser);
+      if (!m) return;
+      // subito sul tablet, poi conferma dal PC
+      if ('volume' in patch) m.volume = patch.volume;
+      if ('mute' in patch) m.localMute = patch.mute;
+      popLast = ''; renderPop(); lastRoom = ''; renderState();
+      popBusy++;
+      patch.user = m.id;
+      D.api.post('/api/discord/user', patch, function (err, d) {
+        popBusy--;
+        if (err) { app.toast(err.message, 'err'); loadState(); return; }
+        st = d; popLast = ''; renderState();
+        if (msg) app.toast(msg, 'ok');
+      });
+    }
+    D.bindTap(pop, {
+      onTap: function (t, x) {
+        var m = findMem(popUser);
+        if (!m) return closePop();
+        var pv = D.closestAttr(t, 'data-vol', pop);
+        if (pv) return setUser({ volume: parseInt(pv.getAttribute('data-vol'), 10) });
+        var act = D.closestAttr(t, 'data-act', pop);
+        if (!act) return;
+        var a = act.getAttribute('data-act');
+        var v = typeof m.volume === 'number' ? m.volume : 100;
+        if (a === 'close') return closePop();
+        if (a === 'mute') return setUser({ mute: !m.localMute }, m.localMute ? 'Di nuovo udibile' : 'Mutato per te');
+        if (a === 'up' || a === 'down') return setUser({ volume: Math.max(0, Math.min(200, v + (a === 'up' ? 10 : -10))) });
+        if (a === 'bar') {
+          // il punto toccato diventa il volume (0-200%, il segno a metà è 100%), a passi di 5
+          var r = act.getBoundingClientRect();
+          var nv = Math.round(Math.max(0, Math.min(1, (x - r.left) / (r.right - r.left))) * 40) * 5;
+          setUser({ volume: nv });
+        }
+      }
+    });
+
     function renderState() {
+      renderPop();   // si chiude da solo se la persona (o la stanza) non c'è più
       var ready = st && st.status === 'ready';
       var v = (st && st.voice) || {};
       D.toggleClass(muteBtn, 'off', !!v.mute);
@@ -1366,12 +1438,7 @@ var Widgets = (function () {
       onTap: function (t) {
         var m = D.closestAttr(t, 'data-user', members);
         if (!m || D.hasClass(m, 'me')) return;
-        var mute = m.getAttribute('data-lmute') !== '1';
-        D.api.post('/api/discord/user', { user: m.getAttribute('data-user'), mute: mute }, function (err, d) {
-          if (err) return app.toast(err.message, 'err');
-          st = d; renderState();
-          app.toast(mute ? 'Mutato per te' : 'Di nuovo udibile', 'ok');
-        });
+        openPop(m.getAttribute('data-user'));
       }
     });
     function toggle(what) {
