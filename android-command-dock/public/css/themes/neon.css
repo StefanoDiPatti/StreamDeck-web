@@ -122,6 +122,15 @@ svg.ic { fill: #f5f5f5; }
 .cl-tabs { background: #050505; }
 .cl-tab { color: #8f8f8f; }
 .cl-tab.on { color: #f5f5f5; }
+.cl-usage { background: #080808; }
+.cu-h { color: #8f8f8f; }
+.cu-h i { color: #ffd23f; }
+.cu-bar { background: #1c1c1c; }
+.cu-row.warm .cu-bar i { background: #ffd23f; }
+.cu-row.hot .cu-bar i { background: #ff3b5c; }
+.cu-row.hot .cu-top span { color: #ff5c7a; }
+.cu-reset { color: #8f8f8f; }
+.cu-err { color: #ff5c7a; }
 .cl-sec { color: #8f8f8f; border-bottom: 1px solid #161616; }
 .cl-sec.closed .cl-sec-n { color: #808080; }
 .cl-sec-add { background: #1c1c1c; }

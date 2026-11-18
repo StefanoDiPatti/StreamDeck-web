@@ -127,6 +127,16 @@ svg.ic { fill: #111111; }
 .cl-tabs { background: #f4efe3; }
 .cl-tab { color: #5a5446; }
 .cl-tab.on { background: #ff9f5b; color: #111111; }
+.cl-usage { background: #fffdf7; }
+.cu-h { color: #5a5446; }
+.cu-h i { color: #8a5a00; }
+.cu-bar { background: #efe8d8; }
+.cu-bar i { background: #ff9f5b; }
+.cu-row.warm .cu-bar i { background: #ffd23f; }
+.cu-row.hot .cu-bar i { background: #ff6b5b; }
+.cu-row.hot .cu-top span { color: #c4271a; }
+.cu-reset { color: #5a5446; }
+.cu-err { color: #c4271a; }
 .cl-sec { color: #5a5446; border-bottom: 1px solid #111111; }
 .cl-sec.closed .cl-sec-n { color: #5a5446; }
 .cl-sec-add { background: #efe8d8; }
