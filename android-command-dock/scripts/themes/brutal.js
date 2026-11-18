@@ -14,7 +14,7 @@ module.exports = {
     '#3fb950': G, '#2f6b3a': G, '#1e5631': G, '#1d3b2a': '#c9f5d6', '#172b22': '#c9f5d6',
     '#e5534b': R, '#c0392b': R, '#8b1d1d': R, '#c8443d': R,
     '#5a1f24': '#ffd0c9', 'rgb(90,31,36)': '#ffd0c9', '#4d1717': '#ffd0c9', '#3a1d1d': '#ffd0c9', '#2a1c1f': '#ffe3df',
-    '#ffb454': Y, '#d29922': Y, '#6b5214': '#fff0b3', '#3a3220': '#fff0b3', '#c15f3c': '#ff9f5b', '#8a4227': '#ffd8bd',
+    '#ffb454': Y, '#d29922': Y, '#6b5214': '#fff0b3', '#3a3220': '#fff0b3', '#c15f3c': '#ff9f5b', '#8a4227': '#ffd8bd', '#a94f2f': '#ff9f5b',
     '#5865f2': '#8b95ff', '#4752c4': '#8b95ff', '#4d5d70': '#bdb5a3', '#8b9bab': '#9a927f', '#6cb6ff': B, '#e8eef4': INK,
     'rgb(255,255,255)': '#000000'
   },
@@ -41,6 +41,9 @@ body { font-family: "Arial Black", "Archivo Black", Roboto, Arial, sans-serif; }
 .tab svg.ic { fill: ${CREAM}; }
 .tab.active { background: ${Y}; color: ${INK}; -webkit-box-shadow: none; box-shadow: none; }
 .tab.active svg.ic { fill: ${INK}; }
+/* play della musica: giallo con icona nera (in dock.css è chiaro con icona scura) */
+.np-btn.np-play { background: ${Y}; border: 3px solid ${INK}; -webkit-box-shadow: 3px 3px 0 ${INK}; box-shadow: 3px 3px 0 ${INK}; }
+.np-btn.np-play svg.ic { fill: ${INK}; }
 .tab.pressed { background: #333; }
 svg.ic { fill: ${INK}; }
 /* tasti come adesivi: bordo spesso e ombra piena, premuti "scendono" */

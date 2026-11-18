@@ -57,5 +57,44 @@ body { font-family: "Roboto Condensed", "Arial Narrow", Roboto, Arial, sans-seri
 .tab.active svg.ic { fill: #41d1ff; -webkit-filter: drop-shadow(0 0 6px #41d1ff); filter: drop-shadow(0 0 6px #41d1ff); }
 .modal-box, .pair-box { border-color: #262626; -webkit-box-shadow: 0 0 30px rgba(65, 209, 255, 0.15); box-shadow: 0 0 30px rgba(65, 209, 255, 0.15); }
 .theme-menu { border-color: #262626; }
+
+/* ---- pulsanti dei widget al neon: fondo nero, bordo e icona luminosi.
+   Colori: azzurro = comandi, rosa = play/live, verde = voce, giallo = cam, rosso = esci/stop */
+.np-btn, .dc-btn, .au-b, .dc-pb, .sc-wbtn, .chat-send, .cl-send, .todo-add, .cl-mic, .todo-mic {
+  background: #0a0a0a; border: 2px solid #41d1ff;
+  -webkit-box-shadow: 0 0 10px rgba(65, 209, 255, 0.45), inset 0 0 8px rgba(65, 209, 255, 0.2);
+  box-shadow: 0 0 10px rgba(65, 209, 255, 0.45), inset 0 0 8px rgba(65, 209, 255, 0.2);
+}
+.np-btn svg.ic, .dc-btn svg.ic, .au-b svg.ic, .dc-pb svg.ic, .sc-wbtn svg.ic, .chat-send svg.ic, .cl-send svg.ic, .todo-add svg.ic {
+  fill: #41d1ff; -webkit-filter: drop-shadow(0 0 4px #41d1ff); filter: drop-shadow(0 0 4px #41d1ff);
+}
+.dc-btn span { color: #41d1ff; text-shadow: 0 0 6px rgba(65, 209, 255, 0.7); }
+/* play: rosa */
+.np-btn.np-play { background: #0a0a0a; border-color: #ff4fd8; -webkit-box-shadow: 0 0 14px rgba(255, 79, 216, 0.6), inset 0 0 10px rgba(255, 79, 216, 0.3); box-shadow: 0 0 14px rgba(255, 79, 216, 0.6), inset 0 0 10px rgba(255, 79, 216, 0.3); }
+.np-btn.np-play svg.ic { fill: #ff4fd8; -webkit-filter: drop-shadow(0 0 5px #ff4fd8); filter: drop-shadow(0 0 5px #ff4fd8); }
+.np-btn.np-vol { background: #0a0a0a; }
+.np-prog i { background: #41d1ff; -webkit-box-shadow: 0 0 8px #41d1ff; box-shadow: 0 0 8px #41d1ff; }
+.np-btn.pressed, .dc-btn.pressed, .au-b.pressed, .chat-send.pressed, .cl-send.pressed, .todo-add.pressed { background: #06323d; }
+/* microfono (Claude, TODO, Discord): verde; acceso/registra = rosso */
+.cl-mic, .todo-mic, .dc-mute { border-color: #8cff66; -webkit-box-shadow: 0 0 10px rgba(140, 255, 102, 0.5), inset 0 0 8px rgba(140, 255, 102, 0.2); box-shadow: 0 0 10px rgba(140, 255, 102, 0.5), inset 0 0 8px rgba(140, 255, 102, 0.2); }
+.cl-mic svg.ic, .todo-mic svg.ic, .dc-mute svg.ic { fill: #8cff66; -webkit-filter: drop-shadow(0 0 4px #8cff66); filter: drop-shadow(0 0 4px #8cff66); }
+.dc-mute span { color: #8cff66; text-shadow: 0 0 6px rgba(140, 255, 102, 0.7); }
+.cl-mic.on, .todo-mic.on, .dc-btn.off { background: #2a0010; border-color: #ff3b5c; -webkit-box-shadow: 0 0 16px rgba(255, 59, 92, 0.75); box-shadow: 0 0 16px rgba(255, 59, 92, 0.75); }
+.cl-mic.on svg.ic, .todo-mic.on svg.ic, .dc-btn.off svg.ic { fill: #ff3b5c; -webkit-filter: drop-shadow(0 0 5px #ff3b5c); filter: drop-shadow(0 0 5px #ff3b5c); }
+.dc-btn.off span { color: #ff3b5c; text-shadow: 0 0 6px rgba(255, 59, 92, 0.8); }
+/* Discord: cam gialla, live rosa, esci rossa; accese = piene */
+.dc-cam { border-color: #ffd23f; } .dc-cam svg.ic { fill: #ffd23f; -webkit-filter: drop-shadow(0 0 4px #ffd23f); filter: drop-shadow(0 0 4px #ffd23f); } .dc-cam span { color: #ffd23f; }
+.dc-live { border-color: #ff4fd8; } .dc-live svg.ic { fill: #ff4fd8; -webkit-filter: drop-shadow(0 0 4px #ff4fd8); filter: drop-shadow(0 0 4px #ff4fd8); } .dc-live span { color: #ff4fd8; }
+.dc-leave { border-color: #ff3b5c; } .dc-leave svg.ic { fill: #ff3b5c; -webkit-filter: drop-shadow(0 0 4px #ff3b5c); filter: drop-shadow(0 0 4px #ff3b5c); } .dc-leave span { color: #ff3b5c; }
+.dc-btn.on { background: #0f3d22; border-color: #39ff88; -webkit-box-shadow: 0 0 16px rgba(57, 255, 136, 0.7); box-shadow: 0 0 16px rgba(57, 255, 136, 0.7); }
+.dc-btn.on svg.ic { fill: #39ff88; } .dc-btn.on span { color: #39ff88; }
+.dc-live.on { background: #3d0030; border-color: #ff4fd8; -webkit-box-shadow: 0 0 18px rgba(255, 79, 216, 0.8); box-shadow: 0 0 18px rgba(255, 79, 216, 0.8); }
+.dc-live.on svg.ic { fill: #ff4fd8; } .dc-live.on span { color: #ff4fd8; }
+/* pulsantini delle intestazioni */
+.sbtn { color: #41d1ff; border: 1px solid #41d1ff; background: #0a0a0a; }
+.sbtn svg.ic { fill: #41d1ff; }
+.sbtn.on, .sbtn.pressed { background: #06323d; }
+/* icone dei tasti: due bagliori, uno stretto (nitidezza) e uno largo */
+.tile.btn .t-icon svg { -webkit-filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 8px currentColor); filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 8px currentColor); }
 `
 };

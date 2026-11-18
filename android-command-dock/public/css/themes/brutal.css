@@ -27,8 +27,8 @@ svg.ic { fill: #111111; }
 .tile.btn.running:before { background: #2bd96b; }
 .t-hold i { background: #ffd23f; }
 #tabs { background: #fffdf7; border-top: 1px solid #111111; }
-.tab { color: #5a5446; }
-.tab svg.ic { fill: #5a5446; }
+.tab { color: #2b2b2b; }
+.tab svg.ic { fill: #2b2b2b; }
 .tab.active { color: #111111; background: #ffffff; -webkit-box-shadow: inset 0 3px 0 #111111; box-shadow: inset 0 3px 0 #111111; }
 .tab.active svg.ic { fill: #111111; }
 .tab.pressed { background: #efe8d8; }
@@ -89,7 +89,7 @@ svg.ic { fill: #111111; }
 .todo-mic.pressed { background: #e3dccb; }
 .todo-mic.on.pressed { background: #ff6b5b; }
 .todo-input { background: #f4efe3; color: #111111; border: 1px solid #111111; }
-.todo-add { background: #4d9dff; }
+.todo-add { background: #3d86e8; }
 .todo-add.pressed { background: #3d86e8; }
 .todo-row { background: #ffffff; }
 .todo-row.pressed { background: #ffd23f; }
@@ -97,7 +97,7 @@ svg.ic { fill: #111111; }
 .todo-row.done .todo-text { color: #5a5446; }
 .todo-box { border: 2px solid #111111; }
 .todo-row.done .todo-box { background: #2bd96b; border-color: #2bd96b; }
-.todo-del svg.ic { fill: #5a5446; }
+.todo-del svg.ic { fill: #2b2b2b; }
 .todo-text b { color: #111111; }
 .todo-row.done .todo-text b { color: #5a5446; }
 .todo-group { color: #5a5446; }
@@ -116,7 +116,7 @@ svg.ic { fill: #111111; }
 .msg code { background: #f4efe3; }
 .msg.typing i { background: #9a927f; }
 .chat-input { background: #f4efe3; color: #111111; border: 1px solid #111111; }
-.chat-send { background: #4d9dff; }
+.chat-send { background: #3d86e8; }
 .claude .chat-send { background: #ff9f5b; }
 .clk-date { color: #2b2b2b; }
 .q-row { background: #ffffff; }
@@ -302,6 +302,9 @@ body { font-family: "Arial Black", "Archivo Black", Roboto, Arial, sans-serif; }
 .tab svg.ic { fill: #f4efe3; }
 .tab.active { background: #ffd23f; color: #111111; -webkit-box-shadow: none; box-shadow: none; }
 .tab.active svg.ic { fill: #111111; }
+/* play della musica: giallo con icona nera (in dock.css è chiaro con icona scura) */
+.np-btn.np-play { background: #ffd23f; border: 3px solid #111111; -webkit-box-shadow: 3px 3px 0 #111111; box-shadow: 3px 3px 0 #111111; }
+.np-btn.np-play svg.ic { fill: #111111; }
 .tab.pressed { background: #333; }
 svg.ic { fill: #111111; }
 /* tasti come adesivi: bordo spesso e ombra piena, premuti "scendono" */

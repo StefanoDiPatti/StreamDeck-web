@@ -3,7 +3,7 @@
 
 /* ---- colori (da dock.css) */
 body { background: #050505; color: #ededed; }
-svg.ic { fill: #ededed; }
+svg.ic { fill: #f5f5f5; }
 #topbar { background: #080808; border-bottom: 1px solid #161616; }
 #status-dot { background: #ff3b5c; }
 #status-dot.on { background: #39ff88; }
@@ -26,8 +26,8 @@ svg.ic { fill: #ededed; }
 .tile.btn.running:before { background: #39ff88; }
 .t-hold i { background: #ffd23f; }
 #tabs { background: #080808; border-top: 1px solid #161616; }
-.tab { color: #8f8f8f; }
-.tab svg.ic { fill: #8f8f8f; }
+.tab { color: #bdbdbd; }
+.tab svg.ic { fill: #bdbdbd; }
 .tab.active { color: #f5f5f5; background: #0f0f0f; -webkit-box-shadow: inset 0 3px 0 #41d1ff; box-shadow: inset 0 3px 0 #41d1ff; }
 .tab.active svg.ic { fill: #f5f5f5; }
 .tab.pressed { background: #1c1c1c; }
@@ -86,7 +86,7 @@ svg.ic { fill: #ededed; }
 .todo-mic.pressed { background: #232323; }
 .todo-mic.on.pressed { background: #b3002d; }
 .todo-input { background: #050505; color: #f5f5f5; border: 1px solid #262626; }
-.todo-add { background: #007a99; }
+.todo-add { background: #006680; }
 .todo-add.pressed { background: #006680; }
 .todo-row { background: #141414; }
 .todo-row.pressed { background: #06323d; }
@@ -94,7 +94,7 @@ svg.ic { fill: #ededed; }
 .todo-row.done .todo-text { color: #808080; }
 .todo-box { border: 2px solid #3d3d3d; }
 .todo-row.done .todo-box { background: #39ff88; border-color: #39ff88; }
-.todo-del svg.ic { fill: #808080; }
+.todo-del svg.ic { fill: #9e9e9e; }
 .todo-text b { color: #f5f5f5; }
 .todo-row.done .todo-text b { color: #808080; }
 .todo-group { color: #8f8f8f; }
@@ -112,7 +112,7 @@ svg.ic { fill: #ededed; }
 .msg code { background: #050505; }
 .msg.typing i { background: #666666; }
 .chat-input { background: #050505; color: #f5f5f5; border: 1px solid #262626; }
-.chat-send { background: #007a99; }
+.chat-send { background: #006680; }
 .clk-date { color: #9e9e9e; }
 .q-row { background: #141414; }
 .q-row.current { background: #06323d; -webkit-box-shadow: inset 4px 0 0 #41d1ff; box-shadow: inset 4px 0 0 #41d1ff; }
@@ -311,3 +311,42 @@ body { font-family: "Roboto Condensed", "Arial Narrow", Roboto, Arial, sans-seri
 .tab.active svg.ic { fill: #41d1ff; -webkit-filter: drop-shadow(0 0 6px #41d1ff); filter: drop-shadow(0 0 6px #41d1ff); }
 .modal-box, .pair-box { border-color: #262626; -webkit-box-shadow: 0 0 30px rgba(65, 209, 255, 0.15); box-shadow: 0 0 30px rgba(65, 209, 255, 0.15); }
 .theme-menu { border-color: #262626; }
+
+/* ---- pulsanti dei widget al neon: fondo nero, bordo e icona luminosi.
+   Colori: azzurro = comandi, rosa = play/live, verde = voce, giallo = cam, rosso = esci/stop */
+.np-btn, .dc-btn, .au-b, .dc-pb, .sc-wbtn, .chat-send, .cl-send, .todo-add, .cl-mic, .todo-mic {
+  background: #0a0a0a; border: 2px solid #41d1ff;
+  -webkit-box-shadow: 0 0 10px rgba(65, 209, 255, 0.45), inset 0 0 8px rgba(65, 209, 255, 0.2);
+  box-shadow: 0 0 10px rgba(65, 209, 255, 0.45), inset 0 0 8px rgba(65, 209, 255, 0.2);
+}
+.np-btn svg.ic, .dc-btn svg.ic, .au-b svg.ic, .dc-pb svg.ic, .sc-wbtn svg.ic, .chat-send svg.ic, .cl-send svg.ic, .todo-add svg.ic {
+  fill: #41d1ff; -webkit-filter: drop-shadow(0 0 4px #41d1ff); filter: drop-shadow(0 0 4px #41d1ff);
+}
+.dc-btn span { color: #41d1ff; text-shadow: 0 0 6px rgba(65, 209, 255, 0.7); }
+/* play: rosa */
+.np-btn.np-play { background: #0a0a0a; border-color: #ff4fd8; -webkit-box-shadow: 0 0 14px rgba(255, 79, 216, 0.6), inset 0 0 10px rgba(255, 79, 216, 0.3); box-shadow: 0 0 14px rgba(255, 79, 216, 0.6), inset 0 0 10px rgba(255, 79, 216, 0.3); }
+.np-btn.np-play svg.ic { fill: #ff4fd8; -webkit-filter: drop-shadow(0 0 5px #ff4fd8); filter: drop-shadow(0 0 5px #ff4fd8); }
+.np-btn.np-vol { background: #0a0a0a; }
+.np-prog i { background: #41d1ff; -webkit-box-shadow: 0 0 8px #41d1ff; box-shadow: 0 0 8px #41d1ff; }
+.np-btn.pressed, .dc-btn.pressed, .au-b.pressed, .chat-send.pressed, .cl-send.pressed, .todo-add.pressed { background: #06323d; }
+/* microfono (Claude, TODO, Discord): verde; acceso/registra = rosso */
+.cl-mic, .todo-mic, .dc-mute { border-color: #8cff66; -webkit-box-shadow: 0 0 10px rgba(140, 255, 102, 0.5), inset 0 0 8px rgba(140, 255, 102, 0.2); box-shadow: 0 0 10px rgba(140, 255, 102, 0.5), inset 0 0 8px rgba(140, 255, 102, 0.2); }
+.cl-mic svg.ic, .todo-mic svg.ic, .dc-mute svg.ic { fill: #8cff66; -webkit-filter: drop-shadow(0 0 4px #8cff66); filter: drop-shadow(0 0 4px #8cff66); }
+.dc-mute span { color: #8cff66; text-shadow: 0 0 6px rgba(140, 255, 102, 0.7); }
+.cl-mic.on, .todo-mic.on, .dc-btn.off { background: #2a0010; border-color: #ff3b5c; -webkit-box-shadow: 0 0 16px rgba(255, 59, 92, 0.75); box-shadow: 0 0 16px rgba(255, 59, 92, 0.75); }
+.cl-mic.on svg.ic, .todo-mic.on svg.ic, .dc-btn.off svg.ic { fill: #ff3b5c; -webkit-filter: drop-shadow(0 0 5px #ff3b5c); filter: drop-shadow(0 0 5px #ff3b5c); }
+.dc-btn.off span { color: #ff3b5c; text-shadow: 0 0 6px rgba(255, 59, 92, 0.8); }
+/* Discord: cam gialla, live rosa, esci rossa; accese = piene */
+.dc-cam { border-color: #ffd23f; } .dc-cam svg.ic { fill: #ffd23f; -webkit-filter: drop-shadow(0 0 4px #ffd23f); filter: drop-shadow(0 0 4px #ffd23f); } .dc-cam span { color: #ffd23f; }
+.dc-live { border-color: #ff4fd8; } .dc-live svg.ic { fill: #ff4fd8; -webkit-filter: drop-shadow(0 0 4px #ff4fd8); filter: drop-shadow(0 0 4px #ff4fd8); } .dc-live span { color: #ff4fd8; }
+.dc-leave { border-color: #ff3b5c; } .dc-leave svg.ic { fill: #ff3b5c; -webkit-filter: drop-shadow(0 0 4px #ff3b5c); filter: drop-shadow(0 0 4px #ff3b5c); } .dc-leave span { color: #ff3b5c; }
+.dc-btn.on { background: #0f3d22; border-color: #39ff88; -webkit-box-shadow: 0 0 16px rgba(57, 255, 136, 0.7); box-shadow: 0 0 16px rgba(57, 255, 136, 0.7); }
+.dc-btn.on svg.ic { fill: #39ff88; } .dc-btn.on span { color: #39ff88; }
+.dc-live.on { background: #3d0030; border-color: #ff4fd8; -webkit-box-shadow: 0 0 18px rgba(255, 79, 216, 0.8); box-shadow: 0 0 18px rgba(255, 79, 216, 0.8); }
+.dc-live.on svg.ic { fill: #ff4fd8; } .dc-live.on span { color: #ff4fd8; }
+/* pulsantini delle intestazioni */
+.sbtn { color: #41d1ff; border: 1px solid #41d1ff; background: #0a0a0a; }
+.sbtn svg.ic { fill: #41d1ff; }
+.sbtn.on, .sbtn.pressed { background: #06323d; }
+/* icone dei tasti: due bagliori, uno stretto (nitidezza) e uno largo */
+.tile.btn .t-icon svg { -webkit-filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 8px currentColor); filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 8px currentColor); }
