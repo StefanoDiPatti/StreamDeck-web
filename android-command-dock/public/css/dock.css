@@ -467,7 +467,15 @@ svg.ic.dc-flag { width: 16px; height: 16px; fill: #e5534b; vertical-align: -3px;
 .dc-btn:last-child { margin-right: 0; }
 .dc-btn svg.ic { display: block; width: 26px; height: 26px; margin: 0 auto 5px; }
 .dc-btn.on { background: #2f6b3a; }
-.dc-live.on { background: #c0392b; }
+.dc-live.on { background: #c0392b; position: relative; -webkit-box-shadow: 0 0 0 3px rgba(229, 83, 75, 0.45); box-shadow: 0 0 0 3px rgba(229, 83, 75, 0.45); }
+/* in live: pallino che lampeggia (pulsante e intestazione della stanza) */
+.dc-livedot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #fff; -webkit-animation: dcblink 1s infinite; animation: dcblink 1s infinite; }
+.dc-live .dc-livedot { position: absolute; right: 8px; top: 8px; }
+@-webkit-keyframes dcblink { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+@keyframes dcblink { 0%, 100% { opacity: 1; } 50% { opacity: 0.15; } }
+.dc-onair { display: inline-block; background: #c0392b; color: #fff; font-size: 11px; font-weight: bold; letter-spacing: 1px; border-radius: 5px; padding: 0 7px 0 6px; margin-right: 8px; line-height: 20px; vertical-align: 2px; }
+.dc-onair .dc-livedot { width: 7px; height: 7px; margin-right: 5px; vertical-align: 1px; background: #fff; }
+.dc-streaming .dc-room { -webkit-box-shadow: inset 0 3px 0 #c0392b; box-shadow: inset 0 3px 0 #c0392b; }
 .dc-livebadge { font-size: 9px; font-weight: bold; letter-spacing: .5px; background: #c0392b; color: #fff; border-radius: 4px; padding: 1px 4px; margin-left: 6px; vertical-align: 2px; }
 svg.ic.dc-camflag { fill: #3fb950; }
 .dc-btn.off { background: #8b1d1d; }
