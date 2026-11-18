@@ -1529,8 +1529,8 @@ var Widgets = (function () {
       '<div class="sc-right">' +
         '<div class="sc-whead">FINESTRE APERTE</div>' +
         '<div class="sc-wins scroll"></div>' +
-        '<div class="sc-dhead">DESKTOP VIRTUALI<span class="sc-dsub">tocca uno schermo per passarci</span></div>' +
-        '<div class="sc-desks scroll"></div>' +
+        '<div class="sc-dhead">DESKTOP VIRTUALI<span class="sc-dsub">tocca per passarci</span></div>' +
+        '<div class="sc-desks"></div>' +
       '</div>' +
       '<div class="sc-guide w-vdesk hidden"></div>';
     function q(c) { return root.querySelector('.' + c); }
@@ -1544,54 +1544,24 @@ var Widgets = (function () {
     q('sc-left').appendChild(helpBtn);
     vdeskGuide(guideEl, 'windows', function () { D.addClass(guideEl, 'hidden'); });
 
-    // Ogni desktop come un piccolo schermo (come Win+Tab): i monitor nella loro
-    // posizione e le finestre in scala, la più in alto sopra. Le posizioni sono in %
-    // dell'area di tutti i monitor; l'altezza segue le proporzioni (padding-bottom).
-    function deskThumb(d, area) {
-      var html = '', i;
-      function box(x, y, w, h) {
-        return 'left:' + pct((x - area.x) / area.w) + ';top:' + pct((y - area.y) / area.h) + ';width:' + pct(w / area.w) + ';height:' + pct(h / area.h);
-      }
-      for (i = 0; i < area.mons.length; i++) {
-        var m = area.mons[i];
-        html += '<i class="sc-dkmon" style="' + box(m.x, m.y, m.w, m.h) + '"></i>';
-      }
-      var mins = 0;
-      for (i = d.windows.length - 1; i >= 0; i--) {     // dalla più in basso
-        var w = d.windows[i];
-        if (w.state === 'min') { mins++; continue; }
-        var x = Math.max(area.x, w.x), y = Math.max(area.y, w.y);
-        var r = Math.min(area.x + area.w, w.x + w.w), b = Math.min(area.y + area.h, w.y + w.h);
-        if (r - x < 20 || b - y < 20) continue;
-        html += '<span class="sc-dkwin" style="' + box(x, y, r - x, b - y) + '"><em>' + D.esc(w.process || w.title) + '</em></span>';
-      }
-      var open = d.windows.length - mins;
+    // Ogni desktop è una scheda semplice: icona dello schermo, numero, nome e finestre.
+    function deskCard(d) {
+      var n = d.windows ? d.windows.length : 0;
       return '<div class="sc-dk' + (d.current ? ' on' : '') + '" data-desk="' + D.esc(d.id) + '">' +
-        '<div class="sc-dkscr" style="padding-bottom:' + pct(area.h / area.w) + '">' + html +
-          (d.windows.length ? '' : '<span class="sc-dkempty">vuoto</span>') + '</div>' +
-        '<div class="sc-dklabel"><b>' + d.n + '</b>' + D.esc(d.name) +
-          '<span>' + open + (open === 1 ? ' finestra' : ' finestre') + (mins ? ' · ' + mins + ' ridotte' : '') + '</span></div>' +
+        Icons.html('desktop', 'sc-dkic') + '<b class="sc-dkn">' + d.n + '</b>' +
+        '<span class="sc-dkname">' + D.esc(d.name) + '</span>' +
+        '<span class="sc-dksub">' + (d.current ? 'sei qui' : n + (n === 1 ? ' finestra' : ' finestre')) + '</span>' +
         (desks.desktops.length > 1 ? '<span class="sc-dkx" data-del="' + D.esc(d.id) + '">' + Icons.html('close') + '</span>' : '') +
         '</div>';
-    }
-    function deskArea() {
-      var mons = desks.monitors && desks.monitors.length ? desks.monitors : [{ x: 0, y: 0, w: 1920, h: 1080 }];
-      var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
-      for (var i = 0; i < mons.length; i++) {
-        x0 = Math.min(x0, mons[i].x); y0 = Math.min(y0, mons[i].y);
-        x1 = Math.max(x1, mons[i].x + mons[i].w); y1 = Math.max(y1, mons[i].y + mons[i].h);
-      }
-      return { x: x0, y: y0, w: x1 - x0, h: y1 - y0, mons: mons };
     }
     function renderDesks() {
       D.toggleClass(root, 'sc-dbusy', deskBusy);
       if (!desks) { desksEl.innerHTML = '<div class="empty">Carico…</div>'; return; }
       if (!desks.supported) { desksEl.innerHTML = '<div class="empty">Solo su Windows</div>'; return; }
-      var area = deskArea(), html = '';
-      for (var i = 0; i < desks.desktops.length; i++) html += deskThumb(desks.desktops[i], area);
+      var html = '';
+      for (var i = 0; i < desks.desktops.length; i++) html += deskCard(desks.desktops[i]);
       // "+" come in Visualizzazione attività: crea un desktop e ci entra
-      html += '<div class="sc-dk sc-dknew" data-new="1"><div class="sc-dkscr" style="padding-bottom:' + pct(area.h / area.w) + '">' +
-        '<span class="sc-dkplus">' + Icons.html('add') + '</span></div><div class="sc-dklabel">Nuovo desktop</div></div>';
+      html += '<div class="sc-dk sc-dknew" data-new="1">' + Icons.html('add', 'sc-dkic') + '<span class="sc-dkname">Nuovo</span></div>';
       desksEl.innerHTML = html;
       // la X chiude il desktop: va tenuta premuta (le finestre passano al desktop vicino)
       var xs = desksEl.querySelectorAll('.sc-dkx');
