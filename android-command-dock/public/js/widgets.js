@@ -471,10 +471,11 @@ var Widgets = (function () {
     ] }
   ];
 
-  function gitGuideHtml() {
+  // Guida a sezioni (comandi git, desktop virtuali): [testo, spiegazione, livello]
+  function guideHtml(sections) {
     var html = '';
-    for (var s = 0; s < GIT_GUIDE.length; s++) {
-      var sec = GIT_GUIDE[s];
+    for (var s = 0; s < sections.length; s++) {
+      var sec = sections[s];
       html += '<div class="gg-sec">' + D.esc(sec.title) + '</div>';
       if (sec.note) html += '<div class="gg-note">' + D.esc(sec.note) + '</div>';
       for (var i = 0; i < sec.items.length; i++) {
@@ -496,7 +497,7 @@ var Widgets = (function () {
     var totals = el('div', 'gh-totals', '');
     var list = el('div', 'w-list scroll');
     var guide = el('div', 'w-list scroll gg hidden');
-    guide.innerHTML = gitGuideHtml();
+    guide.innerHTML = guideHtml(GIT_GUIDE);
     root.appendChild(totals); root.appendChild(list); root.appendChild(guide);
     var guideOn = false;
     function showGuide(on) {
@@ -1413,6 +1414,104 @@ var Widgets = (function () {
     };
   }
 
+  // ------------------------------------------------------- desktop virtuali
+  // Guida alle scorciatoie (pagina DESKTOP VIRTUALI). Parte dal sistema del PC
+  // collegato (tile.system, scelto dal server) e si cambia con i due pulsanti.
+  // In arancione ('warn') quello che chiude o sposta qualcosa.
+  var VDESK_GUIDE = {
+    windows: [
+      { title: 'LE BASI', note: 'Windows 10 e 11. Le finestre restano aperte anche sui desktop che non stai guardando.', items: [
+        ['Win + Tab', 'Visualizzazione attività: vedi tutti i desktop e le finestre. Da qui crei, rinomini e riordini i desktop.'],
+        ['Win + Ctrl + D', 'Crea un desktop nuovo e ci entra.'],
+        ['Win + Ctrl + →', 'Passa al desktop a destra.'],
+        ['Win + Ctrl + ←', 'Passa al desktop a sinistra.'],
+        ['Win + Ctrl + F4', 'Chiude il desktop attuale. Le sue finestre non si chiudono: passano al desktop vicino.', 'warn']
+      ] },
+      { title: 'SPOSTARE LE FINESTRE TRA I DESKTOP', note: 'Windows non ha una scorciatoia pronta per questo: si fa da Win + Tab.', items: [
+        ['Win + Tab → trascina', 'Trascina la miniatura di una finestra sul desktop che vuoi, in alto (o sul pulsante + per un desktop nuovo).'],
+        ['Win + Tab → tasto destro', 'Sulla miniatura: "Sposta in" un altro desktop, anche uno nuovo.'],
+        ['Mostra su tutti i desktop', 'Stesso menu: la finestra (o tutte quelle dell\'app) resta visibile su ogni desktop. Comodo per musica e chat.']
+      ] },
+      { title: 'TOUCHPAD', items: [
+        ['4 dita ← / →', 'Cambia desktop.'],
+        ['4 dita ↑', 'Visualizzazione attività (come Win + Tab).'],
+        ['4 dita ↓', 'Mostra il desktop (riduce tutto).']
+      ] },
+      { title: 'FINESTRE E MONITOR (UTILI INSIEME)', items: [
+        ['Alt + Tab', 'Cambia finestra. Di base solo quelle del desktop attuale: si cambia in Impostazioni → Sistema → Multitasking → Desktop.'],
+        ['Win + ← / → / ↑ / ↓', 'Affianca la finestra a metà schermo, la ingrandisce o la riduce (Snap).'],
+        ['Win + Z', 'Sceglie una disposizione di Snap (Windows 11).'],
+        ['Win + Shift + ← / →', 'Sposta la finestra sull\'altro monitor, mantenendo la posizione.'],
+        ['Win + D', 'Mostra il desktop; ripremi per tornare alle finestre.'],
+        ['Win + Home', 'Riduce tutte le finestre tranne quella attiva.']
+      ] },
+      { title: 'TRUCCHI', items: [
+        ['Nome e sfondo', 'In Win + Tab, tasto destro su un desktop: "Rinomina" e "Scegli sfondo". Es. LAVORO, GIOCO, STREAM.'],
+        ['Barra delle applicazioni', 'Impostazioni → Sistema → Multitasking → Desktop: scegli se la barra mostra le finestre di tutti i desktop.'],
+        ['Dal tablet', 'Qui in SCHERMI, sotto le finestre: tocca un desktop per passarci, + per crearne uno, tieni premuta la X per chiuderlo.']
+      ] }
+    ],
+    linux: [
+      { title: 'KDE PLASMA (IL TUO LINUX)', note: 'Scorciatoie di base di Plasma 6. Meta è il tasto Windows. Si cambiano in Impostazioni di sistema → Scorciatoie → KWin.', items: [
+        ['Meta + W', 'Panoramica: tutti i desktop e le finestre. Da qui aggiungi (+) e rinomini i desktop.'],
+        ['Meta + G', 'Griglia dei desktop: tutti i desktop affiancati, trascini le finestre dall\'uno all\'altro.'],
+        ['Ctrl + F1 … F4', 'Va direttamente al desktop 1, 2, 3 o 4.'],
+        ['Meta + Ctrl + ← / →', 'Passa al desktop a sinistra o a destra.'],
+        ['Meta + Ctrl + Shift + ← / →', 'Porta la finestra attiva sul desktop a sinistra o a destra (e ci vai con lei).'],
+        ['Alt + F3', 'Menu della finestra: "Sposta su desktop" o "Tutti i desktop" (visibile ovunque).']
+      ] },
+      { title: 'KDE: QUANTI DESKTOP E COME', items: [
+        ['Desktop virtuali', 'Impostazioni di sistema → cerca "Desktop virtuali": numero, righe, nomi e scorciatoie. Di base ce n\'è uno solo.'],
+        ['Attività', 'Plasma ha anche le Attività (Meta + Q): gruppi di desktop con sfondi e widget diversi. Diverse dai desktop virtuali.'],
+        ['4 dita ← / →', 'Touchpad su Wayland: cambia desktop.'],
+        ['4 dita ↑ / ↓', 'Touchpad: Panoramica e griglia dei desktop.']
+      ] },
+      { title: 'GNOME (SE USI UBUNTU E SIMILI)', note: 'In GNOME i desktop si chiamano spazi di lavoro e se ne crea uno nuovo da solo quando l\'ultimo si riempie.', items: [
+        ['Super', 'Attività: vedi tutti gli spazi di lavoro e le finestre.'],
+        ['Super + PagSu / PagGiù', 'Spazio di lavoro precedente o successivo (anche Ctrl + Alt + ← / →).'],
+        ['Super + Shift + PagSu / PagGiù', 'Porta la finestra sullo spazio di lavoro precedente o successivo.'],
+        ['3 dita ← / →', 'Touchpad: cambia spazio di lavoro.']
+      ] },
+      { title: 'FINESTRE E MONITOR', items: [
+        ['Alt + Tab', 'Cambia finestra (in KDE di base solo quelle del desktop attuale).'],
+        ['Meta + ← / → / ↑ / ↓', 'Affianca la finestra a metà o in un quarto di schermo (KDE e GNOME).'],
+        ['Meta + Shift + ← / →', 'Sposta la finestra sull\'altro monitor.'],
+        ['Meta + D', 'Mostra il desktop (KDE). In GNOME: Super + D.'],
+        ['Alt + F4', 'Chiude la finestra attiva.', 'warn']
+      ] }
+    ]
+  };
+
+  // Guida dentro root (intestazione + elenco). onClose: pulsante X (guida sopra SCHERMI).
+  function vdeskGuide(root, sys, onClose) {
+    var btns = {};
+    var tools = el('span', 'gh-tools');
+    btns.windows = smallBtn('WINDOWS', 'desktop', function () { show('windows'); });
+    btns.linux = smallBtn('LINUX', 'terminal', function () { show('linux'); });
+    tools.appendChild(btns.windows); tools.appendChild(btns.linux);
+    if (onClose) tools.appendChild(smallBtn('', 'close', onClose));
+    var title = header(root, 'DESKTOP VIRTUALI', tools);
+    var guide = el('div', 'w-list scroll gg');
+    root.appendChild(guide);
+    function show(sys) {
+      if (!VDESK_GUIDE[sys]) sys = 'windows';
+      guide.innerHTML = guideHtml(VDESK_GUIDE[sys]);
+      guide.scrollTop = 0;
+      D.toggleClass(btns.windows, 'on', sys === 'windows');
+      D.toggleClass(btns.linux, 'on', sys === 'linux');
+      setText(title, 'DESKTOP VIRTUALI · ' + (sys === 'linux' ? 'LINUX' : 'WINDOWS'));
+    }
+    show(sys);
+    return { show: show };
+  }
+
+  // Pagina a sé (su Linux, dove SCHERMI non c'è)
+  function vdeskWidget(root, tile, app) {
+    D.addClass(root, 'w-vdesk');
+    vdeskGuide(root, tile && tile.system);
+    return { update: function () {}, resize: function () {}, destroy: function () {} };
+  }
+
   // ---------------------------------------------------------------- schermi
   // A sinistra i monitor come sono sulla scrivania: tocca un monitor, scegli una
   // disposizione, tocca una zona e poi una finestra a destra per metterla lì
@@ -1430,9 +1529,98 @@ var Widgets = (function () {
       '<div class="sc-right">' +
         '<div class="sc-whead">FINESTRE APERTE</div>' +
         '<div class="sc-wins scroll"></div>' +
-      '</div>';
+        '<div class="sc-dhead">DESKTOP VIRTUALI<span class="sc-dsub">tocca per passarci</span></div>' +
+        '<div class="sc-desks"></div>' +
+      '</div>' +
+      '<div class="sc-guide w-vdesk hidden"></div>';
     function q(c) { return root.querySelector('.' + c); }
     var map = q('sc-map'), layoutsEl = q('sc-layouts'), openEl = q('sc-open'), winsEl = q('sc-wins'), hint = q('sc-hint');
+    var desksEl = q('sc-desks'), guideEl = q('sc-guide');
+    var desks = null, deskBusy = false;
+
+    // GUIDA: scorciatoie dei desktop virtuali, sopra tutta la pagina
+    var helpBtn = smallBtn('GUIDA', 'info', function () { D.removeClass(guideEl, 'hidden'); });
+    D.addClass(helpBtn, 'sc-help');
+    q('sc-left').appendChild(helpBtn);
+    vdeskGuide(guideEl, 'windows', function () { D.addClass(guideEl, 'hidden'); });
+
+    // Ogni desktop è una scheda semplice: icona dello schermo, numero, nome e finestre.
+    function deskCard(d) {
+      var n = d.windows ? d.windows.length : 0;
+      return '<div class="sc-dk' + (d.current ? ' on' : '') + '" data-desk="' + D.esc(d.id) + '">' +
+        Icons.html('desktop', 'sc-dkic') + '<b class="sc-dkn">' + d.n + '</b>' +
+        '<span class="sc-dkname">' + D.esc(d.name) + '</span>' +
+        '<span class="sc-dksub">' + (d.current ? 'sei qui' : n + (n === 1 ? ' finestra' : ' finestre')) + '</span>' +
+        (desks.desktops.length > 1 ? '<span class="sc-dkx" data-del="' + D.esc(d.id) + '">' + Icons.html('close') + '</span>' : '') +
+        '</div>';
+    }
+    function renderDesks() {
+      D.toggleClass(root, 'sc-dbusy', deskBusy);
+      if (!desks) { desksEl.innerHTML = '<div class="empty">Carico…</div>'; return; }
+      if (!desks.supported) { desksEl.innerHTML = '<div class="empty">Solo su Windows</div>'; return; }
+      var html = '';
+      for (var i = 0; i < desks.desktops.length; i++) html += deskCard(desks.desktops[i]);
+      // "+" come in Visualizzazione attività: crea un desktop e ci entra
+      html += '<div class="sc-dk sc-dknew" data-new="1">' + Icons.html('add', 'sc-dkic') + '<span class="sc-dkname">Nuovo</span></div>';
+      desksEl.innerHTML = html;
+      // la X chiude il desktop: va tenuta premuta (le finestre passano al desktop vicino)
+      var xs = desksEl.querySelectorAll('.sc-dkx');
+      for (var k = 0; k < xs.length; k++) bindClose(xs[k]);
+    }
+    var xFired = 0;
+    function bindClose(x) {
+      D.bindTap(x, { hold: 700, onTap: function () {
+        xFired = new Date().getTime();
+        deskAction({ action: 'delete', desktop: x.getAttribute('data-del') }, function () { return 'Desktop chiuso: le sue finestre sono passate a quello vicino'; });
+      } });
+    }
+    var lastDesks = '';
+    function loadDesks() {
+      if (deskBusy) return;
+      D.api.get('/api/screens/desktops', function (err, d) {
+        if (!alive || deskBusy) return;
+        if (err) {
+          // es. dock avviata prima dell'aggiornamento: meglio dirlo che restare su "Carico…"
+          if (!desks) desksEl.innerHTML = '<div class="empty err">' + D.esc(err.code === 'NOT_FOUND' ?
+            'Il PC ha una versione vecchia della dock: riavviala (icona vicino all\'orologio → Riavvia).' : err.message) + '</div>';
+          return;
+        }
+        var key = JSON.stringify(d);
+        if (key === lastDesks) return;
+        lastDesks = key; desks = d; renderDesks();
+      });
+    }
+    function deskAction(body, msg) {
+      if (deskBusy) return;
+      deskBusy = true; renderDesks();
+      D.api.post('/api/screens/desktops', body, function (err, d) {
+        deskBusy = false;
+        if (err) { app.toast(err.message, 'err'); lastDesks = ''; renderDesks(); loadDesks(); return; }
+        desks = d; lastDesks = JSON.stringify(d); renderDesks();
+        if (msg) app.toast(msg(d), 'ok');
+        lastWins = ''; setTimeout(loadWins, 300);   // le finestre visibili cambiano col desktop
+      }, 15000);
+    }
+    function curDesk(d) {
+      for (var i = 0; d && i < d.desktops.length; i++) if (d.desktops[i].current) return d.desktops[i];
+      return null;
+    }
+    D.bindTap(desksEl, {
+      scrollable: true,
+      onTap: function (t) {
+        if (D.closestAttr(t, 'data-del', desksEl)) {         // la X ha il suo tocco (tenuto premuto)
+          if (new Date().getTime() - xFired > 1500) app.toast('Tieni premuta la X per chiudere il desktop', 'info');
+          return;
+        }
+        if (D.closestAttr(t, 'data-new', desksEl)) {
+          return deskAction({ action: 'create' }, function (d) { var c = curDesk(d); return 'Creato ' + (c ? c.name : 'un desktop nuovo'); });
+        }
+        var c = D.closestAttr(t, 'data-desk', desksEl);
+        if (!c || D.hasClass(c, 'on')) return;
+        D.addClass(c, 'busy');
+        deskAction({ action: 'switch', desktop: c.getAttribute('data-desk') });
+      }
+    });
     var info = null, wins = null, alive = true, error = '';
 
     function mon(id) {
@@ -1644,9 +1832,11 @@ var Widgets = (function () {
     });
 
     renderAll();
+    renderDesks();
     loadInfo();
     loadWins();
-    var fast = D.every(3000, 15000, loadWins);
+    loadDesks();
+    var fast = D.every(3000, 15000, function () { loadWins(); loadDesks(); });
     var slow = D.every(30000, 120000, loadInfo);
     return {
       update: function () {},
@@ -1916,7 +2106,7 @@ var Widgets = (function () {
   }
 
   var CHAT = {};
-  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, discord: discord, screens: screensWidget, mail: mailWidget, audio: audioWidget };
+  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, discord: discord, screens: screensWidget, mail: mailWidget, audio: audioWidget, vdesk: vdeskWidget };
 
   function create(type, root, tile, app) {
     var fn = TYPES[type];

@@ -527,7 +527,31 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .sc-opt.pressed { -webkit-transform: scale(0.95); transform: scale(0.95); }
 .sc-right { position: absolute; right: 0; top: 0; bottom: 0; width: 40%; background: #141c25; border-left: 1px solid #222e3b; }
 .sc-whead { position: absolute; left: 12px; right: 12px; top: 8px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; }
-.sc-wins { position: absolute; left: 6px; right: 6px; top: 36px; bottom: 6px; overflow: auto; -webkit-overflow-scrolling: touch; }
+.sc-wins { position: absolute; left: 6px; right: 6px; top: 36px; height: 171px; overflow: auto; -webkit-overflow-scrolling: touch; }
+/* desktop virtuali: sotto le finestre (4 visibili, il resto scorre) */
+.sc-dhead { position: absolute; left: 12px; right: 12px; top: 212px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; white-space: nowrap; overflow: hidden; border-top: 1px solid #222e3b; padding-top: 6px; }
+.sc-dsub { font-size: 11px; font-weight: normal; letter-spacing: 0; color: #6e7f90; margin-left: 8px; }
+.sc-desks { position: absolute; left: 6px; right: 6px; top: 246px; bottom: 6px; overflow: hidden; }
+/* una scheda per desktop (4 per riga: fino a 3 desktop + il "+") */
+.sc-dk { float: left; width: 23.5%; margin: 0 2% 8px 0; position: relative; height: 124px; padding-top: 14px; border-radius: 10px; background: #172029; border: 2px solid transparent; text-align: center; -webkit-box-sizing: border-box; box-sizing: border-box; }
+.sc-dk:nth-child(4n) { margin-right: 0; }
+.sc-dk.on { border-color: #3d8bfd; background: #10203a; }
+.sc-dk.pressed, .sc-dk.busy { background: #26354a; }
+.sc-dk svg.sc-dkic { display: block; width: 44px; height: 44px; margin: 0 auto; fill: #8b9bab; }
+.sc-dk.on svg.sc-dkic { fill: #6cb6ff; }
+.sc-dkn { position: absolute; left: 50%; top: 22px; width: 24px; margin-left: -12px; font-size: 14px; line-height: 20px; color: #fff; }
+.sc-dkname { display: block; margin-top: 6px; padding: 0 4px; font-size: 15px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-dksub { display: block; margin-top: 2px; font-size: 12px; color: #8b9bab; white-space: nowrap; overflow: hidden; }
+.sc-dk.on .sc-dksub { color: #6cb6ff; }
+.sc-dkx { position: absolute; right: -2px; top: -2px; width: 34px; height: 34px; line-height: 34px; text-align: center; border-radius: 0 9px 0 10px; background: rgba(90, 31, 36, 0.92); z-index: 2; }
+.sc-dkx svg.ic { width: 16px; height: 16px; vertical-align: -3px; }
+.sc-dkx.holding { background: #c0392b; }
+.sc-dknew { background: #131a22; border: 2px dashed #2a3746; padding-top: 26px; color: #8b9bab; }
+.sc-dbusy .sc-desks { opacity: 0.55; }
+/* GUIDA ai desktop virtuali, sopra tutta la pagina */
+.sc-left .sc-help { position: absolute; right: 10px; top: 4px; z-index: 3; }
+.sc-head { right: 110px; }
+.sc-guide { position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 6; background: #18212c; padding: 10px 12px; }
 .sc-win { position: relative; height: 54px; padding: 7px 92px 0 40px; border-radius: 10px; margin-bottom: 3px; background: #172029; }
 .sc-win.active { -webkit-box-shadow: inset 3px 0 0 #3d8bfd; box-shadow: inset 3px 0 0 #3d8bfd; }
 .sc-win.min { opacity: 0.6; }
@@ -625,7 +649,7 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .gh-tools { position: absolute; right: 0; top: 0; white-space: nowrap; }
 .gh-tools .sbtn { position: static; display: inline-block; margin-left: 6px; }
 .gh-tools .sbtn.on { background: #1f3b63; }
-.w-gh .gg { top: 40px; }
+.w-gh .gg, .w-vdesk .gg { top: 40px; }
 .gg-sec { font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #6cb6ff; margin: 14px 4px 6px; }
 .gg-sec:first-child { margin-top: 2px; }
 .gg-note { font-size: 13px; color: #8b9bab; margin: 0 4px 8px; }

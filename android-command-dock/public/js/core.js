@@ -139,7 +139,8 @@ var D = (function () {
     }
     function up() {
       if (!pressed) return;
-      var go = !moved && !fired;
+      // con "hold" parte solo tenendo premuto: un tocco breve non fa niente
+      var go = !moved && !fired && !opts.hold;
       cancel();
       if (go) fire();
     }
