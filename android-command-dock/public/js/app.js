@@ -185,13 +185,13 @@
 
   function makeButton(tile) {
     var b = D.el('div', 'tile btn' + (tile.confirm ? ' confirm' : ''));
-    if (tile.color) b.style.backgroundColor = tile.color;
     var icon = Icons.html(tile.icon);
     if (!icon) D.addClass(b, 'no-icon');
     b.innerHTML = (icon ? '<div class="t-icon">' + icon + '</div>' : '') +
       '<div class="t-label">' + D.esc(tile.label || '') + '</div>' +
       (tile.sub ? '<div class="t-sub">' + D.esc(tile.sub) + '</div>' : '') +
       (tile.confirm ? '<div class="t-hold"><i></i></div>' : '');
+    if (tile.color) tint(b, tile.color);
     D.bindTap(b, {
       hold: tile.confirm ? 900 : 0,
       repeat: !!tile.repeat,
@@ -437,6 +437,89 @@
   }
   D.bindTap(D.$('pair-go'), { onTap: submitPair });
   D.$('pair-code').addEventListener('keydown', function (e) { if (e.keyCode === 13) submitPair(); }, false);
+
+  // ------------------------------------------------------------ temi
+  // Scelti dal pulsante accanto all'orario, ricordati su questo tablet. Il CSS del tema
+  // (css/themes/<tema>.css, generato da scripts/build-themes.js) si carica dopo dock.css.
+  var THEMES = [
+    { id: 'classic', name: 'Classico', sw: ['#0b0f14', '#18212c', '#3d8bfd'] },
+    { id: 'material', name: 'Material', sw: ['#111318', '#272a2f', '#a8c7fa'] },
+    { id: 'neon', name: 'Neon Elgato', sw: ['#050505', '#41d1ff', '#ff5c7a'] },
+    { id: 'brutal', name: 'Neo-brutalista', sw: ['#f4efe3', '#ffd23f', '#111111'] }
+  ];
+  function themeOk(id) { for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return true; return false; }
+  app.theme = D.store.get('theme', 'classic');
+  if (!themeOk(app.theme)) app.theme = 'classic';
+  document.body.className += ' th-' + app.theme;
+
+  // colore di un pulsante con "color": ogni tema lo usa a modo suo
+  function mixHex(a, b, t) {
+    function ch(h, i) { return parseInt(h.substr(1 + i * 2, 2), 16); }
+    if (!/^#[0-9a-fA-F]{6}$/.test(a)) return a;
+    var out = '#';
+    for (var i = 0; i < 3; i++) {
+      var v = Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * t).toString(16);
+      out += v.length < 2 ? '0' + v : v;
+    }
+    return out;
+  }
+  function tint(b, color) {
+    if (app.theme === 'neon') {
+      // tasto nero, l'icona prende il colore (schiarito, per brillare)
+      var light = mixHex(color, '#ffffff', 0.45);
+      var svg = b.querySelector && b.querySelector('.t-icon svg');
+      b.setAttribute('data-tint', light);
+      if (svg) { svg.style.fill = light; svg.style.color = light; }
+    } else if (app.theme === 'brutal') {
+      b.style.backgroundColor = mixHex(color, '#ffffff', 0.55);   // pastello pieno
+    } else {
+      b.style.backgroundColor = color;
+    }
+  }
+
+  function setTheme(id) {
+    if (!themeOk(id) || id === app.theme) return;
+    var link = D.$('theme-css');
+    if (id === 'classic') { if (link) link.parentNode.removeChild(link); }
+    else {
+      if (!link) {
+        link = document.createElement('link');
+        link.id = 'theme-css'; link.rel = 'stylesheet';
+        document.getElementsByTagName('head')[0].appendChild(link);
+      }
+      link.href = 'css/themes/' + id + '.css';
+    }
+    D.removeClass(document.body, 'th-' + app.theme);
+    D.addClass(document.body, 'th-' + id);
+    app.theme = id;
+    D.store.set('theme', id);
+    if (app.cfg && app.page) showPage(app.page.id);   // ridisegna (colori dei pulsanti)
+  }
+
+  var themeBtn = D.$('theme-btn');
+  themeBtn.innerHTML = Icons.html('palette');
+  var themeMenu = null;
+  function closeThemes() { if (themeMenu) { themeMenu.parentNode.removeChild(themeMenu); themeMenu = null; } }
+  function openThemes() {
+    closeThemes();
+    themeMenu = D.el('div', 'theme-layer');
+    var html = '<div class="theme-menu"><div class="theme-h">TEMA</div>';
+    for (var i = 0; i < THEMES.length; i++) {
+      var t = THEMES[i], sw = '';
+      for (var k = 0; k < t.sw.length; k++) sw += '<i style="background:' + t.sw[k] + '"></i>';
+      html += '<div class="theme-opt' + (t.id === app.theme ? ' on' : '') + '" data-theme="' + t.id + '"><span class="theme-sw">' + sw + '</span>' + D.esc(t.name) + '</div>';
+    }
+    themeMenu.innerHTML = html + '</div>';
+    document.body.appendChild(themeMenu);
+    D.bindTap(themeMenu, {
+      onTap: function (t) {
+        var o = D.closestAttr(t, 'data-theme', themeMenu);
+        closeThemes();                       // tocco fuori dal menu = chiude
+        if (o) setTheme(o.getAttribute('data-theme'));
+      }
+    });
+  }
+  D.bindTap(themeBtn, { onTap: function () { if (themeMenu) closeThemes(); else openThemes(); } });
 
   // ------------------------------------------------------------ orologio, fullscreen
   function clock() {

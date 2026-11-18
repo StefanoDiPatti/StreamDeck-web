@@ -96,6 +96,21 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | DESKTOP VIRTUALI *(solo Linux)* | guida alle scorciatoie dei desktop virtuali (KDE Plasma, GNOME, anche Windows); su Windows la stessa guida è nella pagina SCHERMI |
 | BLENDER, DAVINCI *(disponibili: aggiungile alla barra dal pannello)* | scorciatoie dei due programmi |
 
+## Temi del tablet
+
+Il pulsante con la **tavolozza** nella barra in alto, accanto all'orario, apre il menu dei temi:
+
+| Tema | Com'è |
+|---|---|
+| Classico | blu notte, quello di sempre |
+| Material | Material 3 scuro: superfici a toni, angoli molto arrotondati, pagina attiva con la pillola sotto l'icona |
+| Neon Elgato | tasti neri in rilievo come uno Stream Deck, icone colorate che brillano |
+| Neo-brutalista | chiaro: fondo crema, bordi neri spessi, ombra piena, colori pastello |
+
+La scelta resta su quel tablet. I pulsanti con `"color"` cambiano con il tema: nel Neon il colore va sull'icona, nel Neo-brutalista diventa pastello.
+
+Per chi modifica lo stile: i file in `public/css/themes/` sono generati da `public/css/dock.css` e `scripts/themes/<tema>.js` (tabelle dei colori e forme del tema). Dopo una modifica a `dock.css` esegui `npm run themes`.
+
 ## Pannello di controllo (sul PC)
 
 Doppio clic sull'icona **Command Dock** (desktop o vicino all'orologio): si apre nel browser del PC una pagina per scegliere le pagine del tablet.
