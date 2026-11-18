@@ -27,6 +27,7 @@ const appsState = require('./services/apps');
 const discord = require('./services/discord');
 const screens = require('./services/screens');
 const vdesk = require('./services/vdesk');
+const claudeusage = require('./services/claudeusage');
 const pairing = require('./services/pairing');
 const mail = require('./services/mail');
 const pkg = require('../package.json');
@@ -365,6 +366,8 @@ app.get('/api/claude/info', route(function () {
   return Object.assign(claude.info(), { voiceServer: voice.available() });
 }));
 // Sessioni dell'app desktop di Claude (come nella barra laterale del PC)
+// consumi dell'abbonamento (sessione 5 ore, settimana): letti sul PC, mai il token al tablet
+app.get('/api/claude/usage', route(function (req) { return claudeusage.usage(req.query.refresh === '1'); }));
 app.get('/api/claude/desktop', route(function () { return desktopcode.list(); }));
 app.get('/api/claude/desktop/session', route(function (req) { return desktopcode.get(String(req.query.id || '')); }));
 app.post('/api/claude/desktop/send', route(function (req) { const b = req.body || {}; return desktopcode.send(String(b.id || ''), b.text); }));

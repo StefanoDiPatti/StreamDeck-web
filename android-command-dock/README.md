@@ -177,6 +177,8 @@ Il volume **di sistema** sta nella pagina APP (VOL -, MUTE, VOL +).
 
 La pagina CLAUDE ha due elenchi.
 
+**Consumi**: in fondo alla colonna sinistra della pagina CLAUDE ci sono le barre dell'abbonamento: **sessione di 5 ore**, **settimana** e, se Anthropic li dà, i limiti settimanali per modello, ognuno con l'ora in cui si azzera (arancione dal 70%, rosso dal 90%). Tocca il riquadro per aggiornarlo. La dock usa l'accesso di Claude Code già fatto sul PC (`~/.claude/.credentials.json`, come Viber): il token resta sul PC, al tablet arrivano solo le percentuali.
+
 **CLAUDE CODE**: le sessioni dell'app desktop di Claude, raggruppate per le sezioni della barra laterale del PC (le tue cartelle, come UNIMI o Personal Projects). Le sessioni fuori dalle sezioni sono raggruppate per progetto, come nell'app. Il pallino arancione indica che Claude sta lavorando.
 
 - **Scrivere**: quello che scrivi (o detti) parte dall'**app sul PC**, nella sessione vera. La dock apre la sessione nell'app, mette il testo nel campo e preme Invia tramite l'accessibilità di Windows: lo vedi comparire subito sul PC, senza riavviare l'app, e valgono i permessi scelti per quella sessione (es. *Auto*).

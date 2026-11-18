@@ -897,6 +897,7 @@ var Widgets = (function () {
       '<div class="cl-side">' +
         '<div class="cl-tabs"><div class="cl-tab" data-mode="code">CLAUDE CODE</div><div class="cl-tab" data-mode="dock">CHAT</div></div>' +
         '<div class="cl-list scroll"></div>' +
+        '<div class="cl-usage"></div>' +
       '</div>' +
       '<div class="cl-main">' +
         '<div class="cl-head"><div class="cl-title"></div><div class="cl-sub"></div>' +
@@ -1170,13 +1171,43 @@ var Widgets = (function () {
     loadList();
     loadChat(true);
     // conversazione aperta: aggiornata spesso, così vedi le risposte mentre arrivano
+    // ---- consumi dell'abbonamento: sessione di 5 ore, settimana, limiti per modello
+    var usageEl = q('cl-usage');
+    function hm(iso) {
+      if (!iso) return '';
+      var d = new Date(iso), now = new Date();
+      var t = D.pad(d.getHours()) + ':' + D.pad(d.getMinutes());
+      if (d.toDateString() === now.toDateString()) return 'alle ' + t;
+      var giorni = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+      return giorni[d.getDay()] + ' ' + t;
+    }
+    function bar(label, w) {
+      if (!w) return '';
+      var lvl = w.percent >= 90 ? ' hot' : w.percent >= 70 ? ' warm' : '';
+      return '<div class="cu-row' + lvl + '"><div class="cu-top"><b>' + D.esc(label) + '</b><span>' + w.percent + '%</span></div>' +
+        '<div class="cu-bar"><i style="width:' + w.percent + '%"></i></div>' +
+        (w.resetsAt ? '<div class="cu-reset">si azzera ' + hm(w.resetsAt) + '</div>' : '') + '</div>';
+    }
+    function loadUsage(force) {
+      D.api.get('/api/claude/usage' + (force ? '?refresh=1' : ''), function (err, u) {
+        if (!alive) return;
+        if (err || !u.ok) { usageEl.innerHTML = '<div class="cu-h">CONSUMI</div><div class="cu-err">' + D.esc(err ? err.message : u.error) + '</div>'; return; }
+        var h = '<div class="cu-h">CONSUMI' + (u.stale ? ' <i>(non aggiornati)</i>' : '') + '</div>' + bar('Sessione 5 ore', u.fiveHour) + bar('Settimana', u.sevenDay);
+        for (var i = 0; i < u.models.length; i++) h += bar(u.models[i].name + ' (settimana)', u.models[i]);
+        usageEl.innerHTML = h;
+      });
+    }
+    D.bindTap(usageEl, { onTap: function () { loadUsage(true); } });
+    loadUsage(false);
+
     var chatTimer = D.every(2500, 10000, function () { loadChat(false); });
     var listTimer = D.every(8000, 60000, loadList);
+    var usageTimer = D.every(60000, 300000, function () { loadUsage(false); });
 
     return {
       update: function () {},
       resize: function () { log.scrollTop = log.scrollHeight; },
-      destroy: function () { alive = false; voice.stop(); D.stop(chatTimer); D.stop(listTimer); }
+      destroy: function () { alive = false; voice.stop(); D.stop(chatTimer); D.stop(listTimer); D.stop(usageTimer); }
     };
   }
 
