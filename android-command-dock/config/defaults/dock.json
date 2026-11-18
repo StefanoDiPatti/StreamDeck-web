@@ -39,6 +39,7 @@
 //   { "widget": "claude" }  { "widget": "chat", "provider": "ollama" }  { "widget": "discord" }
 //   { "widget": "screens" } (monitor e disposizione delle finestre)  { "widget": "audio" } (dispositivi e volume delle app)
 //   { "widget": "mail" }    (posta in arrivo; account dal pannello di controllo)
+//   { "widget": "viber" } (pannelli e task di Viber)
 //   { "widget": "vdesk", "system": "windows" } (guida ai desktop virtuali; "linux" per partire da Linux)
 //
 // "description" = testo mostrato nel pannello di controllo sul PC, dove scegli
@@ -208,6 +209,14 @@
       "description": "Uscite e microfoni (predefinito, volume, mute) e volume di ogni app",
       "tab": false,
       "tiles": [ { "widget": "audio", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "viber",
+      "title": "VIBER",
+      "icon": "code",
+      "description": "Viber: passa a terminale, git, browser, chat, task e file, barra laterale, task del progetto",
+      "tab": false,
+      "tiles": [ { "widget": "viber", "w": 5, "h": 3 } ]
     },
     {
       "id": "blender",

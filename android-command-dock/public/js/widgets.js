@@ -1334,7 +1334,9 @@ var Widgets = (function () {
       D.toggleClass(camBtn, 'disabled', !inRoom || !st.media);
       D.toggleClass(liveBtn, 'disabled', !inRoom || !st.media);
       camBtn.innerHTML = Icons.html(v.video ? 'camera' : 'camoff') + '<span>' + (v.video ? 'CAM ON' : 'CAM') + '</span>';
-      liveBtn.innerHTML = Icons.html('live') + '<span>' + (v.stream ? 'IN LIVE' : 'LIVE') + '</span>';
+      // in live: pallino rosso che lampeggia sul pulsante e nell'intestazione della stanza
+      liveBtn.innerHTML = Icons.html('live') + (v.stream ? '<i class="dc-livedot"></i>' : '') + '<span>' + (v.stream ? 'SEI IN LIVE' : 'LIVE') + '</span>';
+      D.toggleClass(root, 'dc-streaming', !!v.stream);
       D.toggleClass(root, 'dc-off', !ready);
       if (!ready) {
         var head = !st || st.status === 'connecting' ? 'Collegamento a Discord…' :
@@ -1361,7 +1363,7 @@ var Widgets = (function () {
         lastRoom = 'none';
         return;
       }
-      rtitle.innerHTML = Icons.html('volup') + D.esc(ch.name);
+      rtitle.innerHTML = (v.stream ? '<span class="dc-onair"><i class="dc-livedot"></i>IN LIVE</span>' : '') + Icons.html('volup') + D.esc(ch.name);
       rsub.innerHTML = D.esc(ch.guild || '') + ' · ' + ch.members.length + (ch.members.length === 1 ? ' persona' : ' persone');
       var html = '';
       for (var i = 0; i < ch.members.length; i++) {
@@ -1943,6 +1945,102 @@ var Widgets = (function () {
     };
   }
 
+  // ------------------------------------------------------------ Viber
+  // Pannelli di Viber (terminale, git, browser, chat, task, file), barra laterale
+  // e task del progetto aperto. Comandi per la finestra di Viber in primo piano.
+  var VB_PANELS = [
+    { id: 'terminal', label: 'TERMINALE', icon: 'terminal' },
+    { id: 'git', label: 'GIT', icon: 'git' },
+    { id: 'browser', label: 'BROWSER', icon: 'globe' },
+    { id: 'chat', label: 'CHAT', icon: 'chat' },
+    { id: 'tasks', label: 'TASK', icon: 'check' },
+    { id: 'files', label: 'FILE', icon: 'folder' }
+  ];
+  function viberWidget(root, tile, app) {
+    D.addClass(root, 'w-viber');
+    var html = '<div class="vb-left"><div class="vb-head"><span class="vb-title">VIBER</span><span class="vb-sub"></span></div><div class="vb-panels">';
+    for (var i = 0; i < VB_PANELS.length; i++) {
+      var p = VB_PANELS[i];
+      html += '<div class="vb-p" data-panel="' + p.id + '">' + Icons.html(p.icon) + '<span>' + p.label + '</span></div>';
+    }
+    html += '</div><div class="vb-side" data-side="toggle">' + Icons.html('layout') + '<span>BARRA LATERALE</span></div></div>' +
+      '<div class="vb-right"><div class="vb-thead">TASK<span class="vb-tsub"></span></div><div class="vb-tasks scroll"></div></div>';
+    root.innerHTML = html;
+    function q(c) { return root.querySelector('.' + c); }
+    var sub = q('vb-sub'), panelsEl = q('vb-panels'), sideBtn = q('vb-side'), tasksEl = q('vb-tasks'), tsub = q('vb-tsub');
+    var st = null, alive = true, busy = false, lastTasks = '';
+
+    function renderState() {
+      D.toggleClass(root, 'vb-off', !(st && st.online));
+      if (!st) { sub.innerHTML = 'collegamento…'; return; }
+      if (!st.online) { sub.innerHTML = '<b class="err">' + D.esc(st.message || 'Viber non è aperto') + '</b>'; return; }
+      sub.innerHTML = D.esc(st.name || '');
+      var els = panelsEl.querySelectorAll('.vb-p');
+      for (var i = 0; i < els.length; i++) D.toggleClass(els[i], 'on', els[i].getAttribute('data-panel') === st.active);
+    }
+    function loadState() {
+      if (busy) return;
+      D.api.get('/api/viber/state', function (err, d) {
+        if (!alive || busy) return;
+        st = err ? { online: false, message: err.message } : d;
+        renderState();
+      });
+    }
+    function loadTasks() {
+      D.api.get('/api/viber/tasks', function (err, d) {
+        if (!alive) return;
+        if (err) { if (!lastTasks) tasksEl.innerHTML = '<div class="empty">' + D.esc(err.message) + '</div>'; return; }
+        var key = JSON.stringify(d);
+        if (key === lastTasks) return;
+        lastTasks = key;
+        setText(tsub, d.project ? ' · ' + d.project : '');
+        var h = '';
+        for (var i = 0; i < d.tasks.length; i++) {
+          var t = d.tasks[i], doing = t.status === 'in_progress';
+          h += '<div class="vb-task' + (doing ? ' doing' : '') + '"><div class="vb-ttext">' + D.esc(t.text) + '</div>' +
+            '<div class="vb-tmeta"><span class="vb-chip">' + (doing ? 'IN CORSO' : 'APERTA') + '</span>' + (t.branch ? D.esc(t.branch) : '') + '</div>';
+          for (var k = 0; k < t.steps.length; k++) {
+            var s = t.steps[k];
+            h += '<div class="vb-step ' + s.status + '">' + Icons.html(s.status === 'done' ? 'check' : s.status === 'in_progress' ? 'play' : 'flag') + D.esc(s.text) + '</div>';
+          }
+          h += '</div>';
+        }
+        tasksEl.innerHTML = h || '<div class="empty">Nessuna task aperta in questo progetto</div>';
+      });
+    }
+    function post(url, body, el) {
+      if (busy) return;
+      busy = true;
+      if (el) D.addClass(el, 'busy');
+      D.api.post(url, body, function (err, d) {
+        busy = false;
+        if (el) D.removeClass(el, 'busy');
+        if (err) return app.toast(err.message, 'err');
+        st = d; renderState();
+      });
+    }
+    D.bindTap(panelsEl, {
+      onTap: function (t) {
+        var p = D.closestAttr(t, 'data-panel', panelsEl);
+        if (!p) return;
+        post('/api/viber/panel', { panel: p.getAttribute('data-panel') }, p);
+        if (p.getAttribute('data-panel') === 'tasks') { lastTasks = ''; loadTasks(); }
+      }
+    });
+    D.bindTap(sideBtn, { onTap: function () { post('/api/viber/sidebar', { mode: 'toggle' }, sideBtn); } });
+    D.bindTap(tasksEl, { scrollable: true, onTap: function () { post('/api/viber/panel', { panel: 'tasks' }); } });
+
+    renderState();
+    loadState(); loadTasks();
+    var fast = D.every(3000, 15000, loadState);
+    var slow = D.every(10000, 60000, loadTasks);
+    return {
+      update: function () {},
+      resize: function () {},
+      destroy: function () { alive = false; D.stop(fast); D.stop(slow); }
+    };
+  }
+
   // ------------------------------------------------------------ Email
   // Posta in arrivo in sola lettura. Gli account si aggiungono dal pannello sul PC.
   var ML = { acc: D.store.get('ml:acc', '') };
@@ -2204,7 +2302,7 @@ var Widgets = (function () {
   }
 
   var CHAT = {};
-  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, discord: discord, screens: screensWidget, mail: mailWidget, audio: audioWidget, vdesk: vdeskWidget };
+  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, discord: discord, screens: screensWidget, mail: mailWidget, audio: audioWidget, vdesk: vdeskWidget, viber: viberWidget };
 
   function create(type, root, tile, app) {
     var fn = TYPES[type];

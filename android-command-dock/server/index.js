@@ -28,6 +28,7 @@ const discord = require('./services/discord');
 const screens = require('./services/screens');
 const vdesk = require('./services/vdesk');
 const claudeusage = require('./services/claudeusage');
+const viber = require('./services/viber');
 const pairing = require('./services/pairing');
 const mail = require('./services/mail');
 const pkg = require('../package.json');
@@ -272,6 +273,12 @@ app.post('/api/screens/window', route(function (req) {
   const b = req.body || {};
   return screens.act(String(b.window || ''), String(b.action || ''));
 }));
+// --- Viber: pannelli, barra laterale, task ---
+app.get('/api/viber/state', route(function () { return viber.state(); }));
+app.get('/api/viber/tasks', route(function () { return viber.tasks(); }));
+app.post('/api/viber/panel', route(function (req) { return viber.focusPanel(String((req.body || {}).panel || '')); }));
+app.post('/api/viber/sidebar', route(function (req) { return viber.sidebar(String((req.body || {}).mode || 'toggle')); }));
+
 // desktop virtuali: elenco, passa a uno, crea, chiudi
 app.get('/api/screens/desktops', route(function () { return vdesk.list(); }));
 app.post('/api/screens/desktops', route(function (req) {
