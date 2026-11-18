@@ -245,12 +245,15 @@ public static class DockScreens {
     return GetMonitorInfo(mon, ref mi) ? mi.szDevice : "";
   }
 
-  static bool Listed(IntPtr h) {
+  static bool Listed(IntPtr h) { return Listed(h, false); }
+
+  // shellCloak: accetta anche le finestre nascoste dalla shell (= su un altro desktop virtuale)
+  static bool Listed(IntPtr h, bool shellCloak) {
     if (!IsWindowVisible(h) || GetWindow(h, 4) != IntPtr.Zero) return false;   // nascosta o secondaria
     int ex = GetWindowLong(h, -20);
     if ((ex & 0x80) != 0) return false;                                          // finestra strumento
     int cloaked;
-    if (DwmGetWindowAttribute(h, 14, out cloaked, 4) == 0 && cloaked != 0) return false;
+    if (DwmGetWindowAttribute(h, 14, out cloaked, 4) == 0 && cloaked != 0 && !(shellCloak && cloaked == 2)) return false;
     if (GetWindowTextLength(h) == 0) return false;
     var cls = new StringBuilder(64); GetClassName(h, cls, 64);
     string c = cls.ToString();
@@ -280,6 +283,45 @@ public static class DockScreens {
       string st = IsIconic(h) ? "m" : IsZoomed(h) ? "M" : "n";
       list.Add(h.ToInt64() + "\t" + pid + "\t" + name + "\t" + st + "\t" + MonitorOf(h) + "\t" +
         r.L + " " + r.T + " " + (r.R - r.L) + " " + (r.B - r.T) + "\t" + (h == fg ? "1" : "0") + "\t" + Clean(sb.ToString()));
+      return true;
+    }, IntPtr.Zero);
+    return list.ToArray();
+  }
+
+  // API pubblica di Windows 10/11: a quale desktop virtuale appartiene una finestra
+  [ComImport, Guid("a5cd92ff-29be-454c-8d04-d82879fb3f1b"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  interface IVirtualDesktopManager {
+    [PreserveSig] int IsWindowOnCurrentVirtualDesktop(IntPtr h, out int on);
+    [PreserveSig] int GetWindowDesktopId(IntPtr h, out Guid id);
+    [PreserveSig] int MoveWindowToDesktop(IntPtr h, ref Guid id);
+  }
+  static IVirtualDesktopManager vdm;
+
+  // Finestre di TUTTI i desktop virtuali, dalla più in alto:
+  // "hwnd<TAB>desktop (GUID)<TAB>stato<TAB>monitor<TAB>x y w h<TAB>processo<TAB>titolo"
+  public static string[] DeskWindows() {
+    Aware();
+    if (vdm == null) vdm = (IVirtualDesktopManager)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("aa509086-5ca9-4c25-8f95-589d3c07b48a")));
+    var list = new System.Collections.Generic.List<string>();
+    var names = new System.Collections.Generic.Dictionary<uint, string>();
+    EnumWindows(delegate (IntPtr h, IntPtr l) {
+      if (!Listed(h, true)) return true;
+      Guid d;
+      if (vdm.GetWindowDesktopId(h, out d) != 0 || d == Guid.Empty) return true;   // app UWP sospese e simili
+      uint pid; GetWindowThreadProcessId(h, out pid);
+      string name;
+      if (!names.TryGetValue(pid, out name)) {
+        try { name = Process.GetProcessById((int)pid).ProcessName.ToLowerInvariant(); } catch { name = ""; }
+        names[pid] = name;
+      }
+      if (name == "textinputhost") return true;
+      int len = GetWindowTextLength(h);
+      var sb = new StringBuilder(len + 1); GetWindowText(h, sb, sb.Capacity);
+      RECT r;
+      if (DwmGetWindowAttribute(h, 9, out r, 16) != 0) GetWindowRect(h, out r);
+      string st = IsIconic(h) ? "m" : IsZoomed(h) ? "M" : "n";
+      list.Add(h.ToInt64() + "\t" + d.ToString().ToUpperInvariant() + "\t" + st + "\t" + MonitorOf(h) + "\t" +
+        r.L + " " + r.T + " " + (r.R - r.L) + " " + (r.B - r.T) + "\t" + name + "\t" + Clean(sb.ToString()));
       return true;
     }, IntPtr.Zero);
     return list.ToArray();
@@ -782,6 +824,10 @@ while ($true) {
       'winlist' {
         if (-not $script:screens) { throw 'schermi non disponibili' }
         $data = @{ list = @([DockScreens]::Windows()) }
+      }
+      'deskwins' {
+        if (-not $script:screens) { throw 'schermi non disponibili' }
+        $data = @{ list = @([DockScreens]::DeskWindows()) }
       }
       'place' {
         if (-not $script:screens) { throw 'schermi non disponibili' }
