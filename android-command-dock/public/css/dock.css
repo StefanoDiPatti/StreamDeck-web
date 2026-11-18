@@ -625,7 +625,7 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .gh-tools { position: absolute; right: 0; top: 0; white-space: nowrap; }
 .gh-tools .sbtn { position: static; display: inline-block; margin-left: 6px; }
 .gh-tools .sbtn.on { background: #1f3b63; }
-.w-gh .gg { top: 40px; }
+.w-gh .gg, .w-vdesk .gg { top: 40px; }
 .gg-sec { font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #6cb6ff; margin: 14px 4px 6px; }
 .gg-sec:first-child { margin-top: 2px; }
 .gg-note { font-size: 13px; color: #8b9bab; margin: 0 4px 8px; }

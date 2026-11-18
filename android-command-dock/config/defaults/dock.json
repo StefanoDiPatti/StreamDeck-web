@@ -39,6 +39,7 @@
 //   { "widget": "claude" }  { "widget": "chat", "provider": "ollama" }  { "widget": "discord" }
 //   { "widget": "screens" } (monitor e disposizione delle finestre)  { "widget": "audio" } (dispositivi e volume delle app)
 //   { "widget": "mail" }    (posta in arrivo; account dal pannello di controllo)
+//   { "widget": "vdesk", "system": "windows" } (guida ai desktop virtuali; "linux" per partire da Linux)
 //
 // "description" = testo mostrato nel pannello di controllo sul PC, dove scegli
 // quali pagine stanno nella barra del tablet e in che ordine (config/layout.json).
@@ -190,6 +191,14 @@
       "os": "windows",
       "tab": false,
       "tiles": [ { "widget": "screens", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "vdesk",
+      "title": "DESKTOP VIRTUALI",
+      "icon": "keyboard",
+      "description": "Guida alle scorciatoie per i desktop virtuali di Windows e Linux (KDE, GNOME)",
+      "tab": false,
+      "tiles": [ { "widget": "vdesk", "system": "windows", "linux": { "system": "linux" }, "w": 5, "h": 3 } ]
     },
     {
       "id": "audio",

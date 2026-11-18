@@ -471,10 +471,11 @@ var Widgets = (function () {
     ] }
   ];
 
-  function gitGuideHtml() {
+  // Guida a sezioni (comandi git, desktop virtuali): [testo, spiegazione, livello]
+  function guideHtml(sections) {
     var html = '';
-    for (var s = 0; s < GIT_GUIDE.length; s++) {
-      var sec = GIT_GUIDE[s];
+    for (var s = 0; s < sections.length; s++) {
+      var sec = sections[s];
       html += '<div class="gg-sec">' + D.esc(sec.title) + '</div>';
       if (sec.note) html += '<div class="gg-note">' + D.esc(sec.note) + '</div>';
       for (var i = 0; i < sec.items.length; i++) {
@@ -496,7 +497,7 @@ var Widgets = (function () {
     var totals = el('div', 'gh-totals', '');
     var list = el('div', 'w-list scroll');
     var guide = el('div', 'w-list scroll gg hidden');
-    guide.innerHTML = gitGuideHtml();
+    guide.innerHTML = guideHtml(GIT_GUIDE);
     root.appendChild(totals); root.appendChild(list); root.appendChild(guide);
     var guideOn = false;
     function showGuide(on) {
@@ -1413,6 +1414,96 @@ var Widgets = (function () {
     };
   }
 
+  // ------------------------------------------------------- desktop virtuali
+  // Guida alle scorciatoie (pagina DESKTOP VIRTUALI). Parte dal sistema del PC
+  // collegato (tile.system, scelto dal server) e si cambia con i due pulsanti.
+  // In arancione ('warn') quello che chiude o sposta qualcosa.
+  var VDESK_GUIDE = {
+    windows: [
+      { title: 'LE BASI', note: 'Windows 10 e 11. Le finestre restano aperte anche sui desktop che non stai guardando.', items: [
+        ['Win + Tab', 'Visualizzazione attività: vedi tutti i desktop e le finestre. Da qui crei, rinomini e riordini i desktop.'],
+        ['Win + Ctrl + D', 'Crea un desktop nuovo e ci entra.'],
+        ['Win + Ctrl + →', 'Passa al desktop a destra.'],
+        ['Win + Ctrl + ←', 'Passa al desktop a sinistra.'],
+        ['Win + Ctrl + F4', 'Chiude il desktop attuale. Le sue finestre non si chiudono: passano al desktop vicino.', 'warn']
+      ] },
+      { title: 'SPOSTARE LE FINESTRE TRA I DESKTOP', note: 'Windows non ha una scorciatoia pronta per questo: si fa da Win + Tab.', items: [
+        ['Win + Tab → trascina', 'Trascina la miniatura di una finestra sul desktop che vuoi, in alto (o sul pulsante + per un desktop nuovo).'],
+        ['Win + Tab → tasto destro', 'Sulla miniatura: "Sposta in" un altro desktop, anche uno nuovo.'],
+        ['Mostra su tutti i desktop', 'Stesso menu: la finestra (o tutte quelle dell\'app) resta visibile su ogni desktop. Comodo per musica e chat.']
+      ] },
+      { title: 'TOUCHPAD', items: [
+        ['4 dita ← / →', 'Cambia desktop.'],
+        ['4 dita ↑', 'Visualizzazione attività (come Win + Tab).'],
+        ['4 dita ↓', 'Mostra il desktop (riduce tutto).']
+      ] },
+      { title: 'FINESTRE E MONITOR (UTILI INSIEME)', items: [
+        ['Alt + Tab', 'Cambia finestra. Di base solo quelle del desktop attuale: si cambia in Impostazioni → Sistema → Multitasking → Desktop.'],
+        ['Win + ← / → / ↑ / ↓', 'Affianca la finestra a metà schermo, la ingrandisce o la riduce (Snap).'],
+        ['Win + Z', 'Sceglie una disposizione di Snap (Windows 11).'],
+        ['Win + Shift + ← / →', 'Sposta la finestra sull\'altro monitor, mantenendo la posizione.'],
+        ['Win + D', 'Mostra il desktop; ripremi per tornare alle finestre.'],
+        ['Win + Home', 'Riduce tutte le finestre tranne quella attiva.']
+      ] },
+      { title: 'TRUCCHI', items: [
+        ['Nome e sfondo', 'In Win + Tab, tasto destro su un desktop: "Rinomina" e "Scegli sfondo". Es. LAVORO, GIOCO, STREAM.'],
+        ['Barra delle applicazioni', 'Impostazioni → Sistema → Multitasking → Desktop: scegli se la barra mostra le finestre di tutti i desktop.'],
+        ['Dal tablet', 'La pagina SCHERMI sposta le finestre tra i monitor (non tra i desktop virtuali).']
+      ] }
+    ],
+    linux: [
+      { title: 'KDE PLASMA (IL TUO LINUX)', note: 'Scorciatoie di base di Plasma 6. Meta è il tasto Windows. Si cambiano in Impostazioni di sistema → Scorciatoie → KWin.', items: [
+        ['Meta + W', 'Panoramica: tutti i desktop e le finestre. Da qui aggiungi (+) e rinomini i desktop.'],
+        ['Meta + G', 'Griglia dei desktop: tutti i desktop affiancati, trascini le finestre dall\'uno all\'altro.'],
+        ['Ctrl + F1 … F4', 'Va direttamente al desktop 1, 2, 3 o 4.'],
+        ['Meta + Ctrl + ← / →', 'Passa al desktop a sinistra o a destra.'],
+        ['Meta + Ctrl + Shift + ← / →', 'Porta la finestra attiva sul desktop a sinistra o a destra (e ci vai con lei).'],
+        ['Alt + F3', 'Menu della finestra: "Sposta su desktop" o "Tutti i desktop" (visibile ovunque).']
+      ] },
+      { title: 'KDE: QUANTI DESKTOP E COME', items: [
+        ['Desktop virtuali', 'Impostazioni di sistema → cerca "Desktop virtuali": numero, righe, nomi e scorciatoie. Di base ce n\'è uno solo.'],
+        ['Attività', 'Plasma ha anche le Attività (Meta + Q): gruppi di desktop con sfondi e widget diversi. Diverse dai desktop virtuali.'],
+        ['4 dita ← / →', 'Touchpad su Wayland: cambia desktop.'],
+        ['4 dita ↑ / ↓', 'Touchpad: Panoramica e griglia dei desktop.']
+      ] },
+      { title: 'GNOME (SE USI UBUNTU E SIMILI)', note: 'In GNOME i desktop si chiamano spazi di lavoro e se ne crea uno nuovo da solo quando l\'ultimo si riempie.', items: [
+        ['Super', 'Attività: vedi tutti gli spazi di lavoro e le finestre.'],
+        ['Super + PagSu / PagGiù', 'Spazio di lavoro precedente o successivo (anche Ctrl + Alt + ← / →).'],
+        ['Super + Shift + PagSu / PagGiù', 'Porta la finestra sullo spazio di lavoro precedente o successivo.'],
+        ['3 dita ← / →', 'Touchpad: cambia spazio di lavoro.']
+      ] },
+      { title: 'FINESTRE E MONITOR', items: [
+        ['Alt + Tab', 'Cambia finestra (in KDE di base solo quelle del desktop attuale).'],
+        ['Meta + ← / → / ↑ / ↓', 'Affianca la finestra a metà o in un quarto di schermo (KDE e GNOME).'],
+        ['Meta + Shift + ← / →', 'Sposta la finestra sull\'altro monitor.'],
+        ['Meta + D', 'Mostra il desktop (KDE). In GNOME: Super + D.'],
+        ['Alt + F4', 'Chiude la finestra attiva.', 'warn']
+      ] }
+    ]
+  };
+
+  function vdeskWidget(root, tile, app) {
+    D.addClass(root, 'w-vdesk');
+    var btns = {};
+    var tools = el('span', 'gh-tools');
+    btns.windows = smallBtn('WINDOWS', 'desktop', function () { show('windows'); });
+    btns.linux = smallBtn('LINUX', 'terminal', function () { show('linux'); });
+    tools.appendChild(btns.windows); tools.appendChild(btns.linux);
+    var title = header(root, 'DESKTOP VIRTUALI', tools);
+    var guide = el('div', 'w-list scroll gg');
+    root.appendChild(guide);
+    function show(sys) {
+      if (!VDESK_GUIDE[sys]) sys = 'windows';
+      guide.innerHTML = guideHtml(VDESK_GUIDE[sys]);
+      guide.scrollTop = 0;
+      D.toggleClass(btns.windows, 'on', sys === 'windows');
+      D.toggleClass(btns.linux, 'on', sys === 'linux');
+      setText(title, 'DESKTOP VIRTUALI · ' + (sys === 'linux' ? 'LINUX' : 'WINDOWS'));
+    }
+    show(tile && tile.system);
+    return { update: function () {}, resize: function () {}, destroy: function () {} };
+  }
+
   // ---------------------------------------------------------------- schermi
   // A sinistra i monitor come sono sulla scrivania: tocca un monitor, scegli una
   // disposizione, tocca una zona e poi una finestra a destra per metterla lì
@@ -1916,7 +2007,7 @@ var Widgets = (function () {
   }
 
   var CHAT = {};
-  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, discord: discord, screens: screensWidget, mail: mailWidget, audio: audioWidget };
+  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, discord: discord, screens: screensWidget, mail: mailWidget, audio: audioWidget, vdesk: vdeskWidget };
 
   function create(type, root, tile, app) {
     var fn = TYPES[type];
