@@ -1608,7 +1608,13 @@ var Widgets = (function () {
     function loadDesks() {
       if (deskBusy) return;
       D.api.get('/api/screens/desktops', function (err, d) {
-        if (!alive || err || deskBusy) return;
+        if (!alive || deskBusy) return;
+        if (err) {
+          // es. dock avviata prima dell'aggiornamento: meglio dirlo che restare su "Carico…"
+          if (!desks) desksEl.innerHTML = '<div class="empty err">' + D.esc(err.code === 'NOT_FOUND' ?
+            'Il PC ha una versione vecchia della dock: riavviala (icona vicino all\'orologio → Riavvia).' : err.message) + '</div>';
+          return;
+        }
         var key = JSON.stringify(d);
         if (key === lastDesks) return;
         lastDesks = key; desks = d; renderDesks();
