@@ -14,7 +14,7 @@ const log = require('../log');
 
 const KEY = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VirtualDesktops';
 const SESSION_KEY = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\SessionInfo';
-const MAX = 20;
+const MAX = 3;   // scelta dell'utente: al massimo 3 desktop virtuali
 
 function isLinux() { return platform.name === 'linux' && typeof platform.virtualDesktops === 'function'; }
 function supported() { return process.platform === 'win32' || isLinux(); }
@@ -119,7 +119,7 @@ async function waitFor(test, ms) {
 
 // Per l'anteprima (come Win+Tab): ogni desktop con le sue finestre e i monitor in scala.
 async function preview(desktops) {
-  const out = { supported: true, desktops: desktops, monitors: [] };
+  const out = { supported: true, max: MAX, desktops: desktops, monitors: [] };
   try {
     const screens = require('./screens');
     out.monitors = (await screens.monitors()).map(function (m) { return { id: m.id, n: m.n, x: m.x, y: m.y, w: m.w, h: m.h }; });

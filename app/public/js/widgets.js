@@ -1678,8 +1678,8 @@ var Widgets = (function () {
       if (!desks.supported) { desksEl.innerHTML = '<div class="empty">' + D.esc(desks.message || 'Non disponibili su questo sistema') + '</div>'; return; }
       var html = '';
       for (var i = 0; i < desks.desktops.length; i++) html += deskCard(desks.desktops[i]);
-      // "+" come in Visualizzazione attività: crea un desktop e ci entra
-      html += '<div class="sc-dk sc-dknew" data-new="1">' + Icons.html('add', 'sc-dkic') + '<span class="sc-dkname">Nuovo</span></div>';
+      // "+" come in Visualizzazione attività: crea un desktop e ci entra (al massimo 3 desktop)
+      if (desks.desktops.length < (desks.max || 3)) html += '<div class="sc-dk sc-dknew" data-new="1">' + Icons.html('add', 'sc-dkic') + '<span class="sc-dkname">Nuovo</span></div>';
       desksEl.innerHTML = html;
       // la X chiude il desktop: va tenuta premuta (le finestre passano al desktop vicino)
       var xs = desksEl.querySelectorAll('.sc-dkx');
