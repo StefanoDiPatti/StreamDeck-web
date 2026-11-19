@@ -93,7 +93,7 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, volume e muto di una persona solo per te |
 | GAMES | Hearthstone, World of Tanks, League of Legends (pallino verde se aperti; se già aperto lo porta in primo piano) |
 | EMAIL *(disponibile)* | posta in arrivo degli account scelti dal pannello, lettura dei messaggi, apertura della webmail sul PC |
-| SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app, **desktop virtuali** (passa, crea, chiudi) e pulsante **GUIDA** con le scorciatoie |
+| SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app, **desktop virtuali** (passa, crea, chiudi, trascinaci una finestra) e pulsante **GUIDA** con le scorciatoie |
 | AUDIO | uscite e microfoni (predefinito, volume, mute), volume e mute di ogni app che usa l'audio |
 | DESKTOP VIRTUALI *(solo Linux)* | guida alle scorciatoie dei desktop virtuali (KDE Plasma, GNOME, anche Windows); su Windows la stessa guida è nella pagina SCHERMI |
 | VIBER *(aggiungila dal pannello)* | passa ai pannelli aperti di Viber (terminale, git, browser, chat, task, file), cambia vista (schede, agenti, focus), mostra le task del progetto aperto |
@@ -341,6 +341,8 @@ Nella pagina **SCHERMI** del tablet vedi i monitor come sono disposti sulla scri
 - **Apri le app su**: AUTO lascia decidere a Windows; con un monitor scelto, le app avviate dal tablet (pulsanti *launch*) vengono spostate lì appena compare la loro finestra, mantenendo dimensioni e posizione relative.
 
 A destra le finestre aperte (tre alla volta, la lista scorre) e sotto i **desktop virtuali**: una scheda per desktop con numero, nome e quante finestre ha (quello attivo in blu). Tocca un desktop per passarci, la scheda **+** ne crea uno e ci entra, la **X** nell'angolo (da tenere premuta) lo chiude: le sue finestre non si chiudono, passano al desktop vicino. L'elenco si legge dal registro di Windows, le finestre di ogni desktop con l'API pubblica `IVirtualDesktopManager`, e i comandi sono le scorciatoie Win+Ctrl+←/→, Win+Ctrl+D e Win+Ctrl+F4. Il pulsante **GUIDA** in alto mostra tutte le scorciatoie dei desktop virtuali di Windows e Linux.
+
+**Trascinare una finestra**: tieni premuta una finestra della lista (col mouse basta trascinarla) e lasciala su un **desktop virtuale** (ci va senza che tu cambi desktop, come in Win+Tab), su **Nuovo** (crea un desktop e ce la mette) o su un **monitor** della mappa (stessa misura e posizione relativa). Per i desktop la dock usa l'interfaccia interna di Explorer (quella di Win+Tab, non documentata: l'API pubblica sposta solo le finestre del proprio programma), con i GUID di Windows 11 24H2 e successivi; su versioni diverse il tablet dice che non riesce invece di fare danni.
 
 Le finestre dei programmi avviati come amministratore non si possono spostare (limite di Windows). I giochi a schermo intero esclusivo non si spostano. La scelta del monitor sta in `data/screens.json`.
 

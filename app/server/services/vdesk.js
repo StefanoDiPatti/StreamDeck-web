@@ -176,4 +176,30 @@ async function action(act, id) {
   return preview(desktops);
 }
 
-module.exports = { list: list, action: action, _parse: parse, _fromHelper: fromHelper, _guidFromHex: guidFromHex };
+// Sposta una finestra (del desktop attivo) su un altro desktop virtuale, o su uno nuovo
+// (desktop = 'new'), senza cambiare quello che stai guardando: come trascinarla in Win+Tab.
+async function moveWindow(windowId, desktop) {
+  if (!supported() || typeof platform.moveWindowToDesktop !== 'function') throw err('Spostare finestre tra desktop si può solo su Windows', 'UNSUPPORTED');
+  const wins = typeof platform.deskWindows === 'function' ? await platform.deskWindows() : [];
+  const w = wins.filter(function (x) { return x.id === String(windowId); })[0];
+  if (!w) throw err('Finestra non trovata (è stata chiusa?)', 'NOT_FOUND');
+  let desktops = await read();
+  const isNew = desktop === 'new';
+  let target = null;
+  if (!isNew) {
+    target = desktops.filter(function (d) { return d.id === String(desktop); })[0];
+    if (!target) throw err('Desktop non trovato (è stato chiuso?)', 'NOT_FOUND');
+    if (w.desktop === target.id) return Object.assign(await preview(desktops), { moved: false, title: w.title, desktopName: target.name });
+  } else if (desktops.length >= MAX) {
+    throw err('Hai già ' + MAX + ' desktop');
+  }
+  const before = desktops.length;
+  const to = String(await platform.moveWindowToDesktop(w.id, isNew ? '' : target.id)).toUpperCase();
+  // Explorer scrive il desktop nuovo nel registro poco dopo
+  desktops = isNew ? await waitFor(function (l) { return l.length > before; }) : await read();
+  const dest = desktops.filter(function (d) { return d.id === to; })[0];
+  log.info('vdesk', '"' + w.title + '" spostata su ' + (dest ? dest.name : to));
+  return Object.assign(await preview(desktops), { moved: true, title: w.title, desktopName: dest ? dest.name : 'un desktop nuovo' });
+}
+
+module.exports = { list: list, action: action, moveWindow: moveWindow, _parse: parse, _fromHelper: fromHelper, _guidFromHex: guidFromHex };

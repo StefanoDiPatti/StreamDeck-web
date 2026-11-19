@@ -627,6 +627,13 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .sc-dkn { position: absolute; left: 50%; top: 22px; width: 24px; margin-left: -12px; font-size: 14px; line-height: 20px; color: #fff; }
 .sc-dkname { display: block; margin-top: 6px; padding: 0 4px; font-size: 15px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-dksub { display: block; margin-top: 2px; font-size: 12px; color: #8b9bab; white-space: nowrap; overflow: hidden; }
+/* trascinamento di una finestra su un desktop virtuale o un monitor */
+.sc-win { -webkit-touch-callout: none; }
+.sc-win.dragging { opacity: 0.4; }
+.sc-ghost { position: absolute; z-index: 800; padding: 9px 14px; border-radius: 10px; background: #1f3b63; border: 2px solid #3d8bfd; color: #ffffff; font-size: 14px; font-weight: bold; white-space: nowrap; pointer-events: none; -webkit-box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+.sc-ghost svg.ic { width: 18px; height: 18px; margin: -3px 8px 0 0; }
+.sc-dragging .sc-dk, .sc-dragging .sc-mon { border-color: #3b5170; border-style: dashed; }
+.sc-dragging .sc-dk.drop, .sc-dragging .sc-mon.drop { border-color: #6cb6ff; border-style: solid; background: #1f3b63; }
 /* telefono: pagina più bassa, finestre (scorrono) e desktop virtuali più compatti */
 body.phone .sc-wins { height: 104px; }
 body.phone .sc-dhead { top: 144px; }

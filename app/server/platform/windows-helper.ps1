@@ -767,6 +767,77 @@ function Close-ClaudeTrust {
   return @{ closed = $false }
 }
 
+# --- Sposta una finestra su un altro desktop virtuale (pagina SCHERMI, trascinamento).
+# L'API pubblica (IVirtualDesktopManager.MoveWindowToDesktop) vale solo per le finestre
+# del proprio processo: per quelle degli altri programmi serve l'interfaccia interna di
+# Explorer, la stessa di Win+Tab. Non e' documentata e i GUID cambiano tra le versioni:
+# questi sono quelli di Windows 11 24H2 e successivi (come github.com/MScholtes/VirtualDesktop).
+# Si carica solo al primo uso; se non va, la dock lo dice invece di fare danni.
+$script:vdx = $false
+function Use-Vdx {
+  if ($script:vdx) { return }
+  Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class DockVD {
+  [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIInspectable), Guid("372E1D3B-38D3-42E4-A15B-8AB2B178F513")]
+  public interface IApplicationView { }
+  [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("1841C6D7-4F9D-42C0-AF41-8747538F10E5")]
+  public interface IApplicationViewCollection {
+    int GetViews(out IntPtr a); int GetViewsByZOrder(out IntPtr a); int GetViewsByAppUserModelId(string s, out IntPtr a);
+    int GetViewForHwnd(IntPtr hwnd, out IApplicationView view);
+  }
+  [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("3F07F4BE-B107-441A-AF0F-39D82529072C")]
+  public interface IVirtualDesktop { bool IsViewVisible(IApplicationView view); Guid GetId(); }
+  [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("53F5CA0B-158F-4124-900C-057158060B27")]
+  public interface IVirtualDesktopManagerInternal {
+    int GetCount();
+    void MoveViewToDesktop(IApplicationView view, IVirtualDesktop desktop);
+    bool CanViewMoveDesktops(IApplicationView view);
+    IVirtualDesktop GetCurrentDesktop();
+    void GetDesktops(out IntPtr desktops);
+    [PreserveSig] int GetAdjacentDesktop(IVirtualDesktop from, int direction, out IVirtualDesktop desktop);
+    void SwitchDesktop(IVirtualDesktop desktop);
+    void SwitchDesktopAndMoveForegroundView(IVirtualDesktop desktop);
+    IVirtualDesktop CreateDesktop();
+    void MoveDesktop(IVirtualDesktop desktop, int index);
+    void RemoveDesktop(IVirtualDesktop desktop, IVirtualDesktop fallback);
+    IVirtualDesktop FindDesktop(ref Guid desktopId);
+  }
+  [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("6D5140C1-7436-11CE-8034-00AA006009FA")]
+  public interface IServiceProvider10 { [return: MarshalAs(UnmanagedType.IUnknown)] object QueryService(ref Guid service, ref Guid riid); }
+  static IVirtualDesktopManagerInternal mgr;
+  static IApplicationViewCollection views;
+  static void Init() {
+    if (mgr != null) return;
+    var shell = (IServiceProvider10)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("C2F03A33-21F5-47FA-B4BB-156362A2F239")));
+    Guid s1 = new Guid("C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B"), i1 = typeof(IVirtualDesktopManagerInternal).GUID;
+    mgr = (IVirtualDesktopManagerInternal)shell.QueryService(ref s1, ref i1);
+    Guid i2 = typeof(IApplicationViewCollection).GUID;
+    views = (IApplicationViewCollection)shell.QueryService(ref i2, ref i2);
+  }
+  // desk = GUID del desktop, oppure "" per crearne uno nuovo (senza passarci). Ritorna il GUID.
+  public static string Move(long hwnd, string desk) {
+    try { Init(); } catch (Exception e) { mgr = null; throw new Exception("desktop virtuali non raggiungibili su questa versione di Windows (" + e.Message + ")"); }
+    IApplicationView view;
+    if (views.GetViewForHwnd(new IntPtr(hwnd), out view) != 0 || view == null) throw new Exception("finestra non trovata tra quelle di Windows");
+    if (!mgr.CanViewMoveDesktops(view)) throw new Exception("Windows non permette di spostare questa finestra su un altro desktop");
+    IVirtualDesktop target;
+    if (String.IsNullOrEmpty(desk)) target = mgr.CreateDesktop();
+    else { Guid g = new Guid(desk); target = mgr.FindDesktop(ref g); }
+    mgr.MoveViewToDesktop(view, target);
+    return target.GetId().ToString().ToUpperInvariant();
+  }
+}
+"@
+  $script:vdx = $true
+}
+function Move-ToDesktop($req) {
+  Use-Vdx
+  $desk = [string]$req.desk
+  return @{ moved = $true; desk = [DockVD]::Move([long]$req.hwnd, $desk) }
+}
+
 function Open-Target($req) {
   $psi = New-Object System.Diagnostics.ProcessStartInfo
   $psi.FileName = [string]$req.file
@@ -852,6 +923,10 @@ while ($true) {
         if (-not $script:screens) { throw 'schermi non disponibili' }
         $data = @{ moved = [DockScreens]::Place([long]$req.hwnd, [int]$req.x, [int]$req.y, [int]$req.w, [int]$req.h, [bool]$req.max) }
         if ($req.focus) { [void][DockInput]::FocusWindow([DockScreens]::Handle([long]$req.hwnd)) }
+      }
+      'vdmove' {
+        if (-not $script:screens) { throw 'schermi non disponibili' }
+        $data = Move-ToDesktop $req
       }
       'winact' {
         if (-not $script:screens) { throw 'schermi non disponibili' }

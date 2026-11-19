@@ -1647,7 +1647,7 @@ var Widgets = (function () {
       '<div class="sc-right">' +
         '<div class="sc-whead">FINESTRE APERTE</div>' +
         '<div class="sc-wins scroll"></div>' +
-        '<div class="sc-dhead">DESKTOP VIRTUALI<span class="sc-dsub">tocca per passarci</span></div>' +
+        '<div class="sc-dhead">DESKTOP VIRTUALI<span class="sc-dsub">tocca per passarci · trascinaci una finestra</span></div>' +
         '<div class="sc-desks"></div>' +
       '</div>' +
       '<div class="sc-guide w-vdesk hidden"></div>';
@@ -1915,6 +1915,7 @@ var Widgets = (function () {
     D.bindTap(winsEl, {
       scrollable: true,
       onTap: function (t) {
+        if (drag || new Date().getTime() - dragEnded < 700) return;   // fine di un trascinamento
         var row = D.closestAttr(t, 'data-win', winsEl);
         if (!row) return;
         var id = row.getAttribute('data-win');
@@ -1949,6 +1950,107 @@ var Widgets = (function () {
       }
     });
 
+    // ---- trascinamento: tieni premuta una finestra della lista, poi lasciala su un desktop
+    // virtuale, su "Nuovo" (desktop nuovo) o su un monitor della mappa.
+    var drag = null, dragEnded = 0, hold = null, holdT = null;
+    function now() { return new Date().getTime(); }
+    // pagina girata sul telefono (body.rot): dalle coordinate dello schermo a quelle della pagina
+    function local(x, y) {
+      if (D.hasClass(document.body, 'rot')) return { x: y, y: document.body.offsetHeight - x };
+      return { x: x, y: y };
+    }
+    function dropAt(x, y) {
+      var el = document.elementFromPoint(x, y);
+      if (!el) return null;
+      var n = D.closestAttr(el, 'data-new', root);
+      if (n) return { kind: 'new', el: n };
+      var d = D.closestAttr(el, 'data-desk', root);
+      if (d) return { kind: 'desk', el: d, id: d.getAttribute('data-desk') };
+      var m = D.closestAttr(el, 'data-mon', root);
+      if (m) return { kind: 'mon', el: m, id: m.getAttribute('data-mon') };
+      return null;
+    }
+    function startDrag(row, x, y) {
+      var title = row.querySelector('.sc-wtitle').textContent;
+      drag = { id: row.getAttribute('data-win'), title: title, row: row, target: null };
+      D.addClass(row, 'dragging');
+      D.addClass(root, 'sc-dragging');
+      var g = D.el('div', 'sc-ghost');
+      g.innerHTML = Icons.html('window') + D.esc(short(title, 30));
+      document.body.appendChild(g);
+      drag.ghost = g;
+      moveDrag(x, y);
+    }
+    function moveDrag(x, y) {
+      var p = local(x, y);
+      drag.ghost.style.left = Math.round(p.x + 14) + 'px';
+      drag.ghost.style.top = Math.round(p.y - 46) + 'px';
+      var t = dropAt(x, y);
+      if (drag.target && (!t || t.el !== drag.target.el)) D.removeClass(drag.target.el, 'drop');
+      if (t) D.addClass(t.el, 'drop');
+      drag.target = t;
+    }
+    function endDrag(cancel) {
+      var d = drag;
+      drag = null;
+      dragEnded = now();
+      if (d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+      D.removeClass(d.row, 'dragging');
+      D.removeClass(root, 'sc-dragging');
+      if (d.target) D.removeClass(d.target.el, 'drop');
+      if (cancel) return;
+      if (!d.target) { app.toast('Lasciala su un desktop virtuale, su Nuovo o su un monitor', 'info'); return; }
+      var body = { window: d.id };
+      if (d.target.kind === 'mon') body.monitor = d.target.id;
+      else body.desktop = d.target.kind === 'new' ? 'new' : d.target.id;
+      D.addClass(d.row, 'busy');
+      D.api.post('/api/screens/move', body, function (err, r) {
+        D.removeClass(d.row, 'busy');
+        if (err) return app.toast(err.message, 'err');
+        var where = r.desktopName || ('monitor ' + r.monitor);
+        app.toast(r.moved === false ? 'È già su ' + where : 'Spostata su ' + where + ': ' + short(r.title, 30), 'ok');
+        lastWins = ''; setTimeout(loadWins, 400);
+        lastDesks = ''; setTimeout(loadDesks, 600);
+      }, 15000);
+    }
+    function rowAt(t) {
+      var row = D.closestAttr(t, 'data-win', winsEl);
+      return row && !D.closestAttr(t, 'data-act', row) ? row : null;
+    }
+    function cancelHold() { clearTimeout(holdT); hold = null; }
+    winsEl.addEventListener('touchstart', function (e) {
+      var row = rowAt(e.target);
+      if (!row || e.touches.length > 1) return;
+      var t = e.touches[0];
+      hold = { row: row, x: t.clientX, y: t.clientY };
+      clearTimeout(holdT);
+      holdT = setTimeout(function () { if (hold) { startDrag(hold.row, hold.x, hold.y); hold = null; } }, 400);
+    }, false);
+    winsEl.addEventListener('touchmove', function (e) {
+      var t = e.touches[0];
+      if (drag) { e.preventDefault(); moveDrag(t.clientX, t.clientY); return; }
+      if (hold && (Math.abs(t.clientX - hold.x) > 10 || Math.abs(t.clientY - hold.y) > 10)) cancelHold();   // sta scorrendo
+    }, false);
+    winsEl.addEventListener('touchend', function (e) {
+      cancelHold();
+      if (drag) { e.preventDefault(); endDrag(false); }
+    }, false);
+    winsEl.addEventListener('touchcancel', function () { cancelHold(); if (drag) endDrag(true); }, false);
+    // col mouse (browser del PC): si trascina subito, basta muoversi un po'
+    var mhold = null;
+    winsEl.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      var row = rowAt(e.target);
+      if (row) mhold = { row: row, x: e.clientX, y: e.clientY };
+    }, false);
+    function onMouseMove(e) {
+      if (drag) { moveDrag(e.clientX, e.clientY); e.preventDefault(); return; }
+      if (mhold && (Math.abs(e.clientX - mhold.x) > 8 || Math.abs(e.clientY - mhold.y) > 8)) { startDrag(mhold.row, e.clientX, e.clientY); mhold = null; }
+    }
+    function onMouseUp() { mhold = null; if (drag) endDrag(false); }
+    document.addEventListener('mousemove', onMouseMove, false);
+    document.addEventListener('mouseup', onMouseUp, false);
+
     renderAll();
     renderDesks();
     loadInfo();
@@ -1959,7 +2061,12 @@ var Widgets = (function () {
     return {
       update: function () {},
       resize: function () { renderMap(); },
-      destroy: function () { alive = false; D.stop(fast); D.stop(slow); }
+      destroy: function () {
+        alive = false; D.stop(fast); D.stop(slow);
+        if (drag) endDrag(true);
+        document.removeEventListener('mousemove', onMouseMove, false);
+        document.removeEventListener('mouseup', onMouseUp, false);
+      }
     };
   }
 

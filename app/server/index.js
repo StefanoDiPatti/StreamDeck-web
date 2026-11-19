@@ -287,6 +287,13 @@ app.post('/api/viber/project', route(function (req) { return viber.project(Strin
 
 // desktop virtuali: elenco, passa a uno, crea, chiudi
 app.get('/api/screens/desktops', route(function () { return vdesk.list(); }));
+// Trascinamento di una finestra: su un desktop virtuale ({ desktop: GUID | 'new' }) o su un monitor ({ monitor })
+app.post('/api/screens/move', route(function (req) {
+  const b = req.body || {};
+  if (b.monitor) return screens.moveWindowToMonitor(String(b.window || ''), String(b.monitor));
+  if (b.desktop) return vdesk.moveWindow(String(b.window || ''), String(b.desktop));
+  throw badRequest('desktop o monitor richiesti');
+}));
 app.post('/api/screens/desktops', route(function (req) {
   const b = req.body || {};
   return vdesk.action(String(b.action || ''), b.desktop ? String(b.desktop) : '');

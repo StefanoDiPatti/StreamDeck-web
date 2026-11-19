@@ -240,6 +240,9 @@ svg.ic.dc-camflag { fill: #127a3a; }
 .sc-dk.on svg.sc-dkic { fill: #1f5fd1; }
 .sc-dkn { color: #111111; }
 .sc-dksub { color: #5a5446; }
+.sc-ghost { background: #9cc4ff; border: 2px solid #111111; color: #111111; }
+.sc-dragging .sc-dk, .sc-dragging .sc-mon { border-color: #111111; }
+.sc-dragging .sc-dk.drop, .sc-dragging .sc-mon.drop { border-color: #111111; background: #9cc4ff; }
 .sc-dk.on .sc-dksub { color: #1f5fd1; }
 .sc-dkx { background: rgba(255, 208, 201, 0.92); }
 .sc-dkx.holding { background: #ff6b5b; }

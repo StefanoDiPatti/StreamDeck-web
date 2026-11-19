@@ -225,6 +225,9 @@ svg.ic.dc-camflag { fill: #7fd99a; }
 .sc-dk.on svg.sc-dkic { fill: #a8c7fa; }
 .sc-dkn { color: #e9e9ee; }
 .sc-dksub { color: #8e9099; }
+.sc-ghost { background: #0f3b62; border: 2px solid #a8c7fa; color: #e9e9ee; }
+.sc-dragging .sc-dk, .sc-dragging .sc-mon { border-color: #44474e; }
+.sc-dragging .sc-dk.drop, .sc-dragging .sc-mon.drop { border-color: #a8c7fa; background: #0f3b62; }
 .sc-dk.on .sc-dksub { color: #a8c7fa; }
 .sc-dkx { background: rgba(92, 26, 27, 0.92); }
 .sc-dkx.holding { background: #93000a; }
