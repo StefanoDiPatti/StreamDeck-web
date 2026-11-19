@@ -188,10 +188,10 @@ function autoGrid(tiles) {
 }
 
 // Le pagine i cui pulsanti si scelgono e ordinano dal pannello: solo pulsanti, oppure
-// (con "buttonRow") widget sopra e una fila di pulsanti sotto (pagina VIBER).
+// (con "buttonGrid") pulsanti in griglia a sinistra e widget a destra (pagina VIBER).
 function editablePage(p) {
   const buttons = p.tiles.filter(function (t) { return !t.widget; });
-  return buttons.length > 0 && (buttons.length === p.tiles.length || !!p.buttonRow);
+  return buttons.length > 0 && (buttons.length === p.tiles.length || !!p.buttonGrid);
 }
 
 function clampInt(v, min, max, def) {
@@ -234,8 +234,8 @@ function normalizeDock(raw, layout, osKey) {
     // quelli nuovi (in nessuna delle due liste) in fondo.
     // "hidden": true = pulsante disponibile ma nascosto finché non lo mostri dal pannello.
     const custom = tileLayout[p.id];
-    const row = !!p.buttonRow;
-    const editable = editablePage({ tiles: all, buttonRow: row });
+    const row = !!p.buttonGrid;
+    const editable = editablePage({ tiles: all, buttonGrid: row });
     const fixed = all.filter(function (t) { return t.widget; });
     const buttons = all.filter(function (t) { return !t.widget; });
     let shownButtons = buttons.filter(function (t) { return !t.hidden; });
@@ -248,8 +248,8 @@ function normalizeDock(raw, layout, osKey) {
       shownButtons = shown.map(function (id) { return byId[id]; })
         .concat(buttons.filter(function (t) { return shown.indexOf(t.id) < 0 && hide.indexOf(t.id) < 0 && !t.hidden; }));
     }
-    // widget prima, poi i pulsanti. Con "buttonRow" la griglia è solo per i widget: i
-    // pulsanti stanno in una fila in fondo (il tablet toglie quelli che non si possono usare).
+    // widget prima, poi i pulsanti. Con "buttonGrid" la griglia è solo per i widget (a destra):
+    // i pulsanti li dispone il tablet a sinistra, togliendo quelli che non si possono usare.
     let tiles = editable ? fixed.concat(shownButtons) : all;
     const changed = tiles.length !== all.length || tiles.some(function (t, i) { return t !== all[i]; });
     if (!row && (p.autoGrid || useCustom || changed)) {
@@ -271,7 +271,8 @@ function normalizeDock(raw, layout, osKey) {
       rows: rws,
       tiles: tiles,
       allTiles: all,
-      buttonRow: row,
+      buttonGrid: row,
+      widgetWidth: row ? Math.max(0.3, Math.min(0.7, Number(p.widgetWidth) || 0.5)) : undefined,
       editable: editable
     });
   });

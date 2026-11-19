@@ -214,14 +214,15 @@
       "id": "viber",
       "title": "VIBER",
       "icon": "code",
-      "description": "Viber: liste di progetti e task, sotto una fila di pulsanti (pannelli, disposizioni, viste) personalizzabile dal pannello",
+      "description": "Viber: pulsanti (pannelli, disposizioni, viste) personalizzabili dal pannello, a destra progetti e task",
       "tab": false,
-      // liste di progetti e task, sotto una fila di pulsanti che si scelgono e ordinano dal
-      // pannello di controllo come per BLENDER. "hidden": true = disponibile ma nascosto.
-      // I pannelli che non sono tra le schede aperte in Viber escono dalla fila da soli.
+      // pulsanti a sinistra (si scelgono e ordinano dal pannello di controllo come per BLENDER;
+      // "hidden": true = disponibile ma nascosto), a destra le colonne Progetti e Task.
+      // I pannelli che non sono tra le schede aperte in Viber escono dalla griglia da soli.
       "columns": 1,
       "rows": 1,
-      "buttonRow": true,
+      "buttonGrid": true,
+      "widgetWidth": 0.5,
       "tiles": [
         { "widget": "viber", "label": "PROGETTI E TASK" },
         { "id": "terminal", "label": "TERMINALE", "icon": "terminal", "action": { "type": "viber", "panel": "terminal" } },

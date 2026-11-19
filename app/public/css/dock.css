@@ -743,11 +743,11 @@ body.phone .sc-map { bottom: 120px; }
 .au-ctl.muted .au-mute { background: #8b1d1d; }
 .au-ctl.muted .au-bar i { background: #4d5d70; }
 
-/* ---- Viber: liste progetti e task (sotto, la fila di pulsanti della pagina) */
+/* ---- Viber: colonne Progetti e Task a tutta altezza (a sinistra i pulsanti della pagina) */
 .w-viber { padding: 0 !important; }
 .vb-col { position: absolute; top: 0; bottom: 0; }
-.vb-colp { left: 0; width: 42%; border-right: 1px solid #222e3b; }
-.vb-colt { left: 42%; right: 0; background: #141c25; }
+.vb-colp { left: 0; width: 45%; border-right: 1px solid #222e3b; }
+.vb-colt { left: 45%; right: 0; background: #141c25; }
 .vb-h { position: absolute; left: 12px; right: 12px; top: 8px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vb-sub { font-weight: normal; letter-spacing: 0; }
 .vb-sub .err { color: #ff9c94; font-weight: normal; }
@@ -779,6 +779,17 @@ body.phone .sc-map { bottom: 120px; }
 .vb-step.done svg.ic { fill: #3fb950; }
 .vb-step.in_progress { color: #ffffff; }
 .vb-step.in_progress svg.ic { fill: #6cb6ff; }
+/* telefono: colonne strette, testo più piccolo */
+body.phone .vb-h { left: 8px; right: 8px; font-size: 11px; }
+body.phone .vb-projs, body.phone .vb-tasks { left: 4px; right: 4px; top: 32px; bottom: 4px; }
+body.phone .vb-pr { padding: 5px 6px 5px 20px; margin-bottom: 4px; }
+body.phone .vb-dot { left: 7px; top: 10px; width: 8px; height: 8px; }
+body.phone .vb-pname { font-size: 12px; }
+body.phone .vb-pmeta { font-size: 10px; }
+body.phone .vb-task { padding: 6px 7px; }
+body.phone .vb-ttext { font-size: 12px; }
+body.phone .vb-step { font-size: 11px; padding-left: 16px; }
+body.phone .vb-step svg.ic { width: 12px; height: 12px; }
 /* pulsante del pannello attivo in Viber */
 .tile.btn.vb-on { border-color: #3d8bfd; -webkit-box-shadow: inset 0 0 0 3px #3d8bfd; box-shadow: inset 0 0 0 3px #3d8bfd; }
 
