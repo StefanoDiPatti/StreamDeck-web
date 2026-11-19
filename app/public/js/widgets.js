@@ -183,8 +183,8 @@ var Widgets = (function () {
     art.appendChild(artPh); art.appendChild(img);
     var info = el('div', 'np-info');
     var src = el('div', 'np-src', '');
-    var title = el('div', 'np-title', 'Niente in riproduzione');
-    var artist = el('div', 'np-artist', '');
+    var title = el('div', 'np-title notr', 'Niente in riproduzione');
+    var artist = el('div', 'np-artist notr', '');
     var seek = el('div', 'np-seek');
     var prog = el('div', 'np-prog'); var progFill = el('i', ''); prog.appendChild(progFill);
     seek.appendChild(prog);
@@ -236,7 +236,9 @@ var Widgets = (function () {
     ctrlBtn(ctr, 'next', 'next');
     var volUp = ctrlBtn(ctr, 'volup', 'volume_up', 'np-vol', true);
     var shufBtn = ctrlBtn(ctr2, 'shuffle', 'shuffle', 'np-opt', false, 'SHUFFLE');
-    var repBtn = ctrlBtn(ctr2, 'repeat', 'repeat', 'np-opt', false, 'RIPETI');
+    // "RIPETI" altrove è Redo (scorciatoie): qui è Repeat, quindi il testo lo sceglie il widget
+    var REP = I18n.lang() === 'en' ? ['REPEAT', 'REPEAT 1'] : ['RIPETI', 'RIPETI 1'];
+    var repBtn = ctrlBtn(ctr2, 'repeat', 'repeat', 'np-opt notr', false, REP[0]);
     var muteBtn = ctrlBtn(ctr2, 'mute', 'mute', 'np-opt', false, 'MUTO');
     var volLabel = el('div', 'np-vollabel', '');
     ctr2.appendChild(volLabel);
@@ -280,7 +282,7 @@ var Widgets = (function () {
       D.toggleClass(shufBtn, 'off', !(cur && cur.canShuffle));
       D.toggleClass(repBtn, 'on', !!(cur && cur.repeat && cur.repeat !== 'none'));
       D.toggleClass(repBtn, 'off', !(cur && cur.canRepeat));
-      setText(repBtn.querySelector('span'), cur && cur.repeat === 'one' ? 'RIPETI 1' : 'RIPETI');
+      setText(repBtn.querySelector('span'), cur && cur.repeat === 'one' ? REP[1] : REP[0]);
       D.toggleClass(muteBtn, 'on', !!(cur && cur.muted));
       var noVol = !(cur && cur.canVolume);
       D.toggleClass(volDown, 'off', noVol); D.toggleClass(volUp, 'off', noVol); D.toggleClass(muteBtn, 'off', noVol);
@@ -664,7 +666,7 @@ var Widgets = (function () {
         var text = D.esc(it.text);
         if (it.label && it.text.indexOf(it.label) === 0) text = '<b>' + D.esc(it.label) + '</b>' + D.esc(it.text.slice(it.label.length));
         row.innerHTML = '<span class="todo-box">' + (it.done ? Icons.html('check') || 'x' : '') + '</span>' +
-          '<span class="todo-text">' + text + '</span>' +
+          '<span class="todo-text notr">' + text + '</span>' +
           '<span class="todo-del">' + (Icons.html('close') || 'x') + '</span>';
         bindRow(row, it);
         list.appendChild(row);
@@ -798,7 +800,7 @@ var Widgets = (function () {
     }
 
     function bubble(m) {
-      var b = el('div', 'msg ' + m.role + (m.error ? ' error' : ''));
+      var b = el('div', 'msg notr ' + m.role + (m.error ? ' error' : ''));
       b.innerHTML = m.role === 'user' ? D.esc(m.text).replace(/\n/g, '<br>') : D.richText(m.text);
       return b;
     }
@@ -901,8 +903,12 @@ var Widgets = (function () {
     var t = el('div', 'clk-time', '');
     var d = el('div', 'clk-date', '');
     root.appendChild(t); root.appendChild(d);
-    var DAYS = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
-    var MONTHS = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+    var en = I18n.lang() === 'en';
+    var DAYS = en ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] :
+      ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
+    var MONTHS = en ? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] :
+      ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+    D.addClass(d, 'notr');   // già nella lingua scelta
     function paint() {
       var n = new Date();
       setText(t, D.pad(n.getHours()) + ':' + D.pad(n.getMinutes()));
@@ -1894,7 +1900,7 @@ var Widgets = (function () {
         var w = wins[i], m = mon(w.monitor);
         html += '<div class="sc-win' + (w.active ? ' active' : '') + (w.state === 'min' ? ' min' : '') + '" data-win="' + D.esc(w.id) + '">' +
           '<span class="sc-wmon">' + (m ? m.n : '?') + '</span>' +
-          '<span class="sc-wtitle">' + D.esc(w.title) + '</span>' +
+          '<span class="sc-wtitle notr">' + D.esc(w.title) + '</span>' +
           '<span class="sc-wproc">' + D.esc(w.process) + (w.state === 'min' ? ' · ridotta' : w.state === 'max' ? ' · ingrandita' : '') + '</span>' +
           '<span class="sc-wbtn" data-act="minimize">' + Icons.html('minimize') + '</span>' +
           '<span class="sc-wbtn" data-act="maximize">' + Icons.html('fullscreen') + '</span>' +
@@ -2206,7 +2212,7 @@ var Widgets = (function () {
       for (var i = 0; i < d.projects.length; i++) {
         var p = d.projects[i], what = VB_STATES[p.state] || '';
         h += '<div class="vb-pr st-' + p.state + (p.active ? ' on' : '') + '" data-path="' + D.esc(p.path) + '"><i class="vb-dot"></i>' +
-          '<div class="vb-pname">' + D.esc(p.name) + '</div>' +
+          '<div class="vb-pname notr">' + D.esc(p.name) + '</div>' +
           '<div class="vb-pmeta">' + (what ? '<b>' + what + '</b>' : '') + D.esc(p.title || (p.agents ? '' : 'nessun agente')) + '</div></div>';
       }
       projEl.innerHTML = h || '<div class="empty">Nessun progetto aperto in Viber</div>';
@@ -2229,7 +2235,7 @@ var Widgets = (function () {
         var h = '';
         for (var i = 0; i < d.tasks.length; i++) {
           var t = d.tasks[i], doing = t.status === 'in_progress';
-          h += '<div class="vb-task' + (doing ? ' doing' : '') + '"><div class="vb-ttext">' + D.esc(t.text) + '</div>' +
+          h += '<div class="vb-task' + (doing ? ' doing' : '') + '"><div class="vb-ttext notr">' + D.esc(t.text) + '</div>' +
             '<div class="vb-tmeta"><span class="vb-chip">' + (doing ? 'IN CORSO' : 'APERTA') + '</span>' + (t.branch ? D.esc(t.branch) : '') + '</div>';
           for (var k = 0; k < t.steps.length; k++) {
             var s = t.steps[k];
