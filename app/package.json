@@ -1,0 +1,35 @@
+{
+  "name": "vibe-deck",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Trasforma un vecchio tablet Android 4 in una Stream Deck wireless per Windows e Linux",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node scripts/bootstrap.js",
+    "server": "node server/index.js",
+    "setup": "node scripts/bootstrap.js --setup",
+    "test": "node --test",
+    "themes": "node scripts/build-themes.js",
+    "demo": "node scripts/demo.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.2.0",
+    "express": "^4.22.3",
+    "imapflow": "^2.10.0",
+    "mailparser": "^3.14.1",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "acorn": "^8.19.0",
+    "hoodiecrow-imap": "^3.3.1"
+  },
+  "author": "Stefano Di Patti",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/StefanoDiPatti/vibe-deck.git"
+  }
+}
