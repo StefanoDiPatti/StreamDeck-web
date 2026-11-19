@@ -705,7 +705,9 @@ body.phone .sc-map { bottom: 120px; }
 .saver.hidden { display: none; }
 .saver.waking { background: transparent; }
 .saver.waking .saver-clock, .saver.waking .saver-hint { display: none; }
-.saver-clock { position: absolute; font-size: 72px; font-weight: bold; letter-spacing: 4px; color: #2a3440; }
+/* orario del salvaschermo: un font per tema (public/fonts, solo cifre e ":"; i temi lo cambiano) */
+@font-face { font-family: "VDClockClassic"; src: url("../fonts/clock-classic.ttf") format("truetype"); }
+.saver-clock { position: absolute; font-family: "VDClockClassic", Roboto, "Segoe UI", sans-serif; font-size: 104px; font-weight: normal; line-height: 1; letter-spacing: 2px; color: #3c4c5e; white-space: nowrap; }
 .saver-hint { position: absolute; left: 0; right: 0; bottom: 18px; text-align: center; font-size: 13px; letter-spacing: 2px; color: #1c242d; text-transform: uppercase; }
 
 /* ---- Audio: dispositivi e volume delle app */

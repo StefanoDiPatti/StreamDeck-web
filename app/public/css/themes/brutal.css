@@ -331,6 +331,9 @@ svg.ic.dc-camflag { fill: #127a3a; }
 .gg-row.danger code { color: #c4271a; }
 
 /* ---- forme del tema (scritte a mano) */
+/* salvaschermo: cifre nere pesanti con ombra piena */
+@font-face { font-family: "VDClockBrutal"; src: url("../../fonts/clock-brutal.ttf") format("truetype"); }
+.saver-clock { font-family: "VDClockBrutal", "Arial Black", sans-serif; font-size: 100px; letter-spacing: 0; color: #6e6656; text-shadow: 6px 6px 0 #4a3d06; }
 body { font-family: "Arial Black", "Archivo Black", Roboto, Arial, sans-serif; }
 /* barre nere con testo crema */
 #topbar { background: #111111; color: #f4efe3; border-bottom: 3px solid #111111; }

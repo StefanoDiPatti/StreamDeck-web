@@ -320,6 +320,9 @@ svg.ic.dc-camflag { fill: #39ff88; }
 .gg-row.danger code { color: #ff5c7a; }
 
 /* ---- forme del tema (scritte a mano) */
+/* salvaschermo: cifre digitali con bagliore tenue */
+@font-face { font-family: "VDClockNeon"; src: url("../../fonts/clock-neon.ttf") format("truetype"); }
+.saver-clock { font-family: "VDClockNeon", "Roboto Condensed", sans-serif; font-size: 88px; letter-spacing: 6px; color: #1b8fb3; text-shadow: 0 0 14px rgba(65, 209, 255, 0.45), 0 0 34px rgba(65, 209, 255, 0.2); }
 body { font-family: "Roboto Condensed", "Arial Narrow", Roboto, Arial, sans-serif; }
 #topbar { border-bottom-color: #000; }
 .tb-left, #page-title { text-transform: uppercase; letter-spacing: 3px; }
