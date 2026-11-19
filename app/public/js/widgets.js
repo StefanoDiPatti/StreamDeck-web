@@ -2268,7 +2268,7 @@ var Widgets = (function () {
       var a = current();
       if (!a) {
         setText(info, '');
-        list.innerHTML = '<div class="empty">Nessun account email.<br>Aggiungilo dal pannello di controllo sul PC<br>(sezione Email).</div>';
+        list.innerHTML = '<div class="empty">Nessun account email.<br>La posta arriva da Thunderbird sul PC:<br>pannello di controllo, sezione Email.</div>';
         return;
       }
       if (!data || data.account.id !== a.id) {
@@ -2302,7 +2302,7 @@ var Widgets = (function () {
       setText(rtitle, 'Caricamento…');
       setText(rmeta, '');
       rbody.innerHTML = '';
-      D.api.get('/api/mail/message?account=' + encodeURIComponent(a.id) + '&uid=' + uid, function (err, m) {
+      D.api.get('/api/mail/message?account=' + encodeURIComponent(a.id) + '&uid=' + encodeURIComponent(uid), function (err, m) {
         if (!alive || openUid !== uid) return;
         if (err) { setText(rtitle, err.message); return; }
         setText(rtitle, m.subject || '(senza oggetto)');

@@ -216,15 +216,17 @@ app.post('/api/control/discord', controlOnly, route(async function (req) {
   return controlInfo();
 }));
 app.post('/api/control/discord/authorize', controlOnly, route(async function () { await discord.authorize(); return controlInfo(); }));
-app.post('/api/control/mail', controlOnly, route(async function (req) { await mail.addAccount(req.body || {}); return controlInfo(); }));
-app.post('/api/control/mail/remove', controlOnly, route(function (req) { mail.removeAccount(String((req.body || {}).id || '')); return controlInfo(); }));
-app.post('/api/control/mail/login', controlOnly, route(async function (req) { await mail.relogin(String((req.body || {}).id || '')); return controlInfo(); }));
+// account di Thunderbird: quali mostrare sul tablet
+// Controlla di nuovo: cerca Thunderbird e rilegge la posta di tutti gli account
+app.post('/api/control/mail/check', controlOnly, route(async function () { await mail.check(); return controlInfo(); }));
+app.post('/api/control/mail/open', controlOnly, route(function () { return mail.openWebmail(); }));
+app.post('/api/control/mail/show', controlOnly, route(function (req) { const b = req.body || {}; mail.setShown(String(b.id || ''), b.shown !== false); return controlInfo(); }));
 app.post('/api/control/discord/logout', controlOnly, route(function () { discord.logout(); return controlInfo(); }));
 
 // --- tutto il resto richiede il token ---
 app.use('/api', auth.requireToken);
 
-// --- Email (tablet): solo lettura, gli account si scelgono dal pannello ---
+// --- Email (tablet): letta da Thunderbird sul PC, in sola lettura ---
 app.get('/api/mail', route(function () { return mail.state(); }));
 app.get('/api/mail/list', route(function (req) { return mail.list(String(req.query.account || ''), req.query.refresh === '1'); }));
 app.get('/api/mail/message', route(function (req) { return mail.message(String(req.query.account || ''), req.query.uid); }));
@@ -489,7 +491,12 @@ function start() {
     log.error('platform', 'avvio backend ' + platform.name + ' non riuscito: ' + e.message);
   }).then(function () {
     return new Promise(function (resolve, reject) {
-      const server = app.listen(PORT, HOST, function () { banner(); todosync.start(); resolve(server); });
+      const server = app.listen(PORT, HOST, function () {
+        banner(); todosync.start();
+        // posta: Thunderbird c'è? quali account? (si vede nel log)
+        mail.startupCheck().catch(function (e) { log.debug('mail', 'controllo all\'avvio: ' + e.message); });
+        resolve(server);
+      });
       // Connessioni tenute aperte più a lungo del polling a riposo del tablet (15 s):
       // con i 5 s di Node ogni richiesta apriva una connessione TCP nuova (radio e CPU in più).
       server.keepAliveTimeout = 65000;

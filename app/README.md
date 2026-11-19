@@ -13,7 +13,7 @@ Il PC (Windows o Linux) fa girare un piccolo server Node.js. Il tablet apre una 
 - **Schermi**: scegli su quale monitor si aprono le app dal tablet e disponi le finestre nelle zone, come Snap di Windows.
 - **Pannello di controllo sul PC** per scegliere e ordinare con il trascinamento le pagine del tablet e i pulsanti di ogni pagina.
 - **Windows e Linux** riconosciuti da soli: su Linux i pulsanti di Windows diventano i loro equivalenti (PowerShell → Terminale, Task Mgr → Monitor di sistema...).
-- **Email**: posta in arrivo di Gmail, Outlook, iCloud, Yahoo, Libero o qualsiasi IMAP, in sola lettura. Gli account si scelgono dal pannello.
+- **Email**: posta in arrivo letta da Thunderbird sul PC (Gmail, Outlook, iCloud, mail di università e aziende...), in sola lettura.
 - **QR code** per collegare un telefono o un tablet: lo inquadri ed è fatta.
 - Ollama, riepilogo GitHub, TODO sulle Memo di Windows, orologio.
 - Pagine di scorciatoie per Blender e DaVinci Resolve (da aggiungere alla barra dal pannello), che mettono in primo piano il programma prima di premere i tasti.
@@ -92,7 +92,7 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | CLAUDE | chat, sessioni di Claude Code, dettatura, scrittura sul PC |
 | DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, volume e muto di una persona solo per te |
 | GAMES | Hearthstone, World of Tanks, League of Legends (pallino verde se aperti; se già aperto lo porta in primo piano) |
-| EMAIL *(disponibile)* | posta in arrivo degli account scelti dal pannello, lettura dei messaggi, apertura della webmail sul PC |
+| EMAIL *(disponibile)* | posta in arrivo degli account di Thunderbird scelti dal pannello, lettura dei messaggi, apertura di Thunderbird sul PC |
 | SCHERMI *(Windows; Linux con KDE Plasma 6 + kdotool)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app, **desktop virtuali** (passa, crea, chiudi, trascinaci una finestra) e pulsante **GUIDA** con le scorciatoie |
 | AUDIO | uscite e microfoni (predefinito, volume, mute), volume e mute di ogni app che usa l'audio |
 | DESKTOP VIRTUALI *(solo Linux)* | guida alle scorciatoie dei desktop virtuali (KDE Plasma, GNOME, anche Windows); su Windows la stessa guida è nella pagina SCHERMI |
@@ -156,22 +156,17 @@ In cima al pannello c'è un QR code con il link diretto (indirizzo + codice di a
 
 ### Email
 
-Nella sezione **Email** del pannello scegli il servizio e collega l'account; poi aggiungi la pagina **EMAIL** alla barra. Sul tablet vedi la posta in arrivo (le non lette in evidenza), apri un messaggio per leggerlo e con **APRI SUL PC** apri la webmail nel browser del PC. Con più account, **CAMBIA** passa da uno all'altro.
+La posta si collega **solo tramite [Thunderbird](https://www.thunderbird.net/download/)** (gratis, open source, di Mozilla, per Windows e Linux). È l'unico modo che funziona con tutti i servizi senza password per le app né app da registrare: l'accesso lo fa Thunderbird con i metodi ufficiali di ogni servizio (Gmail con la conferma sul telefono, Outlook, iCloud, Yahoo, Libero, e anche le mail di **università e aziende** con Microsoft 365 o Google Workspace, se l'organizzazione permette Thunderbird) e lo rinnova da solo.
 
-La dock legge la posta in **sola lettura**: non segna le email come lette, non le sposta e non le cancella.
+1. Installa Thunderbird e aggiungi i tuoi account (*Account email esistente*: per Gmail e Microsoft lascia vuota la password, si apre la pagina di accesso del servizio).
+2. Lascia attivo **"Conserva i messaggi di questo account sul computer"** (è il valore di partenza; impostazioni dell'account → Sincronizzazione e archiviazione): serve per leggere il testo dal tablet.
+3. Nella sezione **Email** del pannello gli account compaiono da soli: scegli quali mostrare sul tablet, poi aggiungi la pagina **EMAIL** alla barra.
 
-| Servizio | Cosa serve |
-|---|---|
-| Gmail | verifica in due passaggi attiva e una [password per le app](https://myaccount.google.com/apppasswords) |
-| iCloud | una password specifica per le app dal tuo Apple ID |
-| Yahoo | una password per le app dalle impostazioni di sicurezza |
-| Libero | la password della casella |
-| Altro (IMAP) | server IMAP, porta (993 con SSL, 143 con STARTTLS) e password |
-| Outlook / Hotmail | Microsoft accetta solo OAuth2: registra un'app gratuita sul [portale Azure](https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade) (*Personal Microsoft accounts*, *Allow public client flows* attivo), incolla il Client ID nel pannello e completa l'accesso con il codice su microsoft.com/devicelogin |
+Sul tablet vedi la posta in arrivo (le non lette in evidenza), apri un messaggio per leggerlo e con **APRI SUL PC** apri Thunderbird. Con più account, **CAMBIA** passa da uno all'altro. Thunderbird deve restare aperto (anche ridotto a icona) per scaricare le email nuove.
 
-**Account di scuola o di lavoro (Microsoft 365, es. università):** li gestisce l'organizzazione, che di solito non permette di registrare app né di leggere la posta da programmi esterni. L'alternativa più semplice è l'inoltro automatico verso una casella Gmail (in Outlook web: Impostazioni → Posta → Inoltro), se l'organizzazione lo consente, e poi collegare Gmail.
+**Riservatezza:** la dock non chiede e non salva password o token. Legge in **sola lettura** i file del profilo di Thunderbird (`INBOX.msf` per l'elenco, il file della posta per il testo): non segna le email come lette, non le sposta e non le cancella, e le manda solo al tablet sulla rete di casa. I file della posta sul disco non sono cifrati (vale per ogni programma di posta): proteggi l'account del PC con una password e, se puoi, con la cifratura del disco. `data/mail.json` tiene solo quali account mostrare.
 
-Le credenziali restano in `data/mail.json`, cifrate, solo su questo PC: il tablet non le riceve mai.
+Profili cercati: `%APPDATA%\Thunderbird` su Windows; `~/.thunderbird`, Flatpak (`~/.var/app/org.mozilla.Thunderbird/.thunderbird`) e Snap su Linux. `DOCK_THUNDERBIRD_DIR` indica un'altra cartella (quella con `profiles.ini`).
 
 ### Discord
 
@@ -446,7 +441,7 @@ Se sposti la cartella del progetto, rilancia `install`: l'icona punta al percors
 
 Password, token e client secret non stanno in chiaro sul disco:
 
-- `data/mail.json` e `data/discord.json` sono cifrati (AES-256-GCM);
+- `data/mail.json` (solo gli account da mostrare) e `data/discord.json` sono cifrati (AES-256-GCM);
 - nel `.env` i segreti (`GITHUB_TOKEN`, `ANTHROPIC_API_KEY` e ogni variabile che finisce in `TOKEN`, `SECRET`, `PASSWORD`, `_KEY`) vengono cifrati al primo avvio: diventano `enc:v1:...`. Per cambiarne uno scrivi il valore nuovo in chiaro: al riavvio viene cifrato di nuovo. `DOCK_TOKEN` resta leggibile perché è il codice che il tablet ti chiede.
 
 La chiave sta nel **portachiavi del sistema**: su Linux il Secret Service (KWallet su KDE, GNOME Keyring), letto con `secret-tool` (pacchetto `libsecret`); su Windows la DPAPI del tuo account. Se il portachiavi non c'è, la chiave finisce in `data/secret-key` (permessi 600) e il log lo segnala. `data/secret-key.json` dice dove sta.
@@ -458,7 +453,7 @@ La cifratura protegge i file copiati, sincronizzati o finiti per sbaglio in un b
 - Il tablet invia solo "ho premuto il pulsante X della pagina Y": l'azione la legge il server da `dock.json`. Dal tablet non si possono lanciare comandi arbitrari.
 - **Attenzione:** "scrivi sul PC" e le sessioni di Claude Code danno al tablet la possibilità di scrivere testo sul PC e di far lavorare Claude Code nelle tue cartelle. Per questo il codice di accesso è importante: non condividerlo.
 - L'estensione del browser è accettata solo da questo PC (`127.0.0.1`) e con un header che i siti web non possono inviare.
-- Token GitHub, chiave API di Claude, Ollama e le credenziali email restano sul PC.
+- Token GitHub, chiave API di Claude e Ollama restano sul PC; per la posta la dock non ha credenziali (le tiene Thunderbird).
 - Sotto Windows la regola firewall vale solo per le reti **private**. Se la tua rete è "Pubblica", il tablet potrebbe non collegarsi: impostala come privata.
 
 ## Problemi comuni

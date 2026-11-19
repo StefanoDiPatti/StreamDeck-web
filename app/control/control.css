@@ -172,6 +172,11 @@ body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select:
 .ml-form .wide { grid-column: 1 / -1; }
 .ml-help { color: var(--text-2); font-size: 14px; margin: 0 0 12px; }
 .ml-help a { color: var(--accent-2); }
+.ml-acc.off { opacity: .6; }
+.ml-acc .chip { flex: none; }
+.ml-steps { margin-top: 12px; }
+.ml-more { margin: 6px 0 12px; }
+.ml-more summary { cursor: pointer; color: var(--accent-2); font-weight: 600; margin-bottom: 8px; }
 .btn.add-acc { margin-top: 4px; }
 
 /* Discord */
@@ -213,3 +218,9 @@ input[type=text], input[type=password] { width: 100%; height: 40px; padding: 0 1
 #toast.err { border-color: var(--bad); }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* stato di Thunderbird nella sezione Email */
+.ml-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: var(--sunken); }
+.ml-status .txt { flex: 1 1 260px; color: var(--text-2); font-size: 14px; }
+.ml-status .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
+.ml-status .dot.ok { background: var(--ok); }
