@@ -212,6 +212,12 @@ const HANDLERS = {
     return Object.assign(st, { message: message });
   },
 
+  // Pagina VIBER: { "panel": "terminal" } | { "layout": "review" } | { "view": "agents" } | { "project": "next" }
+  viber: async function (a) {
+    const viber = require('../services/viber');
+    return { message: null, viber: await viber.action(a) };
+  },
+
   wait: async function (a) {
     const ms = Math.max(0, Math.min(parseInt(a.ms, 10) || 0, MAX_WAIT_MS));
     await new Promise(function (r) { setTimeout(r, ms); });

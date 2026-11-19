@@ -51,8 +51,30 @@
   D.bindTap(D.$('modal-close'), { onTap: function () { D.addClass(D.$('modal'), 'hidden'); } });
 
   // ------------------------------------------------------------ layout
-  function viewport() {
+  function screenSize() {
     return { w: window.innerWidth || document.documentElement.clientWidth, h: window.innerHeight || document.documentElement.clientHeight };
+  }
+  // Misure "logiche" della dock: col telefono in verticale sono girate (vedi rotate).
+  function viewport() {
+    var s = screenSize();
+    return app.rotated ? { w: s.h, h: s.w } : s;
+  }
+
+  // Telefono (lato corto sotto i 600 px): la dock è sempre orizzontale. Tenuto in
+  // verticale (o col blocco rotazione) si gira tutta la pagina di 90°: si legge
+  // girando il telefono con la parte alta a sinistra. Il tablet non cambia.
+  // Con la tastiera aperta non si gira: lo schermo che si accorcia non è una rotazione.
+  function rotate(focused) {
+    var s = screenSize();
+    var phone = Math.min(s.w, s.h) < 600;
+    var want = phone && s.h > s.w;
+    if (focused && app.rotated !== undefined) want = app.rotated;
+    app.rotated = want;
+    var b = document.body;
+    D.toggleClass(b, 'rot', want);
+    b.style.width = want ? s.h + 'px' : '';
+    b.style.height = want ? s.w + 'px' : '';
+    D.toggleClass(b, 'phone', phone);
   }
 
   // Dispone le tile nella griglia: da sinistra a destra, prima cella libera.
@@ -81,8 +103,9 @@
   }
 
   function layout() {
-    var v = viewport();
     var focused = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    rotate(focused);
+    var v = viewport();
     // Tastiera aperta (schermo molto basso): nasconde barre per fare spazio
     var kb = focused && v.h < 380;
     D.toggleClass(document.body, 'kb-open', kb);
@@ -91,13 +114,45 @@
     var gap = v.w < 900 ? 6 : 8;
     var sw = stage.clientWidth || v.w;
     var sh = Math.max(100, stage.clientHeight || (v.h - (kb ? 0 : TOP_H + TABS_H)));
-    var cw = (sw - gap * (cols + 1)) / cols;
-    var ch = (sh - gap * (rows + 1)) / rows;
     app.lastSize = sw + 'x' + sh;
-    stage.style.fontSize = Math.round(Math.max(12, Math.min(19, Math.min(cw * 0.12, ch * 0.15)))) + 'px';
-    for (var i = 0; i < app.tiles.length; i++) {
+    // "buttonGrid": pulsanti in griglia a sinistra (solo quelli usabili: un widget può
+    // toglierne qualcuno, e la griglia si ricompatta), widget a destra.
+    var btns = [], gx = 0, gsw = sw, font = 0, i;
+    for (i = 0; i < app.tiles.length; i++) if (app.tiles[i].side && !app.tiles[i].off) btns.push(app.tiles[i]);
+    if (btns.length) {
+      var area = Math.round(sw * (1 - (app.page.widgetWidth || 0.5)));
+      var n = btns.length, bc = 1, best = 1e9;
+      // colonne x righe con celle di forma comoda e pochi buchi
+      for (var c = 1; c <= n; c++) {
+        var r = Math.ceil(n / c);
+        var cwc = (area - gap * (c + 1)) / c, chc = (sh - gap * (r + 1)) / r;
+        var score = Math.abs(Math.log((cwc / chc) / 1.25)) + 0.35 * (c * r - n);
+        if (score < best) { best = score; bc = c; }
+      }
+      var br = Math.ceil(n / bc);
+      var bcw = (area - gap * (bc + 1)) / bc, bch = (sh - gap * (br + 1)) / br;
+      var last = n - (br - 1) * bc;   // pulsanti nell'ultima riga: si allargano, niente buchi
+      var lcw = (area - gap * (last + 1)) / last;
+      for (i = 0; i < n; i++) {
+        var b = btns[i].el, inLast = Math.floor(i / bc) === br - 1, wcell = inLast ? lcw : bcw;
+        b.style.left = Math.round(gap + (i % bc) * (wcell + gap)) + 'px';
+        b.style.top = Math.round(gap + Math.floor(i / bc) * (bch + gap)) + 'px';
+        b.style.width = Math.round(wcell) + 'px';
+        b.style.height = Math.round(bch) + 'px';
+        D.toggleClass(b, 'short', bch < 95);
+      }
+      font = Math.min(bcw * 0.12, bch * 0.15);
+      gx = area - gap;
+      gsw = sw - gx;
+    }
+    var cw = (gsw - gap * (cols + 1)) / cols;
+    var ch = (sh - gap * (rows + 1)) / rows;
+    stage.style.fontSize = Math.round(Math.max(12, Math.min(19, font || Math.min(cw * 0.12, ch * 0.15)))) + 'px';
+    for (i = 0; i < app.tiles.length; i++) {
       var p = app.tiles[i];
-      var left = Math.round(gap + p.x * (cw + gap));
+      p.el.style.display = p.off ? 'none' : '';
+      if (p.side) continue;
+      var left = Math.round(gx + gap + p.x * (cw + gap));
       var topPx = Math.round(gap + p.y * (ch + gap));
       var w = Math.round(p.w * cw + (p.w - 1) * gap);
       var h = Math.round(p.h * ch + (p.h - 1) * gap);
@@ -109,6 +164,15 @@
       if (p.widget) p.widget.resize(w, h);
     }
   }
+
+  // Un widget toglie dalla fila un pulsante che ora non si può usare (pagina VIBER:
+  // pannello non aperto in Viber) e lo rimette quando torna usabile.
+  app.setOff = function (p, off) {
+    off = !!off;
+    if (!!p.off === off) return;
+    p.off = off;
+    layout();
+  };
 
   // ------------------------------------------------------------ pagine
   function findPage(id) {
@@ -149,8 +213,15 @@
     app.page = page;
     D.store.set('page', page.id);
     D.setText(D.$('page-title'), page.title);
-    var placed = pack(page.tiles, page.columns, page.rows);
-    for (var i = 0; i < placed.length; i++) {
+    // "buttonGrid": i widget nella griglia (a destra), i pulsanti a sinistra (vedi layout)
+    var gridTiles = page.tiles, sideTiles = [], i;
+    if (page.buttonGrid) {
+      gridTiles = [];
+      for (i = 0; i < page.tiles.length; i++) (page.tiles[i].widget ? gridTiles : sideTiles).push(page.tiles[i]);
+    }
+    var placed = pack(gridTiles, page.columns, page.rows);
+    for (i = 0; i < sideTiles.length; i++) placed.push({ tile: sideTiles[i], side: true });
+    for (i = 0; i < placed.length; i++) {
       var p = placed[i];
       p.el = p.tile.widget ? makeWidget(p) : makeButton(p.tile);
       stage.appendChild(p.el);
@@ -224,6 +295,8 @@
       flash(node, 'ok');
       // stato aperto/chiuso aggiornato subito dopo un avvio o una chiusura
       if (a.type === 'launch') { clearTimeout(app.pollTimer); app.pollTimer = setTimeout(poll, 1800); }
+      // pulsanti della pagina VIBER: il riquadro progetti/task si aggiorna subito
+      if (r && r.viber) for (var i = 0; i < app.tiles.length; i++) if (app.tiles[i].widget && app.tiles[i].widget.viber) app.tiles[i].widget.viber(r.viber);
       if (r && r.output !== undefined) showModal(tile.label || 'Output', r.output);
       else if (r && r.message) app.toast(r.message, 'ok');
     }, 125000);
@@ -310,7 +383,7 @@
   function paintSaver() {
     var n = new Date();
     D.setText(saverClock, D.pad(n.getHours()) + ':' + D.pad(n.getMinutes()));
-    var v = { w: window.innerWidth || 800, h: window.innerHeight || 480 };
+    var v = viewport();
     saverClock.style.left = Math.round(Math.random() * Math.max(0, v.w - 220)) + 'px';
     saverClock.style.top = Math.round(Math.random() * Math.max(0, v.h - 120)) + 'px';
   }

@@ -129,6 +129,8 @@ body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select:
 .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .bt-preview .preview-label { display: flex; justify-content: space-between; }
 .bt-grid { display: grid; gap: 6px; width: 100%; aspect-ratio: 1.75; min-height: 160px; }
+.bt-grid .bfixed { border: 1px dashed var(--cell-line); border-radius: 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 12px; font-weight: 700; letter-spacing: .5px; text-align: center; padding: 6px; opacity: .8; }
+.bt-grid .bfixed small { font-size: 10px; font-weight: 400; opacity: .7; }
 .bt-grid .bcell { border: 1px dashed var(--cell-line); border-radius: 9px; }
 .btile { position: relative; min-width: 0; min-height: 0; border-radius: 9px; background: var(--c, #1d2835); border: 1px solid rgba(255, 255, 255, .06); color: var(--tile-fg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 6px 4px; cursor: grab; user-select: none; touch-action: none; overflow: hidden; container-type: size; }
 .btile .bi { display: flex; height: 38%; max-height: 64px; }

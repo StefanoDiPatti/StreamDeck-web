@@ -73,7 +73,7 @@ test('griglia automatica: niente buchi inutili, forma da tablet', function () {
   assert.ok(config.autoGrid([{ w: 3, h: 1 }, { w: 1, h: 1 }]).columns >= 3);
 });
 
-test('pagina APP di default: CLAUDE unico, Viber e terminale su Linux', function () {
+test('pagina APP di default: CLAUDE unico, Viber su entrambi, terminale su Linux', function () {
   const raw = readDefault('dock');
   const lin = page(config.normalizeDock(raw, {}, 'linux'), 'apps');
   const win = page(config.normalizeDock(raw, {}, 'windows'), 'apps');
@@ -89,7 +89,8 @@ test('pagina APP di default: CLAUDE unico, Viber e terminale su Linux', function
   assert.ok(ll.indexOf('TERMINALE') >= 0 && ll.indexOf('POWERSHELL') < 0);
   assert.ok(ll.indexOf('MONITOR') >= 0 && ll.indexOf('TASK MGR') < 0);
   const wl = labels(win);
-  assert.ok(wl.indexOf('VIBER') < 0 && wl.indexOf('POWERSHELL') >= 0 && wl.indexOf('TASK MGR') >= 0);
+  assert.strictEqual(wl[wl.indexOf('VS CODE') + 1], 'VIBER', 'Viber anche su Windows');
+  assert.ok(wl.indexOf('POWERSHELL') >= 0 && wl.indexOf('TASK MGR') >= 0);
   // su Windows screenshot e desktop restano le scorciatoie di sempre
   const shot = win.tiles.filter(function (t) { return t.id === 'screenshot'; })[0];
   assert.deepStrictEqual(shot.action.keys, ['WIN', 'SHIFT', 'S']);

@@ -92,6 +92,7 @@
     },
     "viber": {
       "label": "Viber",
+      "windows": { "path": "%LOCALAPPDATA%\\Programs\\Viber\\Viber.exe" },
       "linux": [
         { "path": "~/.local/share/applications/viber.desktop" },
         { "path": "~/.local/opt/Viber/@viberdesktop" },

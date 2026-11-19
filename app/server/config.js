@@ -187,9 +187,11 @@ function autoGrid(tiles) {
   return best ? { columns: best.columns, rows: best.rows } : { columns: 8, rows: 6 };
 }
 
-// Le pagine i cui pulsanti si scelgono e ordinano dal pannello: solo pulsanti, niente widget.
+// Le pagine i cui pulsanti si scelgono e ordinano dal pannello: solo pulsanti, oppure
+// (con "buttonGrid") pulsanti in griglia a sinistra e widget a destra (pagina VIBER).
 function editablePage(p) {
-  return p.tiles.length > 0 && p.tiles.every(function (t) { return !t.widget; });
+  const buttons = p.tiles.filter(function (t) { return !t.widget; });
+  return buttons.length > 0 && (buttons.length === p.tiles.length || !!p.buttonGrid);
 }
 
 function clampInt(v, min, max, def) {
@@ -230,17 +232,27 @@ function normalizeDock(raw, layout, osKey) {
 
     // Pulsanti scelti dal pannello: "show" in ordine, "hide" nascosti,
     // quelli nuovi (in nessuna delle due liste) in fondo.
+    // "hidden": true = pulsante disponibile ma nascosto finché non lo mostri dal pannello.
     const custom = tileLayout[p.id];
-    let tiles = all;
-    if (custom && Array.isArray(custom.show) && editablePage({ tiles: all })) {
+    const row = !!p.buttonGrid;
+    const editable = editablePage({ tiles: all, buttonGrid: row });
+    const fixed = all.filter(function (t) { return t.widget; });
+    const buttons = all.filter(function (t) { return !t.widget; });
+    let shownButtons = buttons.filter(function (t) { return !t.hidden; });
+    const useCustom = !!(custom && Array.isArray(custom.show) && editable);
+    if (useCustom) {
       const byId = {};
-      all.forEach(function (t) { byId[t.id] = t; });
+      buttons.forEach(function (t) { byId[t.id] = t; });
       const hide = Array.isArray(custom.hide) ? custom.hide : [];
       const shown = custom.show.filter(function (id, i) { return byId[id] && custom.show.indexOf(id) === i; });
-      tiles = shown.map(function (id) { return byId[id]; })
-        .concat(all.filter(function (t) { return shown.indexOf(t.id) < 0 && hide.indexOf(t.id) < 0; }));
+      shownButtons = shown.map(function (id) { return byId[id]; })
+        .concat(buttons.filter(function (t) { return shown.indexOf(t.id) < 0 && hide.indexOf(t.id) < 0 && !t.hidden; }));
     }
-    if (p.autoGrid || (custom && tiles !== all)) {
+    // widget prima, poi i pulsanti. Con "buttonGrid" la griglia è solo per i widget (a destra):
+    // i pulsanti li dispone il tablet a sinistra, togliendo quelli che non si possono usare.
+    let tiles = editable ? fixed.concat(shownButtons) : all;
+    const changed = tiles.length !== all.length || tiles.some(function (t, i) { return t !== all[i]; });
+    if (!row && (p.autoGrid || useCustom || changed)) {
       const g = autoGrid(tiles.map(function (t) { return { w: clampInt(t.w, 1, 8, 1), h: clampInt(t.h, 1, 6, 1) }; }));
       cols = g.columns;
       rws = g.rows;
@@ -259,7 +271,9 @@ function normalizeDock(raw, layout, osKey) {
       rows: rws,
       tiles: tiles,
       allTiles: all,
-      editable: editablePage({ tiles: all })
+      buttonGrid: row,
+      widgetWidth: row ? Math.max(0.3, Math.min(0.7, Number(p.widgetWidth) || 0.5)) : undefined,
+      editable: editable
     });
   });
   if (!pages.length) {
@@ -374,7 +388,7 @@ function saveLayout(tabs, home, tiles) {
       if (!page || !page.editable || !t) return;
       // pulsanti di altri sistemi (es. Windows se sei su Linux): restano dove sono
       const known = {};
-      page.allTiles.forEach(function (x) { known[x.id] = true; });
+      page.allTiles.forEach(function (x) { if (!x.widget) known[x.id] = true; });
       const clean = function (list) { return (Array.isArray(list) ? list : []).map(String).filter(function (id, i, a) { return known[id] && a.indexOf(id) === i; }); };
       const show = clean(t.show);
       const hide = clean(t.hide).filter(function (id) { return show.indexOf(id) < 0; });

@@ -96,17 +96,31 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app, **desktop virtuali** (passa, crea, chiudi) e pulsante **GUIDA** con le scorciatoie |
 | AUDIO | uscite e microfoni (predefinito, volume, mute), volume e mute di ogni app che usa l'audio |
 | DESKTOP VIRTUALI *(solo Linux)* | guida alle scorciatoie dei desktop virtuali (KDE Plasma, GNOME, anche Windows); su Windows la stessa guida è nella pagina SCHERMI |
-| VIBER *(aggiungila dal pannello)* | passa a terminale, git, browser, chat, task e file di Viber, apre/chiude la barra laterale, mostra le task del progetto aperto |
+| VIBER *(aggiungila dal pannello)* | passa ai pannelli aperti di Viber (terminale, git, browser, chat, task, file), cambia vista (schede, agenti, focus), mostra le task del progetto aperto |
 | BLENDER, DAVINCI *(disponibili: aggiungile alla barra dal pannello)* | scorciatoie dei due programmi |
 
 ## Viber
 
-La pagina **VIBER** comanda la finestra di Viber in primo piano sul PC (Windows e Linux):
+La pagina **VIBER** comanda la finestra di Viber in primo piano sul PC (Windows e Linux). A sinistra **i pulsanti** in una griglia, che si scelgono e ordinano dal pannello di controllo come per BLENDER; a destra due colonne a tutta altezza, **Progetti** e **Task**:
 
-- sei pulsanti per passare a **terminale, git, browser, chat, task e file** (quello attivo è evidenziato) e **BARRA LATERALE** per aprire o chiudere le worktree;
-- a destra le **task** del progetto aperto, prima quelle in corso, con i loro passi; un tocco apre il pannello delle task.
+- **Progetti**: i progetti aperti in Viber, quello mostrato evidenziato, con lo stato dei loro agenti (pallino rosso *ti aspetta*, arancione *al lavoro*, verde *pronto*). Un tocco passa a quel progetto con le scorciatoie di Viber "progetto successivo/precedente", lette dalle sue impostazioni; dopo ogni passo la dock controlla che il progetto sia cambiato. Con la tastiera italiana le scorciatoie di default (Ctrl+] e Ctrl+[) non si possono premere: in Viber > Impostazioni > Scorciatoie scegline altre (es. Ctrl+PagGiù / Ctrl+PagSu).
+- **Task**: le task del progetto mostrato, prima quelle in corso, con i loro passi. Il riquadro *Tasks* della barra del titolo di Viber non ha comandi nell'API: dal tablet non si apre.
+- **Pannelli**: terminale, git, browser, chat, task, file (e, disponibili ma nascosti, team, note, pull request, deploy, debug, simulatore). Quello attivo è acceso. Un pannello che non è tra le schede aperte in Viber non si può usare (l'API sa solo passare a una scheda già aperta): esce dalla griglia da solo (gli altri si ricompattano) e ritorna quando lo apri in Viber (**TUTTE** le rimette tutte).
+- **Disposizioni** (API di Viber): **TUTTE** (un riquadro con tutte le schede); disponibili anche **DIVIDI** (browser + terminale), **REVIEW** (git + file + terminale), **INTERO** (il pannello attivo a schermo intero).
+- **Viste** (scorciatoie Ctrl+Alt+1/2/3): **SCHEDE** (progetti in alto), **AGENTI** (barra degli agenti a sinistra); disponibile anche **FOCUS**. Viber viene portato in primo piano prima di premere i tasti.
 
-La dock usa l'API locale di Viber: porta e token stanno in `~/.viber/browser-mcp.json`, che Viber scrive quando è aperto (si parla solo con `127.0.0.1`). Se hai più finestre di Viber, vale quella in primo piano.
+Per i pulsanti in `dock.json`: `{ "type": "viber", "panel": "terminal" }`, `{ "type": "viber", "layout": "review" }`, `{ "type": "viber", "view": "agents" }`, `{ "type": "viber", "project": "next" }`.
+
+La dock usa l'API locale di Viber: porta e token stanno in `~/.viber/browser-mcp.json`, che Viber scrive quando è aperto (si parla solo con `127.0.0.1`). Se hai più finestre di Viber, vale quella in primo piano. Se Viber rifiuta un comando (ad esempio una scheda chiusa nel frattempo) il tablet mostra l'avviso.
+
+## Telefono
+
+La dock funziona anche da telefono (inquadra il QR del pannello). La disposizione è sempre quella orizzontale del tablet:
+
+- con il telefono in orizzontale la pagina occupa lo schermo, con le barre in alto e in basso un po' più basse;
+- con il telefono in verticale (o con il blocco della rotazione) la pagina appare **girata di 90°**: gira il telefono con la parte alta verso sinistra e la leggi dritta.
+
+Vale per gli schermi con il lato corto sotto i 600 px; il tablet non cambia.
 ## Temi del tablet
 
 Il pulsante con la **tavolozza** nella barra in alto, accanto all'orario, apre il menu dei temi:
@@ -128,7 +142,7 @@ Doppio clic sull'icona **Vibe Deck** (desktop o vicino all'orologio): si apre ne
 
 - **Trascina** le pagine per cambiare l'ordine della barra in basso, o spostale tra *Nella barra* e *Disponibili*.
 - La **stella** sceglie la pagina che si apre all'avvio.
-- **Pulsanti delle pagine**: scegli una pagina di soli pulsanti (APP, DEV, GAMES, BLENDER, DAVINCI) e trascina i pulsanti per riordinarli, o spostali tra *Sul tablet* e *Nascosti* (anche con la ✕ e il + su ogni pulsante). La griglia si adatta da sola: con meno pulsanti diventano più grandi. *Mostra tutti* rimette tutti i pulsanti nell'ordine predefinito.
+- **Pulsanti delle pagine**: scegli una pagina di pulsanti (APP, DEV, GAMES, VIBER, BLENDER, DAVINCI; in VIBER sono quelli a sinistra delle colonne Progetti e Task) e trascina i pulsanti per riordinarli, o spostali tra *Sul tablet* e *Nascosti* (anche con la ✕ e il + su ogni pulsante). La griglia si adatta da sola: con meno pulsanti diventano più grandi. *Mostra tutti* rimette tutti i pulsanti nell'ordine predefinito.
 - **Salva sul tablet**: il tablet si aggiorna da solo. *Predefinite* torna alle pagine e ai pulsanti di `dock.json`.
 - **Tema** (in alto a destra): Classico, Material, Neon Elgato o Neo-brutalista, gli stessi del tablet. La scelta resta su questo PC ed è separata da quella del tablet; `/control?theme=neon` apre il pannello con un tema senza ricordarlo.
 
@@ -277,6 +291,8 @@ La dock riconosce il sistema e mostra i pulsanti adatti. In `dock.json`:
 - `"linux": { ... }` (o `"windows"`): i campi che cambiano su quel sistema, anche `action`.
 - `"id"`: nome fisso del pulsante, con cui il pannello ricorda ordine e pulsanti nascosti.
 - `"autoGrid": true` sulla pagina: colonne e righe scelte in base a quanti pulsanti ci sono.
+- `"buttonGrid": true` sulla pagina: pulsanti in griglia a sinistra, personalizzabili dal pannello, e widget a destra (`"widgetWidth": 0.5` = metà larghezza). Come la pagina VIBER.
+- `"hidden": true`: pulsante disponibile ma nascosto finché non lo mostri dal pannello.
 
 In `apps.json` e `commands.json` la variante `"linux"` può essere una lista di alternative: vale la prima installata.
 

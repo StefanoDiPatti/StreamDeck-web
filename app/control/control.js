@@ -237,6 +237,20 @@
     return best || { columns: 8, rows: 6 };
   }
 
+  // Stessa regola del tablet (app.js -> layout, "buttonGrid"): pulsanti nella parte sinistra,
+  // celle di forma comoda e pochi buchi. Tablet: area tile circa 1280 x 698.
+  function sideGrid(n, widgetWidth) {
+    const W = 1280 * (1 - widgetWidth), H = 698, gap = 8;
+    let best = null;
+    for (let c = 1; c <= Math.max(1, n); c++) {
+      const r = Math.ceil(Math.max(1, n) / c);
+      const cw = (W - gap * (c + 1)) / c, ch = (H - gap * (r + 1)) / r;
+      const score = Math.abs(Math.log((cw / ch) / 1.25)) + 0.35 * (c * r - n);
+      if (!best || score < best.score) best = { columns: c, rows: r, score: score };
+    }
+    return { columns: best.columns, rows: best.rows };
+  }
+
   function tileHtml(t, on) {
     return '<div class="btile" data-id="' + esc(t.id) + '" style="--c:' + esc(t.color || '#1d2835') + (on && t.w > 1 ? ';grid-column:span ' + t.w : '') + (on && t.h > 1 ? ';grid-row:span ' + t.h : '') + '" title="' + esc(t.label + (t.sub ? ' · ' + t.sub : '')) + '">' +
       (t.icon ? '<span class="bi">' + icon(t.icon) + '</span>' : '') +
@@ -259,13 +273,17 @@
     const byId = {};
     b.all.forEach((t) => { byId[t.id] = t; });
     const shown = st.show.map((id) => byId[id]).filter(Boolean);
-    const g = autoGrid(shown);
+    // pagina VIBER ("buttonGrid"): pulsanti a sinistra, riquadro a destra
+    const fixed = b.fixed || [];
+    const g = b.grid ? sideGrid(shown.length, b.widgetWidth || 0.5) : autoGrid(shown);
     const grid = $('bt-on');
-    grid.style.gridTemplateColumns = 'repeat(' + g.columns + ', minmax(0, 1fr))';
+    grid.style.gridTemplateColumns = 'repeat(' + g.columns + ', minmax(0, 1fr))' + (b.grid ? ' minmax(0, ' + (g.columns * (b.widgetWidth || 0.5) / (1 - (b.widgetWidth || 0.5))).toFixed(2) + 'fr)' : '');
     grid.style.gridTemplateRows = 'repeat(' + g.rows + ', minmax(0, 1fr))';
     let cells = 0;
     shown.forEach((t) => { cells += (t.w || 1) * (t.h || 1); });
-    let html = shown.map((t) => tileHtml(t, true)).join('');
+    // riquadro fisso (non si sposta), poi i pulsanti
+    let html = b.grid ? fixed.map((f) => '<div class="bfixed" style="grid-column:' + (g.columns + 1) + ';grid-row:1 / span ' + g.rows + '">' + esc(f.label) + '<small>fisso · sul tablet i pannelli che non sono aperti in Viber escono dalla griglia da soli</small></div>').join('') : '';
+    html += shown.map((t) => tileHtml(t, true)).join('');
     for (let i = cells; i < g.columns * g.rows; i++) html += '<div class="bcell" aria-hidden="true"></div>';
     grid.innerHTML = html;
     $('bt-size').textContent = shown.length + (shown.length === 1 ? ' pulsante' : ' pulsanti') + ' · griglia ' + g.columns + ' × ' + g.rows;

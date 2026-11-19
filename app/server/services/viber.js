@@ -9,10 +9,19 @@ const os = require('os');
 const path = require('path');
 const http = require('http');
 const platform = require('../platform');
+const keys = require('../platform/keys');
 const log = require('../log');
 
-const PANELS = ['terminal', 'git', 'browser', 'chat', 'tasks', 'files'];
-const SIDEBAR = ['toggle', 'collapse', 'expand'];
+// Pannelli di Viber (nomi dell'API viber_focus_panel).
+const PANELS = ['terminal', 'git', 'browser', 'chat', 'tasks', 'files', 'team', 'notes', 'pr', 'deploy', 'debug', 'simulator'];
+// Disposizioni dell'API: default = un riquadro con tutte le schede (rimette anche File e
+// Tasks), debug = browser + terminale, review = git + file + terminale, fullscreen = un pannello.
+const LAYOUTS = ['default', 'debug', 'review', 'fullscreen'];
+// Viste della finestra (scorciatoie di Viber: Ctrl+Alt+1/2/3). La barra degli agenti
+// non ha un comando nell'API (toggle-sidebar apre/chiude solo la colonnina dei worktree).
+const VIEWS = { tabs: '1', agents: '2', focus: '3' };
+// Stato di un progetto = il più urgente dei suoi agenti.
+const URGENCY = { question: 3, working: 2, completed: 1, idle: 0 };
 // nomi dei pannelli nel layout -> pulsanti del tablet
 const ALIAS = { 'git-diff': 'git', 'git-graph': 'git', todos: 'tasks' };
 function panelId(p) { const id = String(p).split(':')[0]; return ALIAS[id] || id; }
@@ -28,6 +37,12 @@ function readConfig() {
 }
 
 function err(msg, code) { return Object.assign(new Error(msg), { code: code || 'UNAVAILABLE' }); }
+
+function friendly(msg) {
+  if (/is not open in this layout/i.test(msg)) return 'Questo pannello non è tra le schede aperte in Viber';
+  if (/is hidden for this project/i.test(msg)) return 'Questo pannello è nascosto in Viber per questo progetto';
+  return 'Viber: ' + msg;
+}
 
 function call(endpoint, body, timeout) {
   const cfg = readConfig();
@@ -45,6 +60,8 @@ function call(endpoint, body, timeout) {
         let j = null;
         try { j = JSON.parse(b); } catch (e) { /* risposta non JSON */ }
         if (res.statusCode >= 400 || !j) return reject(err('Viber: ' + ((j && j.error) || ('errore ' + res.statusCode))));
+        // Viber risponde 200 anche quando il comando non riesce, con { error }
+        if (j.error) return reject(err(friendly(String(j.error))));
         resolve(j);
       });
     });
@@ -94,11 +111,156 @@ async function focusPanel(panel) {
   return state();
 }
 
-async function sidebar(mode) {
-  if (SIDEBAR.indexOf(mode) < 0) mode = 'toggle';
-  await call('/viber/toggle-sidebar', { mode: mode });
+async function setLayout(preset) {
+  if (LAYOUTS.indexOf(preset) < 0) throw err('Disposizione non valida', 'BAD_REQUEST');
+  const body = { preset: preset };
+  if (preset === 'fullscreen') {
+    // a schermo intero il pannello attivo (senza, Viber userebbe il terminale)
+    const st = await state();
+    if (st.online && PANELS.indexOf(st.active) >= 0) body.panel = st.active;
+  }
+  await call('/viber/set-layout', body);
   await bringFront();
   return state();
+}
+
+// Prima di premere tasti Viber deve essere davanti, altrimenti finirebbero altrove.
+async function front() {
+  const st = await state();
+  if (!st.online) throw err(st.message);
+  try { await platform.focus('Viber'); } catch (e) { throw err('Non riesco a portare Viber in primo piano'); }
+  return st;
+}
+
+// Cambia vista (schede, agenti, focus) con la scorciatoia di Viber.
+async function view(mode) {
+  if (!Object.prototype.hasOwnProperty.call(VIEWS, mode)) throw err('Vista non valida', 'BAD_REQUEST');
+  const st = await front();
+  await platform.sendKeys(['CTRL', 'ALT', VIEWS[mode]]);
+  return st;
+}
+
+// ------------------------------------------------------------ progetti
+// Cartella delle impostazioni di Viber (Electron userData di "@viber/desktop").
+function settingsPath() {
+  if (process.env.VIBER_SETTINGS_FILE) return process.env.VIBER_SETTINGS_FILE;
+  const base = process.platform === 'win32' ? (process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'))
+    : process.platform === 'darwin' ? path.join(os.homedir(), 'Library', 'Application Support')
+      : (process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'));
+  return path.join(base, '@viber', 'desktop', 'app-settings.json');
+}
+
+// Scorciatoia di Viber (come in app-settings.json) -> tasti della dock. null se non si può.
+function comboOf(sc) {
+  if (!sc || typeof sc.key !== 'string') return null;
+  const k = keys.canonical(sc.key);
+  if (!k) return null;
+  const c = [];
+  if (sc.ctrl) c.push('CTRL');
+  if (sc.alt) c.push('ALT');
+  if (sc.shift) c.push('SHIFT');
+  if (sc.meta) c.push('WIN');
+  c.push(k);
+  return c;
+}
+function label(sc) {
+  if (!sc) return '?';
+  return (sc.ctrl ? 'Ctrl+' : '') + (sc.alt ? 'Alt+' : '') + (sc.shift ? 'Shift+' : '') + (sc.meta ? 'Win+' : '') + sc.key;
+}
+// Scorciatoie "progetto successivo/precedente": quelle che hai scelto in Viber, o i default.
+function cycleShortcuts() {
+  let s = {};
+  try { s = (JSON.parse(fs.readFileSync(settingsPath(), 'utf8')).keyboardShortcuts) || {}; } catch (e) { s = {}; }
+  const mac = process.platform === 'darwin';
+  return {
+    next: s.cycleProjectNext || { key: ']', ctrl: !mac, meta: mac },
+    prev: s.cycleProjectPrev || { key: '[', ctrl: !mac, meta: mac }
+  };
+}
+
+function norm(p) { return String(p || '').replace(/[\\/]+$/, '').toLowerCase(); }
+// Progetto di una cartella: la cartella stessa, una sottocartella o una worktree
+// accanto ("Progetto-feature-x"): vince il nome più lungo.
+function projectOf(dir, list) {
+  const d = norm(dir);
+  let best = null;
+  list.forEach(function (p) {
+    const n = norm(p);
+    if ((d === n || d.indexOf(n) === 0) && (!best || n.length > norm(best).length)) best = p;
+  });
+  return best;
+}
+
+// Progetti aperti in Viber (nell'ordine delle schede), quello mostrato, e per ognuno
+// lo stato più urgente dei suoi agenti: ti aspetta, al lavoro, pronto, fermo.
+async function projects() {
+  const res = await Promise.all([call('/agents/projects', {}), call('/agents/list', {}).catch(function () { return []; }), call('/viber/state')]);
+  const list = (res[0] && res[0].projects) || [];
+  const agents = Array.isArray(res[1]) ? res[1] : [];
+  const current = projectOf(summarize(res[2]).project, list);
+  return {
+    projects: list.map(function (p) {
+      const mine = agents.filter(function (a) { return projectOf(a.agent, list) === p; });
+      let st = 'idle';
+      mine.forEach(function (a) { if ((URGENCY[a.state] || 0) > URGENCY[st]) st = a.state; });
+      const top = mine.filter(function (a) { return a.state === st; })[0];
+      return {
+        path: p, name: path.basename(String(p).replace(/[\\/]+$/, '')), active: p === current,
+        state: st, agents: mine.length, title: top ? top.title || '' : ''
+      };
+    })
+  };
+}
+
+// Passa a un altro progetto con le scorciatoie di Viber (progetto successivo/precedente),
+// un passo alla volta, controllando dopo ogni passo che il progetto sia cambiato davvero.
+// target: 'next' | 'prev' | cartella del progetto.
+async function project(target) {
+  const info = await projects();
+  const list = info.projects;
+  if (list.length < 2) throw err('In Viber c\'è un solo progetto aperto', 'BAD_REQUEST');
+  let cur = -1;
+  list.forEach(function (p, i) { if (p.active) cur = i; });
+  if (cur < 0) throw err('Non so quale progetto mostra Viber');
+  let steps, dir;
+  if (target === 'next' || target === 'prev') { steps = 1; dir = target; } else {
+    let to = -1;
+    list.forEach(function (p, i) { if (norm(p.path) === norm(target)) to = i; });
+    if (to < 0) throw err('Progetto non aperto in Viber', 'BAD_REQUEST');
+    if (to === cur) return info;
+    const fwd = (to - cur + list.length) % list.length;
+    dir = fwd <= list.length - fwd ? 'next' : 'prev';
+    steps = dir === 'next' ? fwd : list.length - fwd;
+  }
+  const sc = cycleShortcuts()[dir];
+  const combo = comboOf(sc);
+  if (!combo) throw err('La scorciatoia di Viber per cambiare progetto (' + label(sc) + ') non si può premere dal tablet', 'UNSUPPORTED');
+  await front();
+  let at = cur;
+  for (let i = 0; i < steps; i++) {
+    await platform.sendKeys(combo);
+    const want = list[(at + (dir === 'next' ? 1 : list.length - 1)) % list.length].path;
+    let now = null;
+    for (let t = 0; t < 8 && now !== want; t++) {
+      await new Promise(function (r) { setTimeout(r, 150); });
+      now = projectOf(summarize(await call('/viber/state')).project, list.map(function (p) { return p.path; }));
+    }
+    if (now !== want) {
+      throw err('Viber non ha cambiato progetto: la scorciatoia ' + label(sc) + ' forse non si può premere con la tua tastiera. ' +
+        'In Viber > Impostazioni > Scorciatoie scegline una con tasti che hai (es. Ctrl+PagGiù / Ctrl+PagSu)');
+    }
+    at = (at + (dir === 'next' ? 1 : list.length - 1)) % list.length;
+  }
+  return projects();
+}
+
+// Azione di un pulsante { "type": "viber", "panel" | "layout" | "view" | "project": ... }
+async function action(a) {
+  if (a.panel) return focusPanel(String(a.panel));
+  if (a.layout) return setLayout(String(a.layout));
+  if (a.view) return view(String(a.view));
+  if (a.project) return project(String(a.project));
+  throw err('Azione Viber senza "panel", "layout", "view" o "project"', 'BAD_CONFIG');
 }
 
 // Task del progetto aperto in Viber (non chiuse), con le sottotask sotto la loro task.
@@ -131,4 +293,8 @@ async function tasks() {
   return { project: path.basename(project), tasks: out };
 }
 
-module.exports = { state: state, focusPanel: focusPanel, sidebar: sidebar, tasks: tasks, PANELS: PANELS, _summarize: summarize };
+module.exports = {
+  state: state, focusPanel: focusPanel, setLayout: setLayout, view: view, projects: projects, project: project,
+  tasks: tasks, action: action, PANELS: PANELS, LAYOUTS: LAYOUTS, VIEWS: VIEWS,
+  _summarize: summarize, _comboOf: comboOf, _projectOf: projectOf
+};

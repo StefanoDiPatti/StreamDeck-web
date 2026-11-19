@@ -4,6 +4,12 @@
 // Dopo aver cambiato un default, aggiungi qui l'impronta della versione vecchia.
 {
   "dock": [
+    "7d2b85a4c453395a23b9366c856d8fa92a7d0b57",
+    "089537682ee4589e4bb682e91d6f7eaa445665a1",
+    "75c168d280ba5a9d12bfcc68dd2db2c731f18f45",
+    "4f0493cb8f6506fe9c9a3417d4278f6ed99d07a6",
+    "614361ba3a0645edc5ef6982657ac1dd166662a8",
+    "1988d497a1cac1f2f4155e31d505a8f5199b8696",
     "98c88d7786618d08e1a2fc6439be8341dd3ff9ad",
     "72bfaf2e1ae1403c10ad0193bfca4ffc2eb6d62e",
     "bb587eece23b66e339452d1f4083da85998f9409",
@@ -20,6 +26,7 @@
     "0c3a621e0760cf5d6b566e15bef75ac672c34bee"
   ],
   "apps": [
+    "1f1f99f0e7ab86b9df4d90eb5376ac1cfd2a32e2",
     "b34cc13da4ad69dc5fbda8c59c5f121ce61aeecd",
     "6f31546a8f4988c6b1acf1dee3686c5f08b8ade3",
     "b1e38a75defbb73d837a5edb6b9581993bb1a8a4",
