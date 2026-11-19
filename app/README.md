@@ -104,7 +104,7 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | AUDIO | uscite e microfoni (predefinito, volume, mute), volume e mute di ogni app che usa l'audio |
 | DESKTOP VIRTUALI *(solo Linux)* | guida alle scorciatoie dei desktop virtuali (KDE Plasma, GNOME, anche Windows); su Windows la stessa guida è nella pagina SCHERMI |
 | VIBER *(aggiungila dal pannello)* | passa ai pannelli aperti di Viber (terminale, git, browser, chat, task, file), cambia vista (schede, agenti, focus), mostra le task del progetto aperto |
-| BLENDER, DAVINCI *(disponibili: aggiungile alla barra dal pannello)* | scorciatoie dei due programmi |
+| BLENDER, DAVINCI, UNREAL *(disponibili: aggiungile alla barra dal pannello)* | scorciatoie dei tre programmi (UNREAL: play, simula, compila C++ con Live Coding, strumenti W/E/R, viste) |
 
 ## Viber
 
@@ -151,7 +151,7 @@ Doppio clic sull'icona **Vibe Deck** (desktop o vicino all'orologio): si apre ne
 
 - **Trascina** le pagine per cambiare l'ordine della barra in basso, o spostale tra *Nella barra* e *Disponibili*.
 - La **stella** sceglie la pagina che si apre all'avvio.
-- **Pulsanti delle pagine**: scegli una pagina di pulsanti (APP, DEV, GAMES, VIBER, BLENDER, DAVINCI; in VIBER sono quelli a sinistra delle colonne Progetti e Task) e trascina i pulsanti per riordinarli, o spostali tra *Sul tablet* e *Nascosti* (anche con la ✕ e il + su ogni pulsante). La griglia si adatta da sola: con meno pulsanti diventano più grandi. *Mostra tutti* rimette tutti i pulsanti nell'ordine predefinito.
+- **Pulsanti delle pagine**: scegli una pagina di pulsanti (APP, DEV, GAMES, VIBER, BLENDER, DAVINCI, UNREAL; in VIBER sono quelli a sinistra delle colonne Progetti e Task) e trascina i pulsanti per riordinarli, o spostali tra *Sul tablet* e *Nascosti* (anche con la ✕ e il + su ogni pulsante). La griglia si adatta da sola: con meno pulsanti diventano più grandi. *Mostra tutti* rimette tutti i pulsanti nell'ordine predefinito.
 - **Salva sul tablet**: il tablet si aggiorna da solo. *Predefinite* torna alle pagine e ai pulsanti di `dock.json`.
 - **Tema** (in alto a destra): Classico, Material, Neon Elgato o Neo-brutalista, gli stessi del tablet. La scelta resta su questo PC ed è separata da quella del tablet; `/control?theme=neon` apre il pannello con un tema senza ricordarlo.
 
