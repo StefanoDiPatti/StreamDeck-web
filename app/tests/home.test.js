@@ -59,7 +59,8 @@ test('controlli: spazio, voci sconosciute, misure minime, griglia troppo piccola
   assert.throws(function () { home.clean({ columns: 6, rows: 4, tiles: [] }); }, /almeno un widget/);
   assert.throws(function () { home.clean({ columns: 6, rows: 4, tiles: [{ id: 'volare' }] }); }, /non disponibile/);
   assert.throws(function () { home.clean({ columns: 4, rows: 2, tiles: [{ id: 'todo', w: 4, h: 2 }, { id: 'clock', w: 1, h: 1 }] }); }, /Non c'è spazio per: Orologio/);
-  assert.throws(function () { home.clean({ columns: 3, rows: 2, tiles: [{ id: 'discord' }] }); }, /almeno 4 colonne/);
+  assert.throws(function () { home.clean({ columns: 3, rows: 2, tiles: [{ id: 'mail' }, { id: 'audio' }] }); }, /Non c'è spazio per: Audio/);
+  assert.throws(function () { home.clean({ columns: 6, rows: 4, tiles: [{ id: 'discord' }] }); }, /non disponibile/, 'Discord completo resta nella sua pagina');
   const c = home.clean({ columns: 99, rows: 0, tiles: [{ id: 'system', x: 7, y: 5, w: 1, h: 9 }] });
   assert.strictEqual(c.columns, 8);
   assert.strictEqual(c.rows, 2);
@@ -101,7 +102,7 @@ test('API del pannello: info con posizioni, salva, errore leggibile, ripristina'
   const ed = r.data.homeEditor;
   assert.strictEqual(ed.custom, false);
   assert.deepStrictEqual(desc(ed.tiles), ['nowplaying@0,0 3x2', 'todo@3,0 3x4', 'system@0,2 3x2']);
-  assert.ok(ed.catalog.length >= 15);
+  assert.ok(ed.catalog.length >= 14);
   assert.ok(!ed.catalog.some(function (c) { return c.widget === 'queue'; }), 'la coda resta nella pagina MUSICA');
 
   r = await control('POST', '/api/control/home', { columns: 6, rows: 4, tiles: [{ id: 'todo', x: 0, y: 0, w: 3, h: 4 }, { id: 'claudeusage', x: 3, y: 0, w: 3, h: 2 }, { id: 'desks', x: 3, y: 2, w: 3, h: 2 }] });
@@ -109,7 +110,7 @@ test('API del pannello: info con posizioni, salva, errore leggibile, ripristina'
   assert.strictEqual(r.data.homeEditor.custom, true);
   assert.deepStrictEqual(desc(r.data.homeEditor.tiles), ['todo@0,0 3x4', 'claudeusage@3,0 3x2', 'desks@3,2 3x2']);
 
-  r = await control('POST', '/api/control/home', { columns: 3, rows: 2, tiles: [{ id: 'discord' }] });
+  r = await control('POST', '/api/control/home', { columns: 3, rows: 2, tiles: [{ id: 'mail' }, { id: 'audio' }] });
   assert.strictEqual(r.ok, false);
 
   const no = await fetch(base + '/api/control/home', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });

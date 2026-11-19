@@ -165,7 +165,7 @@ Si apre sul PC (doppio clic sull'icona **Vibe Deck**). Da qui:
 
 - **Pagine**: trascinale per cambiare l'ordine della barra, spostale tra *Nella barra* e *Disponibili*; la stella sceglie la pagina iniziale.
 - **HOME**: costruisci la pagina HOME sulla griglia del tablet. Dal catalogo a destra (un widget per pagina: Musica, Note e TODO,
-  Diagnostica, Orologio, Consumi di Claude, GitHub, Email, Audio, Discord compatto o completo, Desktop virtuali, Viber progetti
+  Diagnostica, Orologio, Consumi di Claude, GitHub, Email, Audio, Discord (stanza e microfono), Desktop virtuali, Viber progetti
   e Viber task, Ollama, Giochi, più i widget dei plugin) un tocco mette il widget nel primo posto libero. **Trascina** un widget
   per spostarlo, trascina **bordi e angoli** per cambiarne la misura: si muove a scatti di una cella, si ferma contro gli altri
   e non scende sotto la sua misura minima. Le celle tratteggiate sono libere. **Salva HOME**; *Torna alla HOME predefinita* annulla tutto.

@@ -19,7 +19,6 @@ const CATALOG = [
   { id: 'mail', widget: 'mail', label: 'Email', icon: 'mail', page: 'EMAIL', description: 'Messaggi da Thunderbird', w: 3, h: 2, minW: 3, minH: 2 },
   { id: 'audio', widget: 'audio', label: 'Audio', icon: 'volup', page: 'AUDIO', description: 'Uscita, microfono e volume delle app', w: 3, h: 3, minW: 3, minH: 2 },
   { id: 'discordmini', widget: 'discordmini', label: 'Discord', icon: 'headset', page: 'DISCORD', description: 'La stanza in cui sei, chi parla, mute e silenzia', w: 2, h: 2, minW: 2, minH: 2 },
-  { id: 'discord', widget: 'discord', label: 'Discord completo', icon: 'headset', page: 'DISCORD', description: 'Server, canali e stanza vocale (serve tanto spazio)', w: 6, h: 4, minW: 4, minH: 3 },
   { id: 'desks', widget: 'desks', label: 'Desktop virtuali', icon: 'desktop', page: 'SCHERMI', description: 'Tocco = passa a quel desktop, + = nuovo', w: 2, h: 2, minW: 2, minH: 1 },
   { id: 'viber-projects', widget: 'viber', props: { show: 'projects' }, label: 'Viber: progetti', icon: 'code', page: 'VIBER', description: 'Progetti aperti con lo stato degli agenti, tocco = passa al progetto', w: 2, h: 2, minW: 2, minH: 2 },
   { id: 'viber-tasks', widget: 'viber', props: { show: 'tasks' }, label: 'Viber: task', icon: 'flag', page: 'VIBER', description: 'Le task del progetto aperto, con i passi', w: 2, h: 2, minW: 2, minH: 2 },
