@@ -829,6 +829,25 @@ while ($true) {
         if (-not $script:screens) { throw 'schermi non disponibili' }
         $data = @{ list = @([DockScreens]::DeskWindows()) }
       }
+      'vdreg' {
+        # desktop virtuali dal registro (come "reg query", ma senza lanciare reg.exe a ogni giro)
+        $k = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops'
+        $hex = { param($b) if ($b) { ($b | ForEach-Object { $_.ToString('X2') }) -join '' } else { '' } }
+        $p = Get-ItemProperty -Path $k -ErrorAction SilentlyContinue
+        $cur = & $hex $p.CurrentVirtualDesktop
+        if (-not $cur) {
+          Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\SessionInfo' -ErrorAction SilentlyContinue | ForEach-Object {
+            $s = Get-ItemProperty -Path (Join-Path $_.PSPath 'VirtualDesktops') -ErrorAction SilentlyContinue
+            if (-not $cur -and $s.CurrentVirtualDesktop) { $cur = & $hex $s.CurrentVirtualDesktop }
+          }
+        }
+        $names = @{}
+        Get-ChildItem (Join-Path $k 'Desktops') -ErrorAction SilentlyContinue | ForEach-Object {
+          $n = (Get-ItemProperty -Path $_.PSPath -ErrorAction SilentlyContinue).Name
+          if ($n) { $names[$_.PSChildName.Trim('{', '}').ToUpper()] = [string]$n }
+        }
+        $data = @{ ids = (& $hex $p.VirtualDesktopIDs); cur = $cur; names = $names }
+      }
       'place' {
         if (-not $script:screens) { throw 'schermi non disponibili' }
         $data = @{ moved = [DockScreens]::Place([long]$req.hwnd, [int]$req.x, [int]$req.y, [int]$req.w, [int]$req.h, [bool]$req.max) }

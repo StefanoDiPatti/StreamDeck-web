@@ -1,6 +1,7 @@
 // Monitor di sistema. Campiona ogni 2s solo mentre un tablet è collegato
 // (nessuna richiesta da 15s = campionamento in pausa, CPU ~0).
 const os = require('os');
+const { spawn } = require('child_process');
 const platform = require('../platform');
 const common = require('../platform/common');
 const config = require('../config');
@@ -48,21 +49,64 @@ function cpuUsage() {
   return usage;
 }
 
+// GPU NVIDIA: un solo nvidia-smi resta aperto in modalità continua (-lms) mentre il
+// tablet è collegato e stampa una riga ogni INTERVAL. Lanciarlo ogni 2 s costava
+// ~45 ms di CPU a lancio (la voce più cara della dock); così il costo è quasi zero.
+const NV_QUERY = '--query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total';
+let nvStream = null;   // { proc, last, at, name }
+
+function parseNvidia(line) {
+  const p = String(line).split(',').map(function (x) { return x.trim(); });
+  if (p.length < 5) return null;
+  const num = function (v) { const n = parseFloat(v); return isNaN(n) ? null : n; };
+  return { name: p[0] || 'GPU', usage: num(p[1]), temp: num(p[2]) === null ? null : Math.round(num(p[2])), memUsedMb: num(p[3]), memTotalMb: num(p[4]) };
+}
+
+function startNvidiaStream() {
+  if (nvStream) return;
+  let proc;
+  try {
+    proc = spawn('nvidia-smi', [NV_QUERY, '--format=csv,noheader,nounits', '-lms', String(INTERVAL)], { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch (e) { return; }
+  const s = nvStream = { proc: proc, last: null, at: 0, name: null };
+  let buf = '';
+  proc.stdout.on('data', function (c) {
+    buf += c;
+    const lines = buf.split(/\r?\n/);
+    buf = lines.pop();
+    lines.forEach(function (l) {
+      const g = parseNvidia(l);
+      if (!g) return;
+      if (s.name === null) s.name = g.name;
+      if (g.name === s.name) { s.last = g; s.at = Date.now(); }   // con più GPU, sempre la prima
+    });
+  });
+  proc.on('error', function () { if (nvStream === s) nvStream = null; });
+  proc.on('exit', function () { if (nvStream === s) nvStream = null; });
+}
+
+function stopNvidiaStream() {
+  if (!nvStream) return;
+  try { nvStream.proc.kill(); } catch (e) { /* già chiuso */ }
+  nvStream = null;
+}
+
 async function nvidiaGpu() {
   if (nvidia.available === false && Date.now() < nvidia.retryAt) return null;
-  const r = await common.run('nvidia-smi', [
-    '--query-gpu=name,utilization.gpu,temperature.gpu,memory.used,memory.total',
-    '--format=csv,noheader,nounits'
-  ], { timeout: 3000 });
+  if (nvidia.available === true) {
+    startNvidiaStream();
+    if (nvStream && nvStream.last && Date.now() - nvStream.at < INTERVAL * 3) return nvStream.last;
+  }
+  // prima volta (o lettore appena partito): una lettura singola, così il dato c'è subito
+  const r = await common.run('nvidia-smi', [NV_QUERY, '--format=csv,noheader,nounits'], { timeout: 3000 });
   if (!r.ok) {
     if (nvidia.available !== false) log.info('system', 'nvidia-smi non disponibile' + (r.notFound ? '' : ': ' + (r.stderr || r.error)));
     nvidia = { available: false, retryAt: Date.now() + 5 * 60000 };
     return null;
   }
   nvidia.available = true;
-  const p = r.stdout.split('\n')[0].split(',').map(function (x) { return x.trim(); });
-  const num = function (v) { const n = parseFloat(v); return isNaN(n) ? null : n; };
-  return { name: p[0] || 'GPU', usage: num(p[1]), temp: num(p[2]) === null ? null : Math.round(num(p[2])), memUsedMb: num(p[3]), memTotalMb: num(p[4]) };
+  startNvidiaStream();
+  return parseNvidia(r.stdout.split('\n')[0]);
 }
 
 // Temperatura CPU da LibreHardwareMonitor (Windows, opzionale) se configurato.
@@ -152,6 +196,7 @@ function ensureRunning() {
       clearInterval(timer);
       timer = null;
       prevNet = null;
+      stopNvidiaStream();
       log.debug('system', 'campionamento in pausa');
       return;
     }
@@ -165,6 +210,6 @@ function get() {
   return state;
 }
 
-function stop() { if (timer) clearInterval(timer); timer = null; }
+function stop() { if (timer) clearInterval(timer); timer = null; stopNvidiaStream(); }
 
-module.exports = { get: get, sample: sample, stop: stop };
+module.exports = { get: get, sample: sample, stop: stop, _parseNvidia: parseNvidia };

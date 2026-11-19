@@ -292,7 +292,7 @@ function tabletPower() {
   const num = function (v, min, max, def) { const n = Number(v); return isFinite(n) ? Math.max(min, Math.min(max, n)) : def; };
   return {
     idleAfterSec: num(t.idleAfterSec, 10, 3600, 60),
-    pollSec: num(t.pollSec, 1, 30, 2),
+    pollSec: num(t.pollSec, 1, 30, 3),
     idlePollSec: num(t.idlePollSec, 2, 300, 15),
     sleepAfterMin: num(t.sleepAfterMin, 0, 240, 10)
   };
@@ -477,6 +477,10 @@ function start() {
   }).then(function () {
     return new Promise(function (resolve, reject) {
       const server = app.listen(PORT, HOST, function () { banner(); todosync.start(); resolve(server); });
+      // Connessioni tenute aperte più a lungo del polling a riposo del tablet (15 s):
+      // con i 5 s di Node ogni richiesta apriva una connessione TCP nuova (radio e CPU in più).
+      server.keepAliveTimeout = 65000;
+      server.headersTimeout = 66000;
       server.on('error', function (e) {
         if (e.code === 'EADDRINUSE') log.error('server', 'La porta ' + PORT + ' è già in uso: la dock è già avviata? (cambia PORT nel .env)');
         reject(e);

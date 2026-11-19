@@ -46,3 +46,13 @@ test('mai creato un secondo desktop: ce n\'è uno solo', function () {
   assert.strictEqual(list.length, 1);
   assert.strictEqual(list[0].current, true);
 });
+
+test('desktop virtuali letti dall\'helper PowerShell (esadecimali + nomi)', function () {
+  const list = vdesk._fromHelper({
+    ids: 'D22401D2CFF60647BB161BACFD068541E9C6167A6A476B46892CB25040583D87',
+    cur: 'E9C6167A6A476B46892CB25040583D87',
+    names: { '7a16c6e9-476a-466b-892c-b25040583d87': 'GIOCO' }
+  });
+  assert.deepStrictEqual(list.map(function (d) { return d.n + ' ' + d.name + (d.current ? ' *' : ''); }), ['1 Desktop 1', '2 GIOCO *']);
+  assert.strictEqual(vdesk._fromHelper({ ids: '', cur: '', names: {} }).length, 1);
+});

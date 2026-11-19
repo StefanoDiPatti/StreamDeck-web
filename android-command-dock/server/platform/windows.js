@@ -206,6 +206,11 @@ module.exports = {
     });
   },
 
+  // Desktop virtuali dal registro: { ids: hex (16 byte per desktop), cur: hex, names: { GUID: nome } }
+  virtualDesktopsReg: function () {
+    return query.call('vdreg', {}, 4000);
+  },
+
   // Finestre di tutti i desktop virtuali: [{ id, desktop (GUID), state, monitor, x, y, w, h, process, title }]
   deskWindows: function () {
     return query.call('deskwins', {}, 6000).then(function (r) {

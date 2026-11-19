@@ -55,7 +55,20 @@ function parse(text, sessionText) {
   }
   let cur = binValue(text, 'CurrentVirtualDesktop');
   if (!cur && sessionText) cur = binValue(sessionText, 'CurrentVirtualDesktop');
-  const current = cur ? guidFromHex(cur) : '';
+  return build(ids, cur ? guidFromHex(cur) : '', names);
+}
+
+// Dati già letti dall'helper PowerShell (comando "vdreg"): esadecimali + nomi.
+function fromHelper(r) {
+  const ids = [];
+  const raw = String((r && r.ids) || '');
+  for (let i = 0; i + 32 <= raw.length; i += 32) ids.push(guidFromHex(raw.slice(i, i + 32)));
+  const names = {};
+  Object.keys((r && r.names) || {}).forEach(function (k) { names[k.toUpperCase()] = r.names[k]; });
+  return build(ids, r && r.cur ? guidFromHex(r.cur) : '', names);
+}
+
+function build(ids, current, names) {
   // mai creato un secondo desktop: Explorer non scrive l'elenco, ce n'è uno solo
   if (!ids.length) return [{ id: current || 'unico', n: 1, name: 'Desktop 1', current: true }];
   let found = false;
@@ -69,6 +82,10 @@ function parse(text, sessionText) {
 }
 
 async function read() {
+  // prima l'helper PowerShell già aperto (pochi ms); reg.exe solo se non c'è
+  if (typeof platform.virtualDesktopsReg === 'function') {
+    try { return fromHelper(await platform.virtualDesktopsReg()); } catch (e) { log.debug('vdesk', 'helper: ' + e.message); }
+  }
   const text = await regQuery(KEY);
   const sess = binValue(text, 'CurrentVirtualDesktop') ? '' : await regQuery(SESSION_KEY);
   return parse(text, sess);
@@ -159,4 +176,4 @@ async function action(act, id) {
   return preview(desktops);
 }
 
-module.exports = { list: list, action: action, _parse: parse, _guidFromHex: guidFromHex };
+module.exports = { list: list, action: action, _parse: parse, _fromHelper: fromHelper, _guidFromHex: guidFromHex };

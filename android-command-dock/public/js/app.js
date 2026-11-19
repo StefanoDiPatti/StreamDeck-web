@@ -289,7 +289,7 @@
   // Stato del PC ogni pollSec se toccato da poco, ogni idlePollSec a riposo,
   // mai con il salvaschermo o con la pagina in secondo piano.
   function powerCfg() {
-    return (app.cfg && app.cfg.power) || { idleAfterSec: 60, pollSec: 2, idlePollSec: 15, sleepAfterMin: 10 };
+    return (app.cfg && app.cfg.power) || { idleAfterSec: 60, pollSec: 3, idlePollSec: 15, sleepAfterMin: 10 };
   }
   function schedulePoll() {
     clearTimeout(app.pollTimer);

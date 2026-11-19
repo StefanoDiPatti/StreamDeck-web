@@ -208,7 +208,8 @@ body.kb-open #topbar, body.kb-open #tabs { display: none; }
   background: #0b0f14; border-radius: 4px; overflow: hidden;
 }
 .m-nobar .bar { display: none; }
-.bar i { display: block; height: 100%; width: 0; background: #3d8bfd; -webkit-transition: width 0.6s; transition: width 0.6s; }
+/* niente transizione sulla larghezza: ogni 2 s faceva ricalcolare il layout a ogni fotogramma (batteria) */
+.bar i { display: block; height: 100%; width: 0; background: #3d8bfd; }
 .bar.ok i { background: #3fb950; }
 .bar.warn i { background: #d29922; }
 .bar.hot i { background: #e5534b; }
