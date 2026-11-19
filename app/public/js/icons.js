@@ -83,6 +83,7 @@ var Icons = (function () {
   P.claude = P.sparkle;
   P.ollama = P.chat;
   P.blender = P.cube;
+  P.unreal = P.cube;
   P.vscode = P.code;
 
   var svgOk = !!(document.createElementNS &&

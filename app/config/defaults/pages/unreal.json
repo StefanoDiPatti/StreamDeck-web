@@ -1,0 +1,33 @@
+// Pagina UNREAL (id "unreal"): scorciatoie di Unreal Editor 5, come le pagine BLENDER e DAVINCI.
+// Una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/unreal.json e modifica la copia: quella vince su questa.
+// I tasti vanno all'editor ("focus": "UnrealEditor"); quelli della vista (W/E/R, F, G, Alt+2/4)
+// valgono con il viewport selezionato.
+{
+  "id": "unreal",
+  "title": "UNREAL",
+  "icon": "unreal",
+  "description": "Scorciatoie di Unreal Editor: play, compila, strumenti e viste",
+  "tab": false,
+  "autoGrid": true,
+  "tiles": [
+    { "id": "apri", "label": "APRI", "icon": "unreal", "color": "#313843", "action": { "type": "launch", "app": "unreal" } },
+    { "id": "salva_tutto", "label": "SALVA TUTTO", "icon": "save", "sub": "Ctrl+Shift+S", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "S"], "focus": "UnrealEditor" } },
+    { "id": "play", "label": "PLAY", "icon": "play", "sub": "Alt+P", "color": "#2f6b3a", "action": { "type": "hotkey", "keys": ["ALT", "P"], "focus": "UnrealEditor" } },
+    { "id": "simula", "label": "SIMULA", "icon": "play", "sub": "Alt+S", "action": { "type": "hotkey", "keys": ["ALT", "S"], "focus": "UnrealEditor" } },
+    { "id": "stop", "label": "STOP", "icon": "stop", "sub": "Esc", "color": "#8b1d1d", "action": { "type": "key", "key": "ESC", "focus": "UnrealEditor" } },
+    { "id": "espelli", "label": "ESPELLI", "icon": "back", "sub": "F8 (durante il play)", "action": { "type": "key", "key": "F8", "focus": "UnrealEditor" } },
+    { "id": "compila", "label": "COMPILA C++", "icon": "bolt", "sub": "Live Coding · Ctrl+Alt+F11", "color": "#5b3fa0", "action": { "type": "hotkey", "keys": ["CTRL", "ALT", "F11"], "focus": "UnrealEditor" } },
+    { "id": "content", "label": "CONTENT", "icon": "folder", "sub": "Ctrl+Spazio", "action": { "type": "hotkey", "keys": ["CTRL", "SPACE"], "focus": "UnrealEditor" } },
+    { "id": "sposta", "label": "SPOSTA", "icon": "target", "sub": "W", "action": { "type": "key", "key": "W", "focus": "UnrealEditor" } },
+    { "id": "ruota", "label": "RUOTA", "icon": "refresh", "sub": "E", "action": { "type": "key", "key": "E", "focus": "UnrealEditor" } },
+    { "id": "scala", "label": "SCALA", "icon": "fullscreen", "sub": "R", "action": { "type": "key", "key": "R", "focus": "UnrealEditor" } },
+    { "id": "centra", "label": "CENTRA", "icon": "target", "sub": "F", "action": { "type": "key", "key": "F", "focus": "UnrealEditor" } },
+    { "id": "vista_gioco", "label": "VISTA GIOCO", "icon": "gamepad", "sub": "G", "action": { "type": "key", "key": "G", "focus": "UnrealEditor" } },
+    { "id": "wireframe", "label": "WIREFRAME", "icon": "cube", "sub": "Alt+2", "action": { "type": "hotkey", "keys": ["ALT", "2"], "focus": "UnrealEditor" } },
+    { "id": "illuminato", "label": "ILLUMINATO", "icon": "bolt", "sub": "Alt+4", "action": { "type": "hotkey", "keys": ["ALT", "4"], "focus": "UnrealEditor" } },
+    { "id": "annulla", "label": "ANNULLA", "icon": "undo", "sub": "Ctrl+Z", "repeat": true, "action": { "type": "hotkey", "keys": ["CTRL", "Z"], "focus": "UnrealEditor" } },
+    { "id": "ripeti", "label": "RIPETI", "icon": "redo", "sub": "Ctrl+Y", "action": { "type": "hotkey", "keys": ["CTRL", "Y"], "focus": "UnrealEditor" } },
+    { "id": "schermo", "label": "SCHERMO", "icon": "fullscreen", "sub": "F11", "action": { "type": "key", "key": "F11", "focus": "UnrealEditor" } }
+  ]
+}

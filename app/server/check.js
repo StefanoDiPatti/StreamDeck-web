@@ -35,6 +35,9 @@ function iconNames() {
       let m;
       const body = text.slice(start, end);
       while ((m = re.exec(body))) names[m[1]] = true;
+      // e gli alias scritti dopo l'elenco: P.unreal = P.cube;
+      const alias = /^\s*P\.([a-z_][a-z0-9_]*)\s*=/gim;
+      while ((m = alias.exec(text))) names[m[1]] = true;
       iconCache = { mtime: mtime, names: names };
     }
   } catch (e) { return null; }

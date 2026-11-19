@@ -154,7 +154,7 @@ Se qualcosa non va: [Problemi comuni](app/README.md#problemi-comuni).
 | SCHERMI | Monitor, zone delle finestre, desktop virtuali, trascinamento | ✅ | ⚠️ solo KDE Plasma 6 con `kdotool` |
 | AUDIO | Uscita, microfono, volume di ogni app | ✅ | ✅ con `pactl` |
 | VIBER | Pannelli, progetti e task di Viber | ✅ | ✅ |
-| BLENDER, DAVINCI RESOLVE | Scorciatoie dei due programmi | ✅ | ✅ |
+| BLENDER, DAVINCI RESOLVE, UNREAL | Scorciatoie dei tre programmi (Unreal: play, compila C++, strumenti e viste) | ✅ | ✅ |
 | DESKTOP VIRTUALI | Guida alle scorciatoie | ❌ (è dentro SCHERMI) | ✅ |
 
 Le pagine da DISCORD in giù all'inizio non sono nella barra: le aggiungi dal pannello di controllo.

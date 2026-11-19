@@ -167,3 +167,19 @@ test('i file di config non modificati passano alla nuova versione, quelli modifi
   assert.ok(/mia/.test(fs.readFileSync(path.join(conf, 'dock.json'), 'utf8')));
   assert.deepStrictEqual(config.upgradeUserConfig(conf, defs), []);
 });
+
+test('pagina UNREAL: disponibile (fuori dalla barra), tasti validi, id unici, app esistente', function () {
+  const keys = require('../server/platform/keys');
+  const p = config.dock().pages.filter(function (x) { return x.id === 'unreal'; })[0];
+  assert.ok(p, 'pagina unreal');
+  assert.strictEqual(p.tab, false, 'tra le disponibili, come BLENDER e DAVINCI');
+  assert.ok(config.apps().unreal, 'app unreal');
+  assert.ok(require('../server/check').iconNames().unreal, 'icona unreal (alias di cube)');
+  const ids = p.tiles.map(function (t) { return t.id; });
+  ids.forEach(function (id, i) { assert.strictEqual(ids.indexOf(id), i, 'id doppio: ' + id); });
+  p.tiles.forEach(function (t) {
+    const a = t.action;
+    if (a.type === 'hotkey') assert.doesNotThrow(function () { keys.parseCombo(a.keys); }, t.label);
+    if (a.type === 'key') assert.doesNotThrow(function () { keys.parseCombo([a.key]); }, t.label);
+  });
+});
