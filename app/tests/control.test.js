@@ -128,3 +128,10 @@ test('discord: messaggi RPC spezzati in più pezzi vengono ricomposti', async fu
   await assert.rejects(err, /Not authenticated/);
   ipc.close();
 });
+
+test('Discord: il volume di una persona arriva intero (Discord lo manda con i decimali)', function () {
+  const discord = require('../server/services/discord');
+  const m = discord._member({ nick: 'Pippo', volume: 99.99999237060547, user: { id: '1', username: 'pippo' }, voice_state: {} });
+  assert.strictEqual(m.volume, 100);
+  assert.strictEqual(discord._member({ volume: 149.6, user: { id: '2', username: 'b' }, voice_state: {} }).volume, 150);
+});
