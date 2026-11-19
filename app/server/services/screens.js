@@ -31,7 +31,7 @@ let monCache = { at: 0, list: null, pending: null };
 
 function supported() { return typeof platform.monitors === 'function'; }
 function unsupported() {
-  return Object.assign(new Error('Gestione schermi disponibile solo su Windows per ora'), { code: 'UNSUPPORTED' });
+  return Object.assign(new Error('Gestione schermi disponibile su Windows e su Linux con KDE Plasma'), { code: 'UNSUPPORTED' });
 }
 
 function load() {
@@ -152,6 +152,16 @@ async function moveToMonitor(w, mon) {
   return true;
 }
 
+// Trascinamento dal tablet: la finestra va su quel monitor, stessa misura e posizione relativa.
+async function moveWindowToMonitor(windowId, monitorId) {
+  if (!supported()) throw unsupported();
+  const w = await findWindow(windowId);
+  const mon = (await monitors()).filter(function (m) { return m.id === String(monitorId); })[0];
+  if (!mon) throw Object.assign(new Error('Monitor non trovato'), { code: 'BAD_REQUEST' });
+  const moved = await moveToMonitor(w, mon);
+  return { moved: moved, title: w.title, monitor: mon.n };
+}
+
 // Prima di avviare un'app dal tablet: ricorda le finestre già aperte, poi
 // sposta sul monitor scelto la prima finestra nuova di quell'app.
 // processes = nomi dei processi attesi (vuoto = qualsiasi finestra nuova in primo piano).
@@ -195,6 +205,7 @@ module.exports = {
   setTarget: setTarget,
   place: place,
   act: act,
+  moveWindowToMonitor: moveWindowToMonitor,
   followLaunch: followLaunch,
   _zonesFor: zonesFor,
   _zoneRect: zoneRect

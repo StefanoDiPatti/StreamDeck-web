@@ -593,8 +593,8 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .sc-zin { position: absolute; left: 3px; top: 3px; right: 3px; bottom: 3px; border: 1px dashed #3b5170; border-radius: 6px; background: rgba(61, 139, 253, 0.06); text-align: center; overflow: hidden; }
 .sc-zin b { display: block; font-size: 18px; color: #6cb6ff; margin-top: 8px; }
 .sc-zin span { display: block; font-size: 11px; color: #c6d1dc; padding: 2px 4px; line-height: 1.25; }
-.sc-zone.on .sc-zin { border: 2px solid #6cb6ff; background: rgba(61, 139, 253, 0.28); }
-.sc-zone.on .sc-zin b { color: #fff; }
+.sc-zone.on .sc-zin, .sc-zone.drop .sc-zin { border: 2px solid #6cb6ff; background: rgba(61, 139, 253, 0.28); }
+.sc-zone.on .sc-zin b, .sc-zone.drop .sc-zin b { color: #fff; }
 .sc-layouts { position: absolute; left: 8px; right: 8px; bottom: 62px; height: 72px; overflow: hidden; white-space: nowrap; }
 .sc-lay { display: inline-block; vertical-align: top; width: 11.5%; margin-right: 1%; height: 72px; border-radius: 8px; background: #172029; text-align: center; padding-top: 7px; }
 .sc-lay:last-child { margin-right: 0; }
@@ -612,14 +612,14 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .sc-opt.pressed { -webkit-transform: scale(0.95); transform: scale(0.95); }
 .sc-right { position: absolute; right: 0; top: 0; bottom: 0; width: 40%; background: #141c25; border-left: 1px solid #222e3b; }
 .sc-whead { position: absolute; left: 12px; right: 12px; top: 8px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; }
-.sc-wins { position: absolute; left: 6px; right: 6px; top: 36px; height: 171px; overflow: auto; -webkit-overflow-scrolling: touch; }
-/* desktop virtuali: sotto le finestre (4 visibili, il resto scorre) */
-.sc-dhead { position: absolute; left: 12px; right: 12px; top: 212px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; white-space: nowrap; overflow: hidden; border-top: 1px solid #222e3b; padding-top: 6px; }
+.sc-wins { position: absolute; left: 6px; right: 6px; top: 36px; bottom: 180px; overflow: auto; -webkit-overflow-scrolling: touch; }
+/* desktop virtuali: in basso, alti quanto le schede; tutto lo spazio sopra va alle finestre */
+.sc-dhead { position: absolute; left: 12px; right: 12px; bottom: 142px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; white-space: nowrap; overflow: hidden; border-top: 1px solid #222e3b; padding-top: 6px; }
 .sc-dsub { font-size: 11px; font-weight: normal; letter-spacing: 0; color: #6e7f90; margin-left: 8px; }
-.sc-desks { position: absolute; left: 6px; right: 6px; top: 246px; bottom: 6px; overflow: hidden; }
-/* una scheda per desktop (4 per riga: fino a 3 desktop + il "+") */
-.sc-dk { float: left; width: 23.5%; margin: 0 2% 8px 0; position: relative; height: 124px; padding-top: 14px; border-radius: 10px; background: #172029; border: 2px solid transparent; text-align: center; -webkit-box-sizing: border-box; box-sizing: border-box; }
-.sc-dk:nth-child(4n) { margin-right: 0; }
+.sc-desks { position: absolute; left: 6px; right: 6px; bottom: 6px; height: 132px; overflow: hidden; }
+/* una scheda per desktop (3 per riga: al massimo 3 desktop, il "+" finché c'è posto) */
+.sc-dk { float: left; width: 32%; margin: 0 2% 8px 0; position: relative; height: 124px; padding-top: 14px; border-radius: 10px; background: #172029; border: 2px solid transparent; text-align: center; -webkit-box-sizing: border-box; box-sizing: border-box; }
+.sc-dk:nth-child(3n) { margin-right: 0; }
 .sc-dk.on { border-color: #3d8bfd; background: #10203a; }
 .sc-dk.pressed, .sc-dk.busy { background: #26354a; }
 .sc-dk svg.sc-dkic { display: block; width: 44px; height: 44px; margin: 0 auto; fill: #8b9bab; }
@@ -627,10 +627,17 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .sc-dkn { position: absolute; left: 50%; top: 22px; width: 24px; margin-left: -12px; font-size: 14px; line-height: 20px; color: #fff; }
 .sc-dkname { display: block; margin-top: 6px; padding: 0 4px; font-size: 15px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-dksub { display: block; margin-top: 2px; font-size: 12px; color: #8b9bab; white-space: nowrap; overflow: hidden; }
+/* trascinamento di una finestra su un desktop virtuale o un monitor */
+.sc-win { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.sc-win.dragging { opacity: 0.4; }
+.sc-ghost { position: absolute; z-index: 800; padding: 9px 14px; border-radius: 10px; background: #1f3b63; border: 2px solid #3d8bfd; color: #ffffff; font-size: 14px; font-weight: bold; white-space: nowrap; pointer-events: none; -webkit-box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5); }
+.sc-ghost svg.ic { width: 18px; height: 18px; margin: -3px 8px 0 0; }
+.sc-dragging .sc-dk, .sc-dragging .sc-mon { border-color: #3b5170; border-style: dashed; }
+.sc-dragging .sc-dk.drop, .sc-dragging .sc-mon.drop { border-color: #6cb6ff; border-style: solid; background: #1f3b63; }
 /* telefono: pagina più bassa, finestre (scorrono) e desktop virtuali più compatti */
-body.phone .sc-wins { height: 104px; }
-body.phone .sc-dhead { top: 144px; }
-body.phone .sc-desks { top: 176px; }
+body.phone .sc-wins { bottom: 140px; }
+body.phone .sc-dhead { bottom: 104px; }
+body.phone .sc-desks { height: 96px; }
 body.phone .sc-dk { height: 88px; padding-top: 8px; }
 body.phone .sc-dk svg.sc-dkic { width: 30px; height: 30px; }
 body.phone .sc-dkn { top: 12px; font-size: 12px; }

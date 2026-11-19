@@ -93,7 +93,7 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, volume e muto di una persona solo per te |
 | GAMES | Hearthstone, World of Tanks, League of Legends (pallino verde se aperti; se già aperto lo porta in primo piano) |
 | EMAIL *(disponibile)* | posta in arrivo degli account scelti dal pannello, lettura dei messaggi, apertura della webmail sul PC |
-| SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app, **desktop virtuali** (passa, crea, chiudi) e pulsante **GUIDA** con le scorciatoie |
+| SCHERMI *(Windows; Linux con KDE Plasma 6 + kdotool)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app, **desktop virtuali** (passa, crea, chiudi, trascinaci una finestra) e pulsante **GUIDA** con le scorciatoie |
 | AUDIO | uscite e microfoni (predefinito, volume, mute), volume e mute di ogni app che usa l'audio |
 | DESKTOP VIRTUALI *(solo Linux)* | guida alle scorciatoie dei desktop virtuali (KDE Plasma, GNOME, anche Windows); su Windows la stessa guida è nella pagina SCHERMI |
 | VIBER *(aggiungila dal pannello)* | passa ai pannelli aperti di Viber (terminale, git, browser, chat, task, file), cambia vista (schede, agenti, focus), mostra le task del progetto aperto |
@@ -342,7 +342,11 @@ Nella pagina **SCHERMI** del tablet vedi i monitor come sono disposti sulla scri
 - Senza una zona scelta, toccare una finestra la porta in primo piano. I due pulsanti di ogni riga la riducono a icona o la ingrandiscono.
 - **Apri le app su**: AUTO lascia decidere a Windows; con un monitor scelto, le app avviate dal tablet (pulsanti *launch*) vengono spostate lì appena compare la loro finestra, mantenendo dimensioni e posizione relative.
 
-A destra le finestre aperte (tre alla volta, la lista scorre) e sotto i **desktop virtuali**: una scheda per desktop con numero, nome e quante finestre ha (quello attivo in blu). Tocca un desktop per passarci, la scheda **+** ne crea uno e ci entra, la **X** nell'angolo (da tenere premuta) lo chiude: le sue finestre non si chiudono, passano al desktop vicino. L'elenco si legge dal registro di Windows, le finestre di ogni desktop con l'API pubblica `IVirtualDesktopManager`, e i comandi sono le scorciatoie Win+Ctrl+←/→, Win+Ctrl+D e Win+Ctrl+F4. Il pulsante **GUIDA** in alto mostra tutte le scorciatoie dei desktop virtuali di Windows e Linux.
+A destra le finestre aperte (usano tutto lo spazio libero, la lista scorre) e in basso i **desktop virtuali** (al massimo 3): una scheda per desktop con numero, nome e quante finestre ha (quello attivo in blu). Tocca un desktop per passarci, la scheda **+** ne crea uno e ci entra (sparisce quando ce ne sono 3), la **X** nell'angolo (da tenere premuta) lo chiude: le sue finestre non si chiudono, passano al desktop vicino. L'elenco si legge dal registro di Windows, le finestre di ogni desktop con l'API pubblica `IVirtualDesktopManager`, e i comandi sono le scorciatoie Win+Ctrl+←/→, Win+Ctrl+D e Win+Ctrl+F4. Il pulsante **GUIDA** in alto mostra tutte le scorciatoie dei desktop virtuali di Windows e Linux.
+
+**Trascinare una finestra**: tieni premuta una finestra della lista (col mouse basta trascinarla) e lasciala su un **desktop virtuale** (ci va senza che tu cambi desktop, come in Win+Tab), su **Nuovo** (crea un desktop e ce la mette) o su una **zona di un monitor** della mappa: mentre trascini ogni monitor mostra le zone della divisione scelta in basso (Metà, Terzi, Quarti...) e la finestra si ancora nella zona dove la lasci, con quella misura. Per i desktop la dock usa l'interfaccia interna di Explorer (quella di Win+Tab, non documentata: l'API pubblica sposta solo le finestre del proprio programma), con i GUID di Windows 11 24H2 e successivi; su versioni diverse il tablet dice che non riesce invece di fare danni.
+
+**SCHERMI su Linux** (KDE Plasma 6, Wayland o X11): finestre, monitor, desktop virtuali e trascinamento passano da KWin, con [kdotool](https://github.com/jinliu/kdotool) 0.3 o più recente (comando `kwinscript`: la dock manda a KWin un piccolo script e legge la risposta). Su Wayland nessun altro programma vede le finestre degli altri. Installalo (`paru -S kdotool` su Arch/CachyOS, oppure `cargo install kdotool`), riavvia la dock e aggiungi la pagina SCHERMI dal pannello. Senza KDE o senza kdotool la pagina lo dice. Su Linux la finestra trascinata su **Nuovo** crea un desktop in fondo senza passarci; il **+** crea un desktop e ci va, come su Windows.
 
 Le finestre dei programmi avviati come amministratore non si possono spostare (limite di Windows). I giochi a schermo intero esclusivo non si spostano. La scelta del monitor sta in `data/screens.json`.
 
@@ -396,11 +400,12 @@ Basta che Ollama sia acceso sul PC. Il tablet non parla mai direttamente con Oll
 
 ## Linux
 
-Funziona tutto tranne le parti che dipendono da Windows (pagina SCHERMI, Memo), sostituite da strumenti standard.
+Funziona tutto tranne le parti che dipendono da Windows (Memo), sostituite da strumenti standard. La pagina SCHERMI su Linux va con KDE Plasma 6 e kdotool (vedi sopra).
 Nella pagina APP: **TERMINALE** (Konsole, GNOME Terminal, Alacritty...), **MONITOR** di sistema, **SCREENSHOT** di un'area (Spectacle), **DESKTOP** (mostra il desktop di KDE), **CLAUDE** apre la web app di Claude installata da Brave (altrimenti claude.ai), **VIBER** l'app dal desktop. Su CachyOS / Arch:
 
 ```bash
 sudo pacman -S playerctl wtype
+paru -S kdotool          # pagina SCHERMI (finestre e desktop virtuali in KDE)
 sudo ufw allow 8787/tcp
 ```
 

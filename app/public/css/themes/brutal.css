@@ -219,8 +219,8 @@ svg.ic.dc-camflag { fill: #127a3a; }
 .sc-zin { border: 1px dashed #111111; background: rgba(77, 157, 255, 0.06); }
 .sc-zin b { color: #1f5fd1; }
 .sc-zin span { color: #2b2b2b; }
-.sc-zone.on .sc-zin { border: 2px solid #111111; background: rgba(77, 157, 255, 0.28); }
-.sc-zone.on .sc-zin b { color: #111111; }
+.sc-zone.on .sc-zin, .sc-zone.drop .sc-zin { border: 2px solid #111111; background: rgba(77, 157, 255, 0.28); }
+.sc-zone.on .sc-zin b, .sc-zone.drop .sc-zin b { color: #111111; }
 .sc-lay { background: #fffdf7; }
 .sc-lay.on { background: #c9b8ff; }
 .sc-lay.pressed { background: #ffd23f; }
@@ -240,6 +240,9 @@ svg.ic.dc-camflag { fill: #127a3a; }
 .sc-dk.on svg.sc-dkic { fill: #1f5fd1; }
 .sc-dkn { color: #111111; }
 .sc-dksub { color: #5a5446; }
+.sc-ghost { background: #9cc4ff; border: 2px solid #111111; color: #111111; }
+.sc-dragging .sc-dk, .sc-dragging .sc-mon { border-color: #111111; }
+.sc-dragging .sc-dk.drop, .sc-dragging .sc-mon.drop { border-color: #111111; background: #9cc4ff; }
 .sc-dk.on .sc-dksub { color: #1f5fd1; }
 .sc-dkx { background: rgba(255, 208, 201, 0.92); }
 .sc-dkx.holding { background: #ff6b5b; }

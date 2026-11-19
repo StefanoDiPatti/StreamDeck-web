@@ -222,6 +222,12 @@ module.exports = {
     });
   },
 
+  // Sposta una finestra su un desktop virtuale (GUID; '' = uno nuovo, senza passarci).
+  // Ritorna il GUID del desktop di arrivo.
+  moveWindowToDesktop: function (id, desk) {
+    return input.call('vdmove', { hwnd: Number(id), desk: desk ? String(desk) : '' }, 8000).then(function (r) { return r.desk; });
+  },
+
   // rect = area visibile voluta; max = massimizza dopo lo spostamento
   placeWindow: function (id, rect, max, focus) {
     return input.call('place', { hwnd: Number(id), x: Math.round(rect.x), y: Math.round(rect.y), w: Math.round(rect.w), h: Math.round(rect.h), max: !!max, focus: !!focus }, 6000).then(function (r) {

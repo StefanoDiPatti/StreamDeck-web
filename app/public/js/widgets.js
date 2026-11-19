@@ -1647,7 +1647,7 @@ var Widgets = (function () {
       '<div class="sc-right">' +
         '<div class="sc-whead">FINESTRE APERTE</div>' +
         '<div class="sc-wins scroll"></div>' +
-        '<div class="sc-dhead">DESKTOP VIRTUALI<span class="sc-dsub">tocca per passarci</span></div>' +
+        '<div class="sc-dhead">DESKTOP VIRTUALI<span class="sc-dsub">tocca per passarci · trascinaci una finestra</span></div>' +
         '<div class="sc-desks"></div>' +
       '</div>' +
       '<div class="sc-guide w-vdesk hidden"></div>';
@@ -1660,7 +1660,7 @@ var Widgets = (function () {
     var helpBtn = smallBtn('GUIDA', 'info', function () { D.removeClass(guideEl, 'hidden'); });
     D.addClass(helpBtn, 'sc-help');
     q('sc-left').appendChild(helpBtn);
-    vdeskGuide(guideEl, 'windows', function () { D.addClass(guideEl, 'hidden'); });
+    vdeskGuide(guideEl, tile.system === 'linux' ? 'linux' : 'windows', function () { D.addClass(guideEl, 'hidden'); });
 
     // Ogni desktop è una scheda semplice: icona dello schermo, numero, nome e finestre.
     function deskCard(d) {
@@ -1675,11 +1675,11 @@ var Widgets = (function () {
     function renderDesks() {
       D.toggleClass(root, 'sc-dbusy', deskBusy);
       if (!desks) { desksEl.innerHTML = '<div class="empty">Carico…</div>'; return; }
-      if (!desks.supported) { desksEl.innerHTML = '<div class="empty">Solo su Windows</div>'; return; }
+      if (!desks.supported) { desksEl.innerHTML = '<div class="empty">' + D.esc(desks.message || 'Non disponibili su questo sistema') + '</div>'; return; }
       var html = '';
       for (var i = 0; i < desks.desktops.length; i++) html += deskCard(desks.desktops[i]);
-      // "+" come in Visualizzazione attività: crea un desktop e ci entra
-      html += '<div class="sc-dk sc-dknew" data-new="1">' + Icons.html('add', 'sc-dkic') + '<span class="sc-dkname">Nuovo</span></div>';
+      // "+" come in Visualizzazione attività: crea un desktop e ci entra (al massimo 3 desktop)
+      if (desks.desktops.length < (desks.max || 3)) html += '<div class="sc-dk sc-dknew" data-new="1">' + Icons.html('add', 'sc-dkic') + '<span class="sc-dkname">Nuovo</span></div>';
       desksEl.innerHTML = html;
       // la X chiude il desktop: va tenuta premuta (le finestre passano al desktop vicino)
       var xs = desksEl.querySelectorAll('.sc-dkx');
@@ -1786,7 +1786,8 @@ var Widgets = (function () {
         var x = Math.round(ox + (m.x - minX) * k) + 3, y = Math.round(oy + (m.y - minY) * k) + 3;
         var w = Math.round(m.w * k) - 6, h = Math.round(m.h * k) - 6;
         html += '<div class="sc-mon' + (sel ? ' sel' : '') + '" data-mon="' + D.esc(m.id) + '" style="left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px">';
-        if (sel && l) {
+        // zone della divisione scelta: sul monitor selezionato, e su tutti mentre trascini una finestra
+        if ((sel || drag) && l) {
           var zs = zones(l, m);
           for (var z = 0; z < zs.length; z++) {
             var placed = SC.placed[m.id + '|' + l.id + '|' + z];
@@ -1907,7 +1908,7 @@ var Widgets = (function () {
           if (err) return app.toast(err.message, 'err');
           info = d;
           var m = mon(d.target);
-          app.toast(m ? 'Le app dal tablet si aprono sul monitor ' + m.n : 'Le app si aprono dove decide Windows', 'ok');
+          app.toast(m ? 'Le app dal tablet si aprono sul monitor ' + m.n : 'Le app si aprono dove decide il sistema', 'ok');
           renderMap(); renderOpen();
         });
       }
@@ -1915,6 +1916,7 @@ var Widgets = (function () {
     D.bindTap(winsEl, {
       scrollable: true,
       onTap: function (t) {
+        if (drag || new Date().getTime() - dragEnded < 700) return;   // fine di un trascinamento
         var row = D.closestAttr(t, 'data-win', winsEl);
         if (!row) return;
         var id = row.getAttribute('data-win');
@@ -1949,6 +1951,130 @@ var Widgets = (function () {
       }
     });
 
+    // ---- trascinamento: tieni premuta una finestra della lista, poi lasciala su un desktop
+    // virtuale, su "Nuovo" (desktop nuovo) o su un monitor della mappa.
+    var drag = null, dragEnded = 0, hold = null, holdT = null;
+    function now() { return new Date().getTime(); }
+    // pagina girata sul telefono (body.rot): dalle coordinate dello schermo a quelle della pagina
+    function local(x, y) {
+      if (D.hasClass(document.body, 'rot')) return { x: y, y: document.body.offsetHeight - x };
+      return { x: x, y: y };
+    }
+    function dropAt(x, y) {
+      var el = document.elementFromPoint(x, y);
+      if (!el) return null;
+      var n = D.closestAttr(el, 'data-new', root);
+      if (n) return { kind: 'new', el: n };
+      var d = D.closestAttr(el, 'data-desk', root);
+      if (d) return { kind: 'desk', el: d, id: d.getAttribute('data-desk') };
+      var m = D.closestAttr(el, 'data-mon', root);
+      var z = D.closestAttr(el, 'data-zone', root);
+      // una zona della divisione scelta: la finestra si ancora lì, con quella misura
+      if (z && m) return { kind: 'zone', el: z, id: m.getAttribute('data-mon'), zone: parseInt(z.getAttribute('data-zone'), 10) };
+      if (m) return { kind: 'mon', el: m, id: m.getAttribute('data-mon') };
+      return null;
+    }
+    function startDrag(row, x, y) {
+      var title = row.querySelector('.sc-wtitle').textContent;
+      drag = { id: row.getAttribute('data-win'), title: title, row: row, target: null };
+      D.addClass(row, 'dragging');
+      D.addClass(root, 'sc-dragging');
+      renderMap();   // mostra le zone su tutti i monitor
+      var g = D.el('div', 'sc-ghost');
+      g.innerHTML = Icons.html('window') + D.esc(short(title, 30));
+      document.body.appendChild(g);
+      drag.ghost = g;
+      moveDrag(x, y);
+    }
+    function moveDrag(x, y) {
+      var p = local(x, y);
+      drag.ghost.style.left = Math.round(p.x + 14) + 'px';
+      drag.ghost.style.top = Math.round(p.y - 46) + 'px';
+      var t = dropAt(x, y);
+      if (drag.target && (!t || t.el !== drag.target.el)) D.removeClass(drag.target.el, 'drop');
+      if (t) D.addClass(t.el, 'drop');
+      drag.target = t;
+    }
+    function endDrag(cancel) {
+      var d = drag;
+      drag = null;
+      dragEnded = now();
+      if (d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+      D.removeClass(d.row, 'dragging');
+      D.removeClass(root, 'sc-dragging');
+      if (d.target) D.removeClass(d.target.el, 'drop');
+      renderMap();
+      if (cancel) return;
+      if (!d.target) { app.toast('Lasciala su una zona di un monitor, su un desktop virtuale o su Nuovo', 'info'); return; }
+      if (d.target.kind === 'zone') return dropOnZone(d, d.target.id, d.target.zone);
+      var body = { window: d.id };
+      if (d.target.kind === 'mon') body.monitor = d.target.id;
+      else body.desktop = d.target.kind === 'new' ? 'new' : d.target.id;
+      D.addClass(d.row, 'busy');
+      D.api.post('/api/screens/move', body, function (err, r) {
+        D.removeClass(d.row, 'busy');
+        if (err) return app.toast(err.message, 'err');
+        var where = r.desktopName || ('monitor ' + r.monitor);
+        app.toast(r.moved === false ? 'È già su ' + where : 'Spostata su ' + where + ': ' + short(r.title, 30), 'ok');
+        lastWins = ''; setTimeout(loadWins, 400);
+        lastDesks = ''; setTimeout(loadDesks, 600);
+      }, 15000);
+    }
+    // finestra lasciata su una zona: va su quel monitor, nella zona della divisione scelta
+    function dropOnZone(d, monId, zone) {
+      var lay = layout(SC.layout);
+      if (!lay) return;
+      D.addClass(d.row, 'busy');
+      D.api.post('/api/screens/place', { window: d.id, monitor: monId, layout: lay.id, zone: zone }, function (err) {
+        D.removeClass(d.row, 'busy');
+        if (err) return app.toast(err.message, 'err');
+        SC.placed[monId + '|' + lay.id + '|' + zone] = d.title;
+        SC.mon = monId; SC.zone = null;
+        D.store.set('sc:mon', monId);
+        var m = mon(monId);
+        app.toast('Ancorata nella zona ' + (zone + 1) + (m ? ' del monitor ' + m.n : '') + ': ' + short(d.title, 30), 'ok');
+        renderAll();
+        lastWins = ''; setTimeout(loadWins, 400);
+      });
+    }
+    function rowAt(t) {
+      var row = D.closestAttr(t, 'data-win', winsEl);
+      return row && !D.closestAttr(t, 'data-act', row) ? row : null;
+    }
+    function cancelHold() { clearTimeout(holdT); hold = null; }
+    winsEl.addEventListener('touchstart', function (e) {
+      var row = rowAt(e.target);
+      if (!row || e.touches.length > 1) return;
+      var t = e.touches[0];
+      hold = { row: row, x: t.clientX, y: t.clientY };
+      clearTimeout(holdT);
+      holdT = setTimeout(function () { if (hold) { startDrag(hold.row, hold.x, hold.y); hold = null; } }, 400);
+    }, false);
+    winsEl.addEventListener('touchmove', function (e) {
+      var t = e.touches[0];
+      if (drag) { e.preventDefault(); moveDrag(t.clientX, t.clientY); return; }
+      if (hold && (Math.abs(t.clientX - hold.x) > 10 || Math.abs(t.clientY - hold.y) > 10)) cancelHold();   // sta scorrendo
+    }, false);
+    winsEl.addEventListener('touchend', function (e) {
+      cancelHold();
+      if (drag) { e.preventDefault(); endDrag(false); }
+    }, false);
+    winsEl.addEventListener('touchcancel', function () { cancelHold(); if (drag) endDrag(true); }, false);
+    // col mouse (browser del PC): si trascina subito, basta muoversi un po'
+    var mhold = null;
+    winsEl.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      var row = rowAt(e.target);
+      if (row) mhold = { row: row, x: e.clientX, y: e.clientY };
+    }, false);
+    function onMouseMove(e) {
+      if (drag) { moveDrag(e.clientX, e.clientY); e.preventDefault(); return; }
+      if (mhold && (Math.abs(e.clientX - mhold.x) > 8 || Math.abs(e.clientY - mhold.y) > 8)) { startDrag(mhold.row, e.clientX, e.clientY); mhold = null; }
+    }
+    function onMouseUp() { mhold = null; if (drag) endDrag(false); }
+    document.addEventListener('mousemove', onMouseMove, false);
+    document.addEventListener('mouseup', onMouseUp, false);
+
     renderAll();
     renderDesks();
     loadInfo();
@@ -1959,7 +2085,12 @@ var Widgets = (function () {
     return {
       update: function () {},
       resize: function () { renderMap(); },
-      destroy: function () { alive = false; D.stop(fast); D.stop(slow); }
+      destroy: function () {
+        alive = false; D.stop(fast); D.stop(slow);
+        if (drag) endDrag(true);
+        document.removeEventListener('mousemove', onMouseMove, false);
+        document.removeEventListener('mouseup', onMouseUp, false);
+      }
     };
   }
 
