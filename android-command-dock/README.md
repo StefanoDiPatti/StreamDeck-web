@@ -128,6 +128,7 @@ Doppio clic sull'icona **Command Dock** (desktop o vicino all'orologio): si apre
 - La **stella** sceglie la pagina che si apre all'avvio.
 - **Pulsanti delle pagine**: scegli una pagina di soli pulsanti (APP, DEV, GAMES, BLENDER, DAVINCI) e trascina i pulsanti per riordinarli, o spostali tra *Sul tablet* e *Nascosti* (anche con la ✕ e il + su ogni pulsante). La griglia si adatta da sola: con meno pulsanti diventano più grandi. *Mostra tutti* rimette tutti i pulsanti nell'ordine predefinito.
 - **Salva sul tablet**: il tablet si aggiorna da solo. *Predefinite* torna alle pagine e ai pulsanti di `dock.json`.
+- **Tema** (in alto a destra): Classico, Material, Neon Elgato o Neo-brutalista, gli stessi del tablet. La scelta resta su questo PC ed è separata da quella del tablet; `/control?theme=neon` apre il pannello con un tema senza ricordarlo.
 
 Le scelte finiscono in `config/layout.json`. I pulsanti aggiunti in seguito a `dock.json` compaiono in fondo alla pagina. Il pannello risponde solo da questo PC (`http://127.0.0.1:8787/control`), non dal tablet né dalla rete. Le pagine disponibili si raggiungono solo dai pulsanti che le aprono (`{ "type": "page" }`): per le scorciatoie di Blender e DaVinci aggiungi le loro pagine alla barra. Il contenuto delle pagine si modifica sempre in `config/dock.json`.
 

@@ -32,3 +32,17 @@ test('il tema neo-brutalista non lascia testo chiaro su fondo chiaro', function 
   const gen = css.split('/* ---- forme del tema')[0];
   assert.ok(!/(^|[;{]\s*)color:\s*(#ffffff|#e8eef4)\b/m.test(gen), 'testo bianco rimasto nel tema chiaro');
 });
+
+test('il pannello del PC ha gli stessi temi del tablet', function () {
+  const read = function (f) { return fs.readFileSync(path.join(__dirname, '..', f), 'utf8'); };
+  const ids = function (src) { return (src.match(/\{ id: '([a-z]+)', name:/g) || []).map(function (m) { return m.split("'")[1]; }); };
+  const tablet = ids(read('public/js/app.js'));
+  assert.ok(tablet.length >= 4);
+  assert.deepStrictEqual(ids(read('control/theme.js')), tablet);
+  const css = read('control/themes.css');
+  tablet.filter(function (t) { return t !== 'classic'; }).forEach(function (t) {
+    assert.ok(css.indexOf('html[data-theme="' + t + '"]') >= 0, 'manca il tema ' + t + ' in control/themes.css');
+  });
+  const html = read('control/index.html');
+  assert.ok(html.indexOf('/control/theme.js') >= 0 && html.indexOf('/control/themes.css') >= 0 && html.indexOf('id="theme-pick"') >= 0);
+});
