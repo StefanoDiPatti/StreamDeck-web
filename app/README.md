@@ -3,6 +3,8 @@
 Trasforma un vecchio tablet Android 4.x in una **Stream Deck wireless** per il PC.
 Il PC (Windows o Linux) fa girare un piccolo server Node.js. Il tablet apre una pagina web dal browser: niente app da installare.
 
+> Questo è il **riferimento completo**. Per cominciare leggi le tre guide nel [README principale](../README.md): installazione, guida utente e guida per sviluppatori.
+
 - Pulsanti configurabili da JSON: avvio app, scorciatoie, testo, macro, comandi.
 - **Musica**: copertina, coda dei brani, salto a un punto del brano, shuffle e ripeti, volume dell'app (non di sistema). Funziona con Apple Music web e YouTube tramite un'estensione del browser, e con le app desktop (Spotify, VLC, ...). Giochi e launcher (es. Riot Client) vengono ignorati.
 - **Claude**: le sessioni di Claude Code dell'app desktop, divise per le sezioni del PC. Scrivi (o detti) dal tablet e il messaggio parte dall'app sul PC, con i permessi della sessione.
@@ -345,7 +347,7 @@ I pulsanti VOL+ / VOL− / MUTE della pagina APP restano: comandano sempre il vo
 
 Su Windows usa Core Audio (il cambio di dispositivo predefinito usa la stessa interfaccia del pannello Audio di Windows, come SoundSwitch o EarTrumpet). Su Linux usa `pactl` (PulseAudio o PipeWire con pipewire-pulse, versione 15 o successiva): cambiando l'uscita predefinita anche le app che stanno suonando passano lì.
 
-## Schermi (Windows)
+## Schermi
 
 Nella pagina **SCHERMI** del tablet vedi i monitor come sono disposti sulla scrivania (numerati da sinistra) e le finestre aperte.
 
@@ -488,6 +490,8 @@ La cifratura protegge i file copiati, sincronizzati o finiti per sbaglio in un b
 | Temperatura CPU N/D su Windows | Avvia LibreHardwareMonitor con *Remote Web Server* e imposta `libreHardwareMonitorUrl` |
 
 ## Sviluppo
+
+La guida per personalizzare pagine, pulsanti, azioni e widget è nel [README principale](../README.md#3-guida-per-sviluppatori-personalizza-la-tua-vibe-deck).
 
 ```bash
 npm install     # anche le dipendenze di sviluppo
