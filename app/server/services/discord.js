@@ -105,7 +105,8 @@ function member(vs) {
     // Discord li manda? (se sì valgono loro, altrimenti quello che ricorda la dock)
     mediaKnown: 'self_video' in st || 'self_stream' in st,
     localMute: !!vs.mute,
-    volume: typeof vs.volume === 'number' ? vs.volume : 100,
+    // Discord manda il volume con decimali (es. 99.99999237): al tablet arriva intero
+    volume: typeof vs.volume === 'number' ? Math.round(vs.volume) : 100,
     bot: !!u.bot
   };
 }
