@@ -1,0 +1,35 @@
+// Pagina APP (id "apps"): una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/apps.json e modifica la copia: quella vince su questa.
+{
+  "id": "apps",
+  "title": "APP",
+  "icon": "apps",
+  "description": "Avvio app (pallino verde se aperte), schermo, volume di sistema",
+  "columns": 6,
+  "rows": 3,
+  "autoGrid": true,
+  "tiles": [
+    { "id": "blender", "label": "BLENDER", "icon": "cube", "color": "#d9730d", "action": { "type": "launch", "app": "blender" } },
+    { "id": "davinci", "label": "DAVINCI", "icon": "film", "color": "#6b4fa0", "action": { "type": "launch", "app": "davinci" } },
+    { "id": "vscode", "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
+    { "id": "viber", "label": "VIBER", "icon": "code", "color": "#5b45c9", "action": { "type": "launch", "app": "viber" } },
+    // Windows: app Claude. Linux: la web app di Claude (vedi apps.json)
+    { "id": "claude", "label": "CLAUDE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_desktop" } },
+    { "id": "apple_music", "label": "APPLE MUSIC", "icon": "music", "color": "#c2334d", "action": { "type": "launch", "app": "apple_music" } },
+    { "id": "radio_montecarlo", "label": "RADIO MC", "sub": "Monte Carlo", "icon": "radio", "color": "#14427a", "action": { "type": "launch", "app": "radio_montecarlo" } },
+    { "id": "unreal", "label": "UNREAL", "icon": "cube", "color": "#444b55", "action": { "type": "launch", "app": "unreal" } },
+    { "id": "discord", "label": "DISCORD", "icon": "chat", "color": "#4752c4", "action": { "type": "launch", "app": "discord" } },
+    { "id": "terminal", "label": "POWERSHELL", "icon": "terminal", "color": "#1f3b63", "linux": { "label": "TERMINALE" }, "action": { "type": "launch", "app": "powershell" } },
+    { "id": "files", "label": "FILE", "icon": "folder", "action": { "type": "launch", "app": "files" } },
+    { "id": "taskmgr", "label": "TASK MGR", "icon": "cpu", "linux": { "label": "MONITOR", "sub": "di sistema" }, "action": { "type": "launch", "app": "taskmgr" } },
+    { "id": "screenshot", "label": "SCREENSHOT", "icon": "camera", "sub": "Win+Shift+S", "action": { "type": "hotkey", "keys": ["WIN", "SHIFT", "S"] },
+      "linux": { "sub": "area", "action": { "type": "launch", "app": "screenshot" } } },
+    { "id": "desktop", "label": "DESKTOP", "icon": "desktop", "sub": "Win+D", "action": { "type": "hotkey", "keys": ["WIN", "D"] },
+      "linux": { "sub": "mostra", "action": { "type": "command", "id": "show_desktop" } } },
+    { "id": "lock", "label": "BLOCCA", "icon": "lock", "color": "#7a2730", "confirm": true, "action": { "type": "command", "id": "lock_pc" } },
+    { "id": "monitor_off", "label": "SCHERMO OFF", "icon": "power", "sub": "monitor", "color": "#2b3240", "action": { "type": "command", "id": "monitor_off" } },
+    { "id": "vol_down", "label": "VOL -", "icon": "voldown", "sub": "sistema", "repeat": true, "action": { "type": "media", "command": "volume_down" } },
+    { "id": "mute", "label": "MUTE", "icon": "mute", "sub": "sistema", "action": { "type": "media", "command": "mute" } },
+    { "id": "vol_up", "label": "VOL +", "icon": "volup", "sub": "sistema", "repeat": true, "action": { "type": "media", "command": "volume_up" } }
+  ]
+}

@@ -1,0 +1,9 @@
+// Pagina GITHUB (id "github"): una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/github.json e modifica la copia: quella vince su questa.
+{
+  "id": "github",
+  "title": "GITHUB",
+  "icon": "github",
+  "description": "Repository, pull request e issue",
+  "tiles": [ { "widget": "github", "w": 5, "h": 3 } ]
+}

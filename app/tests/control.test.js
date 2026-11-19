@@ -36,7 +36,7 @@ test('layout vuoto o assente: valgono i "tab" di dock.json', function () {
 });
 
 test('i default comprendono la pagina Discord, fuori dalla barra', function () {
-  const d = config.normalizeDock(config.parseJson(require('fs').readFileSync(require('path').join(__dirname, '..', 'config', 'defaults', 'dock.json'), 'utf8')), {});
+  const d = config.normalizeDock(config.defaultDock(), {});
   const p = d.pages.filter(function (x) { return x.id === 'discord'; })[0];
   assert.ok(p, 'pagina discord');
   assert.strictEqual(p.tab, false);

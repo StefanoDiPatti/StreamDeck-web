@@ -33,7 +33,7 @@ Sul PC (Windows o Linux) gira un piccolo server Node.js; il tablet apre una pagi
 
 1. [Guida all'installazione](#1-guida-allinstallazione): requisiti, Windows, Linux, collegare il tablet, aggiornare.
 2. [Guida utente](#2-guida-utente): il tablet, le pagine, il pannello di controllo, i servizi da collegare.
-3. [Guida per sviluppatori](#3-guida-per-sviluppatori-personalizza-la-tua-vibe-deck): pulsanti, pagine, azioni, widget e codice.
+3. [Guida per sviluppatori](#3-guida-per-sviluppatori-personalizza-la-tua-vibe-deck): pagine, pulsanti, app e comandi a file singoli, azioni, widget e codice.
 
 Il riferimento completo di ogni funzione è in [`app/README.md`](app/README.md).
 
@@ -187,33 +187,74 @@ Si apre sul PC (doppio clic sull'icona **Vibe Deck**). Da qui:
 ## Dove stanno le cose
 
 Tutti i file di configurazione sono **JSON con commenti `//`**. Quando salvi, il tablet si aggiorna da solo, senza riavviare.
+Le personalizzazioni si fanno **un file per volta**: una pagina, un'app o un comando per file.
 
-| File (in `app/`) | Cosa contiene | In git? |
+| In `app/` | Cosa contiene | In git? |
 |---|---|---|
-| `config/dock.json` | pagine, pulsanti e widget | no, è tuo |
-| `config/apps.json` | programmi avviabili (percorsi per Windows e Linux) | no |
-| `config/commands.json` | comandi consentiti (whitelist) | no |
+| `config/pages/<id>.json` | **le tue pagine** (una per file) e le copie modificate di quelle predefinite | no, sono tue |
+| `config/apps/<id>.json` | **le tue app** (una per file; `id` = nome del file) | no |
+| `config/commands/<id>.json` | **i tuoi comandi** consentiti (uno per file) | no |
+| `config/dock.json` | titolo, griglia, pagina iniziale e ordine delle pagine | no |
+| `config/apps.json`, `config/commands.json` | app e comandi predefiniti (puoi aggiungerne anche qui) | no |
 | `config/services.json` | musica, Claude, GitHub, Ollama, TODO, tempi del tablet | no |
-| `config/layout.json` | scelte del pannello (ordine delle pagine e dei pulsanti) | no, lo scrive il pannello |
-| `config/defaults/*.json` | i default del progetto, copiati in `config/` al primo avvio | sì |
+| `config/layout.json` | scelte del pannello (pagine nella barra, ordine dei pulsanti) | no, lo scrive il pannello |
+| `config/defaults/` | i default del progetto: `pages/` (una pagina per file) e gli altri JSON | sì |
+| `schema/` | schemi JSON per l'editor (suggerimenti e controllo dei campi) | sì |
 | `data/` | dati personali: giochi, account da mostrare, log, segreti cifrati | no |
 | `.env` | porta, codice di accesso, token e chiavi API | no |
 
-**Regola:** per personalizzare modifica i file in `config/`, mai quelli in `config/defaults/`.
-Per tornare al default cancella il file da `config/`.
+**Regole:**
 
-## Aggiungere un pulsante
+- non modificare `config/defaults/`: le tue versioni in `config/` vincono sempre su quelle predefinite;
+- per tornare al default cancella il tuo file;
+- con **VS Code** aperto sulla cartella del progetto i file di `config/pages/`, `config/apps/` e `config/commands/` hanno
+  suggerimenti e controllo dei campi (`.vscode/settings.json` collega gli schemi di `app/schema/`);
+- il **pannello di controllo**, in fondo (*Pulsanti e nuove pagine*), elenca i problemi: un pulsante che usa un'app o un comando
+  che non esiste, una pagina sbagliata, un'icona o un widget sconosciuti, un file non valido. Gli stessi errori finiscono nel log all'avvio.
 
-In `config/dock.json`, dentro `tiles` della pagina:
+## Aggiungere una pagina
+
+Crea `config/pages/stream.json`: la pagina compare da sola sul tablet, in fondo alla barra.
 
 ```json
-{ "id": "obs", "label": "OBS", "icon": "camera", "color": "#5b3fa0", "action": { "type": "launch", "app": "obs" } }
+// Pagina per lo streaming
+{
+  "id": "stream",
+  "title": "STREAM",
+  "icon": "live",
+  "description": "Scene e microfono",
+  "autoGrid": true,
+  "tiles": [
+    { "id": "obs", "label": "OBS", "icon": "camera", "color": "#5b3fa0", "action": { "type": "launch", "app": "obs" } },
+    { "id": "scena1", "label": "SCENA 1", "action": { "type": "hotkey", "keys": ["CTRL", "F1"], "focus": "obs64" } },
+    { "id": "mic", "label": "MUTA", "icon": "mic", "action": { "type": "discord", "command": "mute" } },
+    { "widget": "clock", "w": 2, "h": 1 }
+  ]
+}
 ```
 
-e in `config/apps.json`:
+- `"id"`: nome fisso della pagina, uguale al nome del file. Apre la pagina da un pulsante (`{ "type": "page", "page": "stream" }`) o dall'indirizzo (`#stream`).
+- `"tab": false`: la pagina è disponibile ma non nella barra (la aggiungi dal pannello).
+- `"columns"`/`"rows"`: griglia fissa; `"autoGrid": true`: si adatta al numero di pulsanti.
+- `"buttonGrid": true`: pulsanti in griglia a sinistra e widget a destra (`"widgetWidth": 0.5`), come la pagina VIBER.
+- **Widget** disponibili: `system`, `nowplaying`, `queue`, `github`, `todo`, `clock`, `claude`, `chat` (con `"provider": "ollama"`),
+  `discord`, `screens`, `mail`, `audio`, `vdesk`, `viber`.
+- **Icone**: `home music apps code github chat sparkle check cube film lock play pause stop next prev volup voldown mute shuffle repeat
+  folder terminal cpu camera desktop robot refresh save keyboard undo redo fullscreen cut flag back add close send trash power bolt mic link
+  headset gamepad cards tank sword layout live camoff window target mail attach`.
+
+**Cambiare una pagina predefinita:** copia il suo file da `config/defaults/pages/` (es. `apps.json`) in `config/pages/` e modifica
+la copia. Per l'ordine e i pulsanti nascosti basta il pannello, senza toccare i file.
+
+**Ordine delle pagine:** in `config/dock.json`, `"pages"` è una lista di id (`["main", "media", "stream", ...]`). Le pagine non
+elencate vanno in fondo. Puoi ancora scrivere una pagina intera dentro `dock.json`, come nelle versioni vecchie.
+
+## Aggiungere un pulsante (e la sua app)
+
+Il pulsante va nei `tiles` della pagina (vedi `obs` nell'esempio sopra). L'app che avvia si scrive in `config/apps/obs.json`:
 
 ```json
-"obs": {
+{
   "label": "OBS Studio",
   "toggle": true,
   "windows": { "path": "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe", "cwd": "C:\\Program Files\\obs-studio\\bin\\64bit" },
@@ -221,11 +262,12 @@ e in `config/apps.json`:
 }
 ```
 
-- `"id"`: nome fisso del pulsante; il pannello lo usa per ricordare ordine e pulsanti nascosti.
+- `"id"` del pulsante: nome fisso; il pannello lo usa per ricordare ordine e pulsanti nascosti.
 - `"sub"`: seconda riga. `"color"`: colore (si adatta al tema). `"w"`/`"h"`: celle occupate.
 - `"confirm": true`: va tenuto premuto. `"repeat": true`: si ripete tenendo premuto. `"hidden": true`: nascosto finché non lo mostri dal pannello.
-- `"toggle": true` (in `apps.json`): pallino verde se aperta e un altro tocco la chiude. `"whenRunning": "focus"`: se è aperta la porta in primo piano.
+- `"toggle": true` (nell'app): pallino verde se aperta e un altro tocco la chiude. `"whenRunning": "focus"`: se è aperta la porta in primo piano.
 - Nei percorsi: `%USERPROFILE%`, `%LOCALAPPDATA%`, `~`, `$HOME`, `*` per la versione; anche collegamenti `.lnk` e `shell:AppsFolder\<AppID>` (app dello Store).
+- Più app in un file solo: `{ "apps": { "obs": { ... }, "spotify": { ... } } }`.
 
 ## Un pulsante diverso su Windows e Linux
 
@@ -236,7 +278,7 @@ e in `config/apps.json`:
 
 - `"os": "linux"` (o `"windows"`): il pulsante, o la pagina intera, c'è solo su quel sistema.
 - `"linux": { ... }` (o `"windows"`): i campi che cambiano su quel sistema, anche l'`action`.
-- In `apps.json` e `commands.json` la variante `"linux"` può essere una **lista di alternative**: vale la prima installata.
+- Nelle app e nei comandi la variante `"linux"` può essere una **lista di alternative**: vale la prima installata.
 
 ## Tipi di azione
 
@@ -248,7 +290,7 @@ e in `config/apps.json`:
 | Scrivi testo | `{ "type": "text", "value": "Ciao!\n" }` |
 | Musica e volume | `{ "type": "media", "command": "play_pause" }` (`next`, `volume_up`, `app_mute`...) |
 | Apri URL / cartella | `{ "type": "open_url", "url": "https://github.com" }`, `{ "type": "open_path", "path": "~/Documents" }` |
-| Comando | `{ "type": "command", "id": "lock_pc" }` → definito in `commands.json` |
+| Comando | `{ "type": "command", "id": "lock_pc" }` → un comando consentito (sotto) |
 | Cambia pagina | `{ "type": "page", "page": "blender" }` |
 | Discord | `{ "type": "discord", "command": "mute" }` (`deaf`, `video`, `stream`) |
 | Macro | `{ "type": "macro", "steps": [ {…}, { "type": "wait", "ms": 300 }, {…} ] }` |
@@ -257,10 +299,10 @@ Tasti disponibili, opzioni e dettagli: [Tipi di azione](app/README.md#tipi-di-az
 
 ## Un comando nuovo
 
-Il tablet non può lanciare comandi liberi: solo quelli scritti in `config/commands.json`.
+Il tablet non può lanciare comandi liberi: solo quelli consentiti. Crea `config/commands/indirizzi_ip.json`:
 
 ```json
-"indirizzi_ip": {
+{
   "label": "Indirizzi IP",
   "showOutput": true,
   "windows": { "cmd": "ipconfig" },
@@ -269,34 +311,6 @@ Il tablet non può lanciare comandi liberi: solo quelli scritti in `config/comma
 ```
 
 Poi il pulsante: `{ "label": "IP", "icon": "link", "action": { "type": "command", "id": "indirizzi_ip" } }`: l'output compare sul tablet.
-
-## Aggiungere una pagina
-
-In `config/dock.json`, dentro `pages`:
-
-```json
-{
-  "id": "stream",
-  "title": "STREAM",
-  "icon": "live",
-  "description": "Scene e microfono",
-  "autoGrid": true,
-  "tiles": [
-    { "id": "scena1", "label": "SCENA 1", "action": { "type": "hotkey", "keys": ["CTRL", "F1"], "focus": "obs64" } },
-    { "id": "mic", "label": "MUTA", "icon": "mic", "action": { "type": "discord", "command": "mute" } },
-    { "widget": "clock", "w": 2, "h": 1 }
-  ]
-}
-```
-
-- `"tab": false`: la pagina è disponibile ma non nella barra (la aggiungi dal pannello).
-- `"columns"`/`"rows"`: griglia fissa; `"autoGrid": true`: si adatta al numero di pulsanti.
-- `"buttonGrid": true`: pulsanti in griglia a sinistra e widget a destra (`"widgetWidth": 0.5`), come la pagina VIBER.
-- **Widget** disponibili: `system`, `nowplaying`, `queue`, `github`, `todo`, `clock`, `claude`, `chat` (con `"provider": "ollama"`),
-  `discord`, `screens`, `mail`, `audio`, `vdesk`, `viber`.
-- **Icone**: `home music apps code github chat sparkle check cube film lock play pause stop next prev volup voldown mute shuffle repeat
-  folder terminal cpu camera desktop robot refresh save keyboard undo redo fullscreen cut flag back add close send trash power bolt mic link
-  headset gamepad cards tank sword layout live camoff window target mail attach`.
 
 ## Mettere mano al codice
 
@@ -312,13 +326,15 @@ npm run themes    # rigenera i temi dopo una modifica a public/css/dock.css
 ```text
 app/
   server/index.js        API (Express) e avvio
-  server/config.js       lettura dei JSON con commenti, ricarica a caldo, unione con i default
+  server/config.js       lettura dei JSON con commenti, ricarica a caldo, unione di default, tuoi file e cartelle
+  server/check.js        controllo della configurazione (problemi mostrati nel pannello)
   server/actions/        motore delle azioni (HANDLERS) e macro
   server/platform/       windows.js (+ helper PowerShell), linux.js: tutto ciò che dipende dal sistema
   server/services/       un file per funzione: media, discord, mail, games, screens, mixer, claude...
   public/                client del tablet (ES5, niente framework): app.js, widgets.js, icons.js, css/
   control/               pannello di controllo del PC
-  config/defaults/       configurazione predefinita (+ history.json)
+  config/defaults/       configurazione predefinita: pages/ (una pagina per file), JSON, history.json
+  schema/                schemi JSON di pagine, app e comandi (per l'editor)
   scripts/               avvio (bootstrap.js), temi, demo, icona Windows/Linux
   tests/                 test con node --test
 ```
@@ -331,8 +347,11 @@ Come aggiungere le cose più comuni:
 - **Un widget**: una funzione `function mioWidget(root, tile, app)` in `public/js/widgets.js` che restituisce
   `{ update: function (stato) {}, resize: function (w, h) {}, destroy: function () {} }`, registrata nella mappa `TYPES`.
   I dati arrivano da `/api/state` (in `update`) o da una rotta nuova in `server/index.js`.
-- **Una pagina predefinita**: in `config/defaults/dock.json`. Prima di cambiare un file in `config/defaults/` aggiungi l'impronta
-  della versione vecchia in `config/defaults/history.json` (così chi non l'ha modificato riceve l'aggiornamento).
+- **Una pagina predefinita**: un file nuovo in `config/defaults/pages/` e il suo id nella lista `"pages"` di `config/defaults/dock.json`.
+  Prima di cambiare un JSON in `config/defaults/` (non le pagine) aggiungi l'impronta della versione vecchia in
+  `config/defaults/history.json` (così chi non l'ha modificato riceve l'aggiornamento).
+- **Un widget o un tipo di azione nuovo**: aggiungilo anche a `schema/page.schema.json` e, per i widget, a `WIDGETS` in `server/check.js`
+  (i test controllano che siano allineati).
 
 Regole da rispettare:
 

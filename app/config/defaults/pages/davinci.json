@@ -1,0 +1,26 @@
+// Pagina DAVINCI RESOLVE (id "davinci"): una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/davinci.json e modifica la copia: quella vince su questa.
+{
+  "id": "davinci",
+  "title": "DAVINCI RESOLVE",
+  "icon": "film",
+  "description": "Scorciatoie di DaVinci Resolve: timeline, tagli, pagine",
+  "tab": false,
+  "autoGrid": true,
+  "tiles": [
+    { "id": "apri", "label": "APRI", "icon": "film", "color": "#6b4fa0", "action": { "type": "launch", "app": "davinci" } },
+    { "id": "salva", "label": "SALVA", "icon": "save", "sub": "Ctrl+S", "action": { "type": "hotkey", "keys": ["CTRL", "S"], "focus": "Resolve" } },
+    { "id": "play", "label": "PLAY", "icon": "play", "sub": "Spazio", "action": { "type": "key", "key": "SPACE", "focus": "Resolve" } },
+    { "id": "stop", "label": "STOP", "icon": "stop", "sub": "K", "action": { "type": "key", "key": "K", "focus": "Resolve" } },
+    { "id": "taglia", "label": "TAGLIA", "icon": "cut", "sub": "Ctrl+B", "action": { "type": "hotkey", "keys": ["CTRL", "B"], "focus": "Resolve" } },
+    { "id": "mark_in", "label": "MARK IN", "icon": "flag", "sub": "I", "action": { "type": "key", "key": "I", "focus": "Resolve" } },
+    { "id": "mark_out", "label": "MARK OUT", "icon": "flag", "sub": "O", "action": { "type": "key", "key": "O", "focus": "Resolve" } },
+    { "id": "annulla", "label": "ANNULLA", "icon": "undo", "sub": "Ctrl+Z", "repeat": true, "action": { "type": "hotkey", "keys": ["CTRL", "Z"], "focus": "Resolve" } },
+    { "id": "ripeti", "label": "RIPETI", "icon": "redo", "sub": "Ctrl+Shift+Z", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "Z"], "focus": "Resolve" } },
+    { "id": "frame_prev", "label": "FRAME -", "icon": "prev", "sub": "←", "repeat": true, "action": { "type": "key", "key": "LEFT", "focus": "Resolve" } },
+    { "id": "edit", "label": "EDIT", "icon": "film", "sub": "Shift+4", "action": { "type": "hotkey", "keys": ["SHIFT", "4"], "focus": "Resolve" } },
+    { "id": "color", "label": "COLOR", "icon": "film", "sub": "Shift+6", "action": { "type": "hotkey", "keys": ["SHIFT", "6"], "focus": "Resolve" } },
+    { "id": "deliver", "label": "DELIVER", "icon": "camera", "sub": "Shift+8", "action": { "type": "hotkey", "keys": ["SHIFT", "8"], "focus": "Resolve" } },
+    { "id": "frame_next", "label": "FRAME +", "icon": "next", "sub": "→", "repeat": true, "action": { "type": "key", "key": "RIGHT", "focus": "Resolve" } }
+  ]
+}

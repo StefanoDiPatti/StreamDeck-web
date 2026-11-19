@@ -61,7 +61,7 @@ function normalizeArgs(args) {
 
 // Esegue un comando della whitelist (config/commands.json) e cattura l'output.
 function runCommand(id) {
-  const all = (config.get('commands').commands) || {};
+  const all = config.commands();
   const def = forPlatform(all[id]);
   if (!all[id]) return Promise.reject(fail('Comando "' + id + '" non definito in commands.json', 'NOT_FOUND'));
   if (!def || !def.cmd) return Promise.reject(fail('Comando "' + id + '" non disponibile su questo sistema', 'UNSUPPORTED'));

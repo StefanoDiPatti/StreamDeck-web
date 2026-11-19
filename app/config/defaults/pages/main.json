@@ -1,0 +1,16 @@
+// Pagina HOME (id "main"): una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/main.json e modifica la copia: quella vince su questa.
+{
+  "id": "main",
+  "title": "HOME",
+  "icon": "home",
+  "description": "Musica, stato del PC e TODO delle Memo",
+  "linux": { "description": "Musica, stato del PC e TODO" },
+  "columns": 6,
+  "rows": 4,
+  "tiles": [
+    { "widget": "nowplaying", "w": 3, "h": 2 },
+    { "widget": "todo", "w": 3, "h": 4 },
+    { "widget": "system", "w": 3, "h": 2 }
+  ]
+}

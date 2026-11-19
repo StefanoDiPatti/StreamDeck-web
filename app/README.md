@@ -284,13 +284,15 @@ Tutti i file accettano commenti `//`. **Salva e il tablet si aggiorna da solo**,
 
 | File | Cosa contiene |
 |---|---|
-| `config/dock.json` | pagine, pulsanti e widget |
+| `config/pages/<id>.json` | le tue pagine, una per file (anche le copie modificate di quelle predefinite) |
+| `config/apps/<id>.json`, `config/commands/<id>.json` | le tue app e i tuoi comandi, uno per file |
+| `config/dock.json` | titolo, griglia, pagina iniziale e ordine delle pagine (`"pages"`: lista di id) |
 | `config/apps.json` | programmi avviabili (percorsi per Windows e Linux) |
 | `config/commands.json` | comandi consentiti (whitelist) |
 | `config/services.json` | musica, Claude, voce, GitHub, Ollama, monitor di sistema |
 | `.env` | porta, codice di accesso, token e chiavi API |
 
-I file in `config/` sono tuoi e non vanno su git. I default stanno in `config/defaults/`: cancella un file da `config/` per ripristinarlo.
+I file in `config/` sono tuoi e non vanno su git. I default stanno in `config/defaults/` (le pagine in `config/defaults/pages/`, una per file): cancella un file da `config/` per ripristinarlo. Esempi passo passo nella [guida per sviluppatori](../README.md#3-guida-per-sviluppatori-personalizza-la-tua-vibe-deck); in fondo al pannello di controllo trovi l'elenco dei problemi della configurazione.
 Se un file in `config/` non l'hai mai modificato, all'avvio passa da solo alla nuova versione predefinita (dopo un `git pull`). Quelli modificati restano come sono.
 
 ### Windows e Linux
@@ -317,13 +319,13 @@ In `apps.json` e `commands.json` la variante `"linux"` può essere una lista di 
 
 ### Aggiungere un pulsante
 
-In `config/dock.json`, dentro `tiles` della pagina:
+In `tiles` della pagina (`config/pages/<id>.json`; per una pagina predefinita copiala prima da `config/defaults/pages/`):
 
 ```json
 { "label": "OBS", "icon": "camera", "color": "#5b3fa0", "action": { "type": "launch", "app": "obs" } }
 ```
 
-e in `config/apps.json`:
+e in `config/apps.json` (oppure in un file `config/apps/obs.json` con solo l'oggetto dell'app):
 
 ```json
 "obs": {

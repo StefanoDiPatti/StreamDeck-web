@@ -1,0 +1,26 @@
+// Pagina BLENDER (id "blender"): una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/blender.json e modifica la copia: quella vince su questa.
+{
+  "id": "blender",
+  "title": "BLENDER",
+  "icon": "cube",
+  "description": "Scorciatoie di Blender: viste, render, salva",
+  "tab": false,
+  "autoGrid": true,
+  "tiles": [
+    { "id": "apri", "label": "APRI", "icon": "cube", "color": "#d9730d", "action": { "type": "launch", "app": "blender" } },
+    { "id": "salva", "label": "SALVA", "icon": "save", "sub": "Ctrl+S", "action": { "type": "hotkey", "keys": ["CTRL", "S"], "focus": "blender" } },
+    { "id": "annulla", "label": "ANNULLA", "icon": "undo", "sub": "Ctrl+Z", "repeat": true, "action": { "type": "hotkey", "keys": ["CTRL", "Z"], "focus": "blender" } },
+    { "id": "ripeti", "label": "RIPETI", "icon": "redo", "sub": "Ctrl+Shift+Z", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "Z"], "focus": "blender" } },
+    { "id": "render", "label": "RENDER", "icon": "camera", "sub": "F12", "color": "#a3530a", "action": { "type": "key", "key": "F12", "focus": "blender" } },
+    { "id": "play", "label": "PLAY", "icon": "play", "sub": "Spazio", "action": { "type": "key", "key": "SPACE", "focus": "blender" } },
+    { "id": "camera", "label": "CAMERA", "icon": "camera", "sub": "Num 0", "action": { "type": "key", "key": "NUM0", "focus": "blender" } },
+    { "id": "fronte", "label": "FRONTE", "icon": "cube", "sub": "Num 1", "action": { "type": "key", "key": "NUM1", "focus": "blender" } },
+    { "id": "destra", "label": "DESTRA", "icon": "cube", "sub": "Num 3", "action": { "type": "key", "key": "NUM3", "focus": "blender" } },
+    { "id": "alto", "label": "ALTO", "icon": "cube", "sub": "Num 7", "action": { "type": "key", "key": "NUM7", "focus": "blender" } },
+    { "id": "wireframe", "label": "WIREFRAME", "icon": "cube", "sub": "Shift+Z", "action": { "type": "hotkey", "keys": ["SHIFT", "Z"], "focus": "blender" } },
+    { "id": "schermo", "label": "SCHERMO", "icon": "fullscreen", "sub": "Ctrl+Spazio", "action": { "type": "hotkey", "keys": ["CTRL", "SPACE"], "focus": "blender" } },
+    { "id": "apri_file", "label": "APRI FILE", "icon": "folder", "sub": "Ctrl+O", "action": { "type": "hotkey", "keys": ["CTRL", "O"], "focus": "blender" } },
+    { "id": "render_anim", "label": "RENDER ANIM", "icon": "film", "sub": "Ctrl+F12", "confirm": true, "action": { "type": "hotkey", "keys": ["CTRL", "F12"], "focus": "blender" } }
+  ]
+}
