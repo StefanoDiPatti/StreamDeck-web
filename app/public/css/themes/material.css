@@ -204,8 +204,8 @@ svg.ic.dc-camflag { fill: #7fd99a; }
 .sc-zin { border: 1px dashed #44474e; background: rgba(168, 199, 250, 0.06); }
 .sc-zin b { color: #a8c7fa; }
 .sc-zin span { color: #c4c6cf; }
-.sc-zone.on .sc-zin { border: 2px solid #a8c7fa; background: rgba(168, 199, 250, 0.28); }
-.sc-zone.on .sc-zin b { color: #e9e9ee; }
+.sc-zone.on .sc-zin, .sc-zone.drop .sc-zin { border: 2px solid #a8c7fa; background: rgba(168, 199, 250, 0.28); }
+.sc-zone.on .sc-zin b, .sc-zone.drop .sc-zin b { color: #e9e9ee; }
 .sc-lay { background: #1d2024; }
 .sc-lay.on { background: #33416b; }
 .sc-lay.pressed { background: #2c3a4f; }

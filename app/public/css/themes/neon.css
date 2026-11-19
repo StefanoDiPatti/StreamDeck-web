@@ -209,8 +209,8 @@ svg.ic.dc-camflag { fill: #39ff88; }
 .sc-zin { border: 1px dashed #333333; background: rgba(65, 209, 255, 0.06); }
 .sc-zin b { color: #41d1ff; }
 .sc-zin span { color: #bdbdbd; }
-.sc-zone.on .sc-zin { border: 2px solid #41d1ff; background: rgba(65, 209, 255, 0.28); }
-.sc-zone.on .sc-zin b { color: #f5f5f5; }
+.sc-zone.on .sc-zin, .sc-zone.drop .sc-zin { border: 2px solid #41d1ff; background: rgba(65, 209, 255, 0.28); }
+.sc-zone.on .sc-zin b, .sc-zone.drop .sc-zin b { color: #f5f5f5; }
 .sc-lay { background: #111111; }
 .sc-lay.on { background: #2a1446; }
 .sc-lay.pressed { background: #06323d; }

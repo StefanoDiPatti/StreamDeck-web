@@ -1786,7 +1786,8 @@ var Widgets = (function () {
         var x = Math.round(ox + (m.x - minX) * k) + 3, y = Math.round(oy + (m.y - minY) * k) + 3;
         var w = Math.round(m.w * k) - 6, h = Math.round(m.h * k) - 6;
         html += '<div class="sc-mon' + (sel ? ' sel' : '') + '" data-mon="' + D.esc(m.id) + '" style="left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px">';
-        if (sel && l) {
+        // zone della divisione scelta: sul monitor selezionato, e su tutti mentre trascini una finestra
+        if ((sel || drag) && l) {
           var zs = zones(l, m);
           for (var z = 0; z < zs.length; z++) {
             var placed = SC.placed[m.id + '|' + l.id + '|' + z];
@@ -1967,6 +1968,9 @@ var Widgets = (function () {
       var d = D.closestAttr(el, 'data-desk', root);
       if (d) return { kind: 'desk', el: d, id: d.getAttribute('data-desk') };
       var m = D.closestAttr(el, 'data-mon', root);
+      var z = D.closestAttr(el, 'data-zone', root);
+      // una zona della divisione scelta: la finestra si ancora lì, con quella misura
+      if (z && m) return { kind: 'zone', el: z, id: m.getAttribute('data-mon'), zone: parseInt(z.getAttribute('data-zone'), 10) };
       if (m) return { kind: 'mon', el: m, id: m.getAttribute('data-mon') };
       return null;
     }
@@ -1975,6 +1979,7 @@ var Widgets = (function () {
       drag = { id: row.getAttribute('data-win'), title: title, row: row, target: null };
       D.addClass(row, 'dragging');
       D.addClass(root, 'sc-dragging');
+      renderMap();   // mostra le zone su tutti i monitor
       var g = D.el('div', 'sc-ghost');
       g.innerHTML = Icons.html('window') + D.esc(short(title, 30));
       document.body.appendChild(g);
@@ -1998,8 +2003,10 @@ var Widgets = (function () {
       D.removeClass(d.row, 'dragging');
       D.removeClass(root, 'sc-dragging');
       if (d.target) D.removeClass(d.target.el, 'drop');
+      renderMap();
       if (cancel) return;
-      if (!d.target) { app.toast('Lasciala su un desktop virtuale, su Nuovo o su un monitor', 'info'); return; }
+      if (!d.target) { app.toast('Lasciala su una zona di un monitor, su un desktop virtuale o su Nuovo', 'info'); return; }
+      if (d.target.kind === 'zone') return dropOnZone(d, d.target.id, d.target.zone);
       var body = { window: d.id };
       if (d.target.kind === 'mon') body.monitor = d.target.id;
       else body.desktop = d.target.kind === 'new' ? 'new' : d.target.id;
@@ -2012,6 +2019,23 @@ var Widgets = (function () {
         lastWins = ''; setTimeout(loadWins, 400);
         lastDesks = ''; setTimeout(loadDesks, 600);
       }, 15000);
+    }
+    // finestra lasciata su una zona: va su quel monitor, nella zona della divisione scelta
+    function dropOnZone(d, monId, zone) {
+      var lay = layout(SC.layout);
+      if (!lay) return;
+      D.addClass(d.row, 'busy');
+      D.api.post('/api/screens/place', { window: d.id, monitor: monId, layout: lay.id, zone: zone }, function (err) {
+        D.removeClass(d.row, 'busy');
+        if (err) return app.toast(err.message, 'err');
+        SC.placed[monId + '|' + lay.id + '|' + zone] = d.title;
+        SC.mon = monId; SC.zone = null;
+        D.store.set('sc:mon', monId);
+        var m = mon(monId);
+        app.toast('Ancorata nella zona ' + (zone + 1) + (m ? ' del monitor ' + m.n : '') + ': ' + short(d.title, 30), 'ok');
+        renderAll();
+        lastWins = ''; setTimeout(loadWins, 400);
+      });
     }
     function rowAt(t) {
       var row = D.closestAttr(t, 'data-win', winsEl);

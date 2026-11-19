@@ -593,8 +593,8 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .sc-zin { position: absolute; left: 3px; top: 3px; right: 3px; bottom: 3px; border: 1px dashed #3b5170; border-radius: 6px; background: rgba(61, 139, 253, 0.06); text-align: center; overflow: hidden; }
 .sc-zin b { display: block; font-size: 18px; color: #6cb6ff; margin-top: 8px; }
 .sc-zin span { display: block; font-size: 11px; color: #c6d1dc; padding: 2px 4px; line-height: 1.25; }
-.sc-zone.on .sc-zin { border: 2px solid #6cb6ff; background: rgba(61, 139, 253, 0.28); }
-.sc-zone.on .sc-zin b { color: #fff; }
+.sc-zone.on .sc-zin, .sc-zone.drop .sc-zin { border: 2px solid #6cb6ff; background: rgba(61, 139, 253, 0.28); }
+.sc-zone.on .sc-zin b, .sc-zone.drop .sc-zin b { color: #fff; }
 .sc-layouts { position: absolute; left: 8px; right: 8px; bottom: 62px; height: 72px; overflow: hidden; white-space: nowrap; }
 .sc-lay { display: inline-block; vertical-align: top; width: 11.5%; margin-right: 1%; height: 72px; border-radius: 8px; background: #172029; text-align: center; padding-top: 7px; }
 .sc-lay:last-child { margin-right: 0; }
