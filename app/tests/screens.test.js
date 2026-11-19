@@ -47,14 +47,11 @@ test('nome del monitor dall\'EDID abbinato al DeviceID', function () {
   assert.strictEqual(common.monitorName('\\\\?\\DISPLAY#XXX#1#{x}', names), '');
 });
 
-test('i giochi sono nei default con la pagina GAMES e la pagina SCHERMI', function () {
-  const apps = config.apps();
-  ['hearthstone', 'world_of_tanks', 'league_of_legends'].forEach(function (id) {
-    assert.ok(apps[id], id);
-    assert.strictEqual(apps[id].game, true);
-    assert.ok(Array.isArray(apps[id].windows.path), id + ': più percorsi possibili');
-  });
+test('nessun gioco nei default (si aggiungono dal pannello); pagine GAMES e SCHERMI', function () {
+  const defApps = config.parseJson(require('fs').readFileSync(require('path').join(__dirname, '..', 'config', 'defaults', 'apps.json'), 'utf8')).apps;
+  Object.keys(defApps).forEach(function (id) { assert.ok(!defApps[id].game, id + ': i giochi non vanno nel repository'); });
   const raw = config.parseJson(require('fs').readFileSync(require('path').join(__dirname, '..', 'config', 'defaults', 'dock.json'), 'utf8'));
+  assert.strictEqual(raw.pages.filter(function (p) { return p.id === 'games'; })[0].source, 'games');
   const ids = config.normalizeDock(raw, {}, 'windows').pages.map(function (p) { return p.id; });
   assert.ok(ids.indexOf('games') >= 0 && ids.indexOf('screens') >= 0);
   // SCHERMI c'è anche su Linux (KDE Plasma con kdotool), con la guida delle scorciatoie di Linux

@@ -257,8 +257,11 @@
   function makeButton(tile) {
     var b = D.el('div', 'tile btn' + (tile.confirm ? ' confirm' : ''));
     var icon = Icons.html(tile.icon);
-    if (!icon) D.addClass(b, 'no-icon');
-    b.innerHTML = (icon ? '<div class="t-icon">' + icon + '</div>' : '') +
+    if (!icon && !tile.image) D.addClass(b, 'no-icon');
+    // "image": immagine al posto dell'icona (es. i giochi), adattata al riquadro
+    var pic = tile.image ? '<div class="t-icon t-img" style="background-image:url(\'' + D.esc(tile.image).replace(/'/g, '%27') + '\')"></div>' : '';
+    if (tile.image) D.addClass(b, 'has-img');
+    b.innerHTML = (pic || (icon ? '<div class="t-icon">' + icon + '</div>' : '')) +
       '<div class="t-label">' + D.esc(tile.label || '') + '</div>' +
       (tile.sub ? '<div class="t-sub">' + D.esc(tile.sub) + '</div>' : '') +
       (tile.confirm ? '<div class="t-hold"><i></i></div>' : '');

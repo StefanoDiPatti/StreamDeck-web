@@ -326,7 +326,16 @@ function mergedDock() {
   return Object.assign({}, user, { pages: (user.pages || []).concat(extra) });
 }
 
-function dock() { return normalizeDock(mergedDock(), get('layout')); }
+// Pagine con "source": "games": i pulsanti sono i giochi scelti dal pannello (data/games.json).
+function withGames(d) {
+  if (!Array.isArray(d.pages) || !d.pages.some(function (p) { return p && p.source === 'games'; })) return d;
+  const games = require('./services/games');
+  return Object.assign({}, d, {
+    pages: d.pages.map(function (p) { return p && p.source === 'games' ? Object.assign({}, p, { tiles: games.tiles(), autoGrid: true }) : p; })
+  });
+}
+
+function dock() { return normalizeDock(withGames(mergedDock()), get('layout')); }
 
 // Il dock per il tablet: senza i dati che servono solo al pannello.
 function tabletDock() {
@@ -340,13 +349,14 @@ function tabletDock() {
   });
 }
 
-// apps.json dell'utente + le app dei default che non ha (es. i giochi aggiunti dopo).
+// apps.json dell'utente + le app dei default che non ha + i giochi scelti dal pannello.
 function apps() {
+  const games = require('./services/games').apps();
   const user = (get('apps').apps) || {};
-  if (fileFor('apps') === path.join(paths.DEFAULTS_DIR, 'apps.json')) return user;
+  if (fileFor('apps') === path.join(paths.DEFAULTS_DIR, 'apps.json')) return Object.assign({}, user, games);
   let defaults = {};
   try { defaults = parseJson(fs.readFileSync(path.join(paths.DEFAULTS_DIR, 'apps.json'), 'utf8')).apps || {}; } catch (e) { /* nessun default */ }
-  return Object.assign({}, defaults, user);
+  return Object.assign({}, defaults, user, games);
 }
 
 function findTile(pageId, tileId) {
@@ -359,12 +369,17 @@ function findTile(pageId, tileId) {
   return null;
 }
 
+// data/games.json (giochi scelti dal pannello): anche lui cambia la pagina GAMES.
+function gamesStamp() {
+  try { return Math.round(fs.statSync(path.join(paths.DATA_DIR, 'games.json')).mtimeMs); } catch (e) { return 0; }
+}
+
 // Cambia quando uno dei file di config cambia: il client lo usa per ricaricarsi.
 function version() {
   return FILES.map(function (name) {
     get(name);
     return cache[name] ? Math.round(cache[name].mtime) : 0;
-  }).join('-');
+  }).concat([gamesStamp()]).join('-');
 }
 
 // Salva le scelte del pannello di controllo. Ritorna il dock aggiornato.
@@ -372,7 +387,7 @@ function version() {
 //  tiles     : { idPagina: { show: [id pulsanti in ordine], hide: [id nascosti] } }
 //              (se manca restano le scelte già salvate)
 function saveLayout(tabs, home, tiles) {
-  const all = normalizeDock(mergedDock(), {});
+  const all = normalizeDock(withGames(mergedDock()), {});
   const ids = {};
   all.pages.forEach(function (p) { ids[p.id] = p; });
   tabs = (Array.isArray(tabs) ? tabs : []).map(String).filter(function (id, i, a) { return ids[id] && a.indexOf(id) === i; });

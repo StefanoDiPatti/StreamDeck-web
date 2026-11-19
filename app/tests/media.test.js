@@ -86,10 +86,6 @@ test('app con apri/chiudi: processo ricavato dal percorso o dalla config', funct
     assert.deepStrictEqual(apps.vscode.processes, ['code']);
     assert.deepStrictEqual(apps.discord.processes, ['discord']);
     assert.strictEqual(apps.apple_music.bridge, 'apple');
-    // giochi: più processi, si portano in primo piano invece di chiuderli
-    assert.deepStrictEqual(apps.league_of_legends.processes, ['league of legends', 'leagueclientux']);
-    assert.strictEqual(apps.league_of_legends.toggle, false);
-    assert.strictEqual(apps.hearthstone.whenRunning, 'focus');
   }
   assert.ok(!apps.powershell, 'PowerShell non va chiuso dal tablet');
   assert.ok(!apps.files, 'Esplora file non va chiuso dal tablet');
