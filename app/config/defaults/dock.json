@@ -1,0 +1,270 @@
+// Layout della dock. Modifica e salva: il tablet si aggiorna da solo.
+//
+// Ogni pagina è una griglia (default 5 colonne x 3 righe, o "columns"/"rows"
+// della pagina). Le tile si dispongono da sinistra a destra; "w"/"h" = celle.
+//
+// Tile pulsante:
+//   { "label": "SALVA", "icon": "save", "color": "#2e7d32", "sub": "Ctrl+S",
+//     "action": { ... }, "repeat": true, "confirm": true }
+//   repeat  = tenendo premuto l'azione si ripete (volume)
+//   confirm = va tenuto premuto ~1s (azioni delicate)
+//   showRunning = id di un'app di apps.json: pallino verde quando è aperta
+//   id    = nome fisso del pulsante (serve al pannello di controllo per ricordare
+//           ordine e pulsanti nascosti; senza id vale la posizione nella pagina)
+//
+// Windows e Linux (il sistema si riconosce da solo):
+//   "os": "linux"  (o "windows")       -> pulsante/pagina solo su quel sistema
+//   "linux": { "label": "TERMINALE" }  -> campi che cambiano su quel sistema
+//                                         (anche "action"; idem "windows": {...})
+//   "autoGrid": true (pagina)          -> colonne e righe scelte in base ai pulsanti
+//
+// Azioni:
+//   { "type": "launch",   "app": "blender" }                 -> apps.json
+//   { "type": "hotkey",   "keys": ["CTRL","S"], "focus": "blender" }
+//   { "type": "key",      "key": "F12" }
+//   { "type": "text",     "value": "ciao\n" }
+//   { "type": "media",    "command": "play_pause" }  next, previous, stop -> app musicale
+//                         volume_up, volume_down, mute                  -> volume di SISTEMA
+//                         app_volume_up, app_volume_down, app_mute      -> volume dell'app musicale
+//   { "type": "open_url", "url": "https://github.com" }
+//   { "type": "command",  "id": "lock_pc" }                   -> commands.json
+//   { "type": "page",     "page": "blender" }
+//   { "type": "discord",  "command": "stream" }  mute, deaf, video (webcam), stream (Go Live del gioco aperto)
+//   { "type": "macro",    "steps": [ {azione}, {"type":"wait","ms":300}, ... ] }
+//   "focus" (opzionale) porta prima in primo piano il programma (nome processo).
+//
+// Tile widget:
+//   { "widget": "system" }  { "widget": "nowplaying" }  { "widget": "queue" }
+//   { "widget": "github" }  { "widget": "todo" }        { "widget": "clock" }
+//   { "widget": "claude" }  { "widget": "chat", "provider": "ollama" }  { "widget": "discord" }
+//   { "widget": "screens" } (monitor e disposizione delle finestre)  { "widget": "audio" } (dispositivi e volume delle app)
+//   { "widget": "mail" }    (posta in arrivo; account dal pannello di controllo)
+//   { "widget": "viber" } (pannelli e task di Viber)
+//   { "widget": "vdesk", "system": "windows" } (guida ai desktop virtuali; "linux" per partire da Linux)
+//
+// "description" = testo mostrato nel pannello di controllo sul PC, dove scegli
+// quali pagine stanno nella barra del tablet e in che ordine (config/layout.json).
+//
+// Icone disponibili: vedi README.
+{
+  "title": "VIBE DECK",
+  "grid": { "columns": 5, "rows": 3 },
+  "home": "main",
+  "pages": [
+    {
+      "id": "main",
+      "title": "HOME",
+      "icon": "home",
+      "description": "Musica, stato del PC e TODO delle Memo",
+      "linux": { "description": "Musica, stato del PC e TODO" },
+      "columns": 6,
+      "rows": 4,
+      "tiles": [
+        { "widget": "nowplaying", "w": 3, "h": 2 },
+        { "widget": "todo", "w": 3, "h": 4 },
+        { "widget": "system", "w": 3, "h": 2 }
+      ]
+    },
+    {
+      "id": "media",
+      "title": "MUSICA",
+      "icon": "music",
+      "description": "Brano in riproduzione e coda della playlist",
+      "tiles": [
+        { "widget": "nowplaying", "w": 3, "h": 3 },
+        { "widget": "queue", "w": 2, "h": 3 }
+      ]
+    },
+    {
+      "id": "apps",
+      "title": "APP",
+      "icon": "apps",
+      "description": "Avvio app (pallino verde se aperte), schermo, volume di sistema",
+      "columns": 6,
+      "rows": 3,
+      "autoGrid": true,
+      "tiles": [
+        { "id": "blender", "label": "BLENDER", "icon": "cube", "color": "#d9730d", "action": { "type": "launch", "app": "blender" } },
+        { "id": "davinci", "label": "DAVINCI", "icon": "film", "color": "#6b4fa0", "action": { "type": "launch", "app": "davinci" } },
+        { "id": "vscode", "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
+        { "id": "viber", "os": "linux", "label": "VIBER", "icon": "window", "color": "#5b45c9", "action": { "type": "launch", "app": "viber" } },
+        // Windows: app Claude. Linux: la web app di Claude (vedi apps.json)
+        { "id": "claude", "label": "CLAUDE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_desktop" } },
+        { "id": "apple_music", "label": "APPLE MUSIC", "icon": "music", "color": "#c2334d", "action": { "type": "launch", "app": "apple_music" } },
+        { "id": "radio_montecarlo", "label": "RADIO MC", "sub": "Monte Carlo", "icon": "radio", "color": "#14427a", "action": { "type": "launch", "app": "radio_montecarlo" } },
+        { "id": "unreal", "label": "UNREAL", "icon": "cube", "color": "#444b55", "action": { "type": "launch", "app": "unreal" } },
+        { "id": "discord", "label": "DISCORD", "icon": "chat", "color": "#4752c4", "action": { "type": "launch", "app": "discord" } },
+        { "id": "terminal", "label": "POWERSHELL", "icon": "terminal", "color": "#1f3b63", "linux": { "label": "TERMINALE" }, "action": { "type": "launch", "app": "powershell" } },
+        { "id": "files", "label": "FILE", "icon": "folder", "action": { "type": "launch", "app": "files" } },
+        { "id": "taskmgr", "label": "TASK MGR", "icon": "cpu", "linux": { "label": "MONITOR", "sub": "di sistema" }, "action": { "type": "launch", "app": "taskmgr" } },
+        { "id": "screenshot", "label": "SCREENSHOT", "icon": "camera", "sub": "Win+Shift+S", "action": { "type": "hotkey", "keys": ["WIN", "SHIFT", "S"] },
+          "linux": { "sub": "area", "action": { "type": "launch", "app": "screenshot" } } },
+        { "id": "desktop", "label": "DESKTOP", "icon": "desktop", "sub": "Win+D", "action": { "type": "hotkey", "keys": ["WIN", "D"] },
+          "linux": { "sub": "mostra", "action": { "type": "command", "id": "show_desktop" } } },
+        { "id": "lock", "label": "BLOCCA", "icon": "lock", "color": "#7a2730", "confirm": true, "action": { "type": "command", "id": "lock_pc" } },
+        { "id": "monitor_off", "label": "SCHERMO OFF", "icon": "power", "sub": "monitor", "color": "#2b3240", "action": { "type": "command", "id": "monitor_off" } },
+        { "id": "vol_down", "label": "VOL -", "icon": "voldown", "sub": "sistema", "repeat": true, "action": { "type": "media", "command": "volume_down" } },
+        { "id": "mute", "label": "MUTE", "icon": "mute", "sub": "sistema", "action": { "type": "media", "command": "mute" } },
+        { "id": "vol_up", "label": "VOL +", "icon": "volup", "sub": "sistema", "repeat": true, "action": { "type": "media", "command": "volume_up" } }
+      ]
+    },
+    {
+      "id": "dev",
+      "title": "DEV",
+      "icon": "code",
+      "description": "VS Code, Claude Code, terminale, OpenClaw e scorciatoie",
+      "autoGrid": true,
+      "tiles": [
+        { "id": "vscode", "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
+        // scorciatoie di VS Code: terminale integrato e palette dei comandi
+        { "id": "vscode_terminal", "label": "TERM VSC", "icon": "terminal", "sub": "Ctrl+`", "color": "#174f86", "action": { "type": "hotkey", "keys": ["CTRL", "BACKQUOTE"], "focus": "Code" } },
+        { "id": "vscode_palette", "label": "PALETTE", "icon": "keyboard", "sub": "Ctrl+Shift+P", "color": "#174f86", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "P"], "focus": "Code" } },
+        { "id": "claude_code", "label": "CLAUDE CODE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_code" } },
+        { "id": "terminal", "label": "POWERSHELL", "icon": "terminal", "color": "#1f3b63", "linux": { "label": "TERMINALE" }, "action": { "type": "launch", "app": "powershell" } },
+        { "id": "github", "label": "GITHUB", "icon": "github", "action": { "type": "open_url", "url": "https://github.com" } },
+        { "id": "git_status", "label": "GIT STATUS", "icon": "github", "action": { "type": "command", "id": "git_status_projects" } },
+        { "id": "openclaw_health", "label": "OPENCLAW", "icon": "robot", "sub": "health", "color": "#2c5e4f", "action": { "type": "command", "id": "openclaw_health" } },
+        { "id": "openclaw_restart", "label": "OPENCLAW", "icon": "refresh", "sub": "riavvia", "color": "#2c5e4f", "confirm": true, "action": { "type": "command", "id": "openclaw_restart" } },
+        { "id": "openclaw_dashboard", "label": "DASHBOARD", "icon": "desktop", "sub": "OpenClaw", "color": "#2c5e4f", "action": { "type": "command", "id": "openclaw_dashboard" } },
+        { "id": "ollama_ps", "label": "OLLAMA PS", "icon": "chat", "action": { "type": "command", "id": "ollama_ps" } },
+        { "id": "claude_ai", "label": "CLAUDE.AI", "icon": "sparkle", "action": { "type": "open_url", "url": "https://claude.ai" } },
+        { "id": "save", "label": "SALVA", "icon": "save", "sub": "Ctrl+S", "action": { "type": "hotkey", "keys": ["CTRL", "S"] } },
+        { "id": "undo", "label": "ANNULLA", "icon": "undo", "sub": "Ctrl+Z", "action": { "type": "hotkey", "keys": ["CTRL", "Z"] } },
+        { "id": "redo", "label": "RIPETI", "icon": "redo", "sub": "Ctrl+Y", "action": { "type": "hotkey", "keys": ["CTRL", "Y"] } }
+      ]
+    },
+    {
+      "id": "github",
+      "title": "GITHUB",
+      "icon": "github",
+      "description": "Repository, pull request e issue",
+      "tiles": [ { "widget": "github", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "ollama",
+      "title": "OLLAMA",
+      "icon": "chat",
+      "description": "Chat con i modelli locali di Ollama",
+      "tiles": [ { "widget": "chat", "provider": "ollama", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "claude",
+      "title": "CLAUDE",
+      "icon": "sparkle",
+      "description": "Chat, sessioni di Claude Code, dettatura, scrittura sul PC",
+      "tiles": [ { "widget": "claude", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "discord",
+      "title": "DISCORD",
+      "icon": "headset",
+      "description": "Server, canali vocali, chi c'è in stanza, mute e audio",
+      "tab": false,
+      "tiles": [ { "widget": "discord", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "games",
+      "title": "GAMES",
+      "icon": "gamepad",
+      "description": "Hearthstone, World of Tanks e League of Legends (pallino verde se aperti)",
+      "tab": false,
+      "columns": 3,
+      "rows": 1,
+      "tiles": [
+        { "id": "hearthstone", "label": "HEARTHSTONE", "icon": "cards", "color": "#8a5a1c", "showRunning": "hearthstone", "action": { "type": "launch", "app": "hearthstone" } },
+        { "id": "world_of_tanks", "label": "WORLD OF TANKS", "icon": "tank", "color": "#5b3a1e", "showRunning": "world_of_tanks", "action": { "type": "launch", "app": "world_of_tanks" } },
+        { "id": "league_of_legends", "label": "LEAGUE OF LEGENDS", "icon": "sword", "color": "#1d4a5e", "showRunning": "league_of_legends", "action": { "type": "launch", "app": "league_of_legends" } }
+      ]
+    },
+    {
+      "id": "mail",
+      "title": "EMAIL",
+      "icon": "mail",
+      "description": "Posta in arrivo di Gmail, Outlook, iCloud e altri (account scelti dal pannello)",
+      "tab": false,
+      "tiles": [ { "widget": "mail", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "screens",
+      "title": "SCHERMI",
+      "icon": "layout",
+      "description": "Monitor, disposizione delle finestre (come Snap di Windows) e desktop virtuali",
+      "os": "windows",
+      "tab": false,
+      "tiles": [ { "widget": "screens", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "vdesk",
+      "title": "DESKTOP VIRTUALI",
+      "icon": "keyboard",
+      "description": "Guida alle scorciatoie dei desktop virtuali (su Windows è nella pagina SCHERMI, pulsante GUIDA)",
+      "os": "linux",
+      "tab": false,
+      "tiles": [ { "widget": "vdesk", "system": "windows", "linux": { "system": "linux" }, "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "audio",
+      "title": "AUDIO",
+      "icon": "volup",
+      "description": "Uscite e microfoni (predefinito, volume, mute) e volume di ogni app",
+      "tab": false,
+      "tiles": [ { "widget": "audio", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "viber",
+      "title": "VIBER",
+      "icon": "code",
+      "description": "Viber: passa a terminale, git, browser, chat, task e file, barra laterale, task del progetto",
+      "tab": false,
+      "tiles": [ { "widget": "viber", "w": 5, "h": 3 } ]
+    },
+    {
+      "id": "blender",
+      "title": "BLENDER",
+      "icon": "cube",
+      "description": "Scorciatoie di Blender: viste, render, salva",
+      "tab": false,
+      "autoGrid": true,
+      "tiles": [
+        { "id": "apri", "label": "APRI", "icon": "cube", "color": "#d9730d", "action": { "type": "launch", "app": "blender" } },
+        { "id": "salva", "label": "SALVA", "icon": "save", "sub": "Ctrl+S", "action": { "type": "hotkey", "keys": ["CTRL", "S"], "focus": "blender" } },
+        { "id": "annulla", "label": "ANNULLA", "icon": "undo", "sub": "Ctrl+Z", "repeat": true, "action": { "type": "hotkey", "keys": ["CTRL", "Z"], "focus": "blender" } },
+        { "id": "ripeti", "label": "RIPETI", "icon": "redo", "sub": "Ctrl+Shift+Z", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "Z"], "focus": "blender" } },
+        { "id": "render", "label": "RENDER", "icon": "camera", "sub": "F12", "color": "#a3530a", "action": { "type": "key", "key": "F12", "focus": "blender" } },
+        { "id": "play", "label": "PLAY", "icon": "play", "sub": "Spazio", "action": { "type": "key", "key": "SPACE", "focus": "blender" } },
+        { "id": "camera", "label": "CAMERA", "icon": "camera", "sub": "Num 0", "action": { "type": "key", "key": "NUM0", "focus": "blender" } },
+        { "id": "fronte", "label": "FRONTE", "icon": "cube", "sub": "Num 1", "action": { "type": "key", "key": "NUM1", "focus": "blender" } },
+        { "id": "destra", "label": "DESTRA", "icon": "cube", "sub": "Num 3", "action": { "type": "key", "key": "NUM3", "focus": "blender" } },
+        { "id": "alto", "label": "ALTO", "icon": "cube", "sub": "Num 7", "action": { "type": "key", "key": "NUM7", "focus": "blender" } },
+        { "id": "wireframe", "label": "WIREFRAME", "icon": "cube", "sub": "Shift+Z", "action": { "type": "hotkey", "keys": ["SHIFT", "Z"], "focus": "blender" } },
+        { "id": "schermo", "label": "SCHERMO", "icon": "fullscreen", "sub": "Ctrl+Spazio", "action": { "type": "hotkey", "keys": ["CTRL", "SPACE"], "focus": "blender" } },
+        { "id": "apri_file", "label": "APRI FILE", "icon": "folder", "sub": "Ctrl+O", "action": { "type": "hotkey", "keys": ["CTRL", "O"], "focus": "blender" } },
+        { "id": "render_anim", "label": "RENDER ANIM", "icon": "film", "sub": "Ctrl+F12", "confirm": true, "action": { "type": "hotkey", "keys": ["CTRL", "F12"], "focus": "blender" } }
+      ]
+    },
+    {
+      "id": "davinci",
+      "title": "DAVINCI RESOLVE",
+      "icon": "film",
+      "description": "Scorciatoie di DaVinci Resolve: timeline, tagli, pagine",
+      "tab": false,
+      "autoGrid": true,
+      "tiles": [
+        { "id": "apri", "label": "APRI", "icon": "film", "color": "#6b4fa0", "action": { "type": "launch", "app": "davinci" } },
+        { "id": "salva", "label": "SALVA", "icon": "save", "sub": "Ctrl+S", "action": { "type": "hotkey", "keys": ["CTRL", "S"], "focus": "Resolve" } },
+        { "id": "play", "label": "PLAY", "icon": "play", "sub": "Spazio", "action": { "type": "key", "key": "SPACE", "focus": "Resolve" } },
+        { "id": "stop", "label": "STOP", "icon": "stop", "sub": "K", "action": { "type": "key", "key": "K", "focus": "Resolve" } },
+        { "id": "taglia", "label": "TAGLIA", "icon": "cut", "sub": "Ctrl+B", "action": { "type": "hotkey", "keys": ["CTRL", "B"], "focus": "Resolve" } },
+        { "id": "mark_in", "label": "MARK IN", "icon": "flag", "sub": "I", "action": { "type": "key", "key": "I", "focus": "Resolve" } },
+        { "id": "mark_out", "label": "MARK OUT", "icon": "flag", "sub": "O", "action": { "type": "key", "key": "O", "focus": "Resolve" } },
+        { "id": "annulla", "label": "ANNULLA", "icon": "undo", "sub": "Ctrl+Z", "repeat": true, "action": { "type": "hotkey", "keys": ["CTRL", "Z"], "focus": "Resolve" } },
+        { "id": "ripeti", "label": "RIPETI", "icon": "redo", "sub": "Ctrl+Shift+Z", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "Z"], "focus": "Resolve" } },
+        { "id": "frame_prev", "label": "FRAME -", "icon": "prev", "sub": "←", "repeat": true, "action": { "type": "key", "key": "LEFT", "focus": "Resolve" } },
+        { "id": "edit", "label": "EDIT", "icon": "film", "sub": "Shift+4", "action": { "type": "hotkey", "keys": ["SHIFT", "4"], "focus": "Resolve" } },
+        { "id": "color", "label": "COLOR", "icon": "film", "sub": "Shift+6", "action": { "type": "hotkey", "keys": ["SHIFT", "6"], "focus": "Resolve" } },
+        { "id": "deliver", "label": "DELIVER", "icon": "camera", "sub": "Shift+8", "action": { "type": "hotkey", "keys": ["SHIFT", "8"], "focus": "Resolve" } },
+        { "id": "frame_next", "label": "FRAME +", "icon": "next", "sub": "→", "repeat": true, "action": { "type": "key", "key": "RIGHT", "focus": "Resolve" } }
+      ]
+    }
+  ]
+}

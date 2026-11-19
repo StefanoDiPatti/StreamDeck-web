@@ -1,4 +1,4 @@
-# Command Dock
+# Vibe Deck
 
 Trasforma un **vecchio tablet Android** (anche Android 4.x, con il suo browser) in una **Stream Deck wireless** per il PC.
 Sul PC (Windows o Linux) gira un piccolo server Node.js; il tablet apre una pagina web: niente app da installare.
@@ -32,18 +32,18 @@ Sul PC (Windows o Linux) gira un piccolo server Node.js; il tablet apre una pagi
 ## Avvio rapido
 
 ```bash
-cd android-command-dock
+cd app
 # Windows: doppio clic su start.bat      Linux: ./start.sh
 ```
 
 Al primo avvio lo script installa le dipendenze, crea il `.env` con un **codice di accesso** casuale e mostra
 l'indirizzo da aprire sul tablet (e un QR code). Il tablet e il PC devono stare sulla stessa rete.
 
-Vuoi solo vedere com'è? `npm run demo` (in `android-command-dock/`) apre una dock con **dati finti** su
+Vuoi solo vedere com'è? `npm run demo` (in `app/`) apre una dock con **dati finti** su
 `http://127.0.0.1:8790/?t=DEMO1234`.
 
 La guida completa (pagine, configurazione, Windows e Linux, sicurezza, problemi comuni) è in
-[`android-command-dock/README.md`](android-command-dock/README.md).
+[`app/README.md`](app/README.md).
 
 ## Requisiti
 

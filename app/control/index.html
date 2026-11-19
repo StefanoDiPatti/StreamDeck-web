@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vibe Deck · Pannello</title>
+  <script src="/control/theme.js"></script>
+  <link rel="stylesheet" href="/control/control.css">
+  <link rel="stylesheet" href="/control/themes.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <div>
+        <h1>Vibe Deck</h1>
+        <p id="sub">Pannello di controllo</p>
+      </div>
+    </div>
+    <div class="top-right">
+      <div id="theme-pick" class="theme-pick" role="group" aria-label="Tema del pannello"></div>
+      <div id="tablet" class="tablet-url"></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="card pair" id="pair-card" hidden>
+      <div class="pair-qr" id="pair-qr" aria-label="QR code per collegare il dispositivo"></div>
+      <div class="pair-txt">
+        <h2>Collega un telefono o un tablet</h2>
+        <p class="hint">Inquadra il QR con la fotocamera: la dock si apre già collegata, senza scrivere il codice. Telefono e PC devono stare sulla stessa rete.</p>
+        <div id="pair-nets" class="chips"></div>
+        <div class="pair-link"><span>Link</span><code id="pair-link"></code></div>
+        <div class="pair-link"><span>Codice</span><code id="pair-code"></code></div>
+        <p class="hint small">Sul telefono: menu del browser &gt; <b>Aggiungi a schermata Home</b> per aprirla a schermo intero.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h2>Pagine del tablet</h2>
+          <p class="hint">Trascina le pagine per cambiare l'ordine, o spostale tra le due colonne. La <b>stella</b> è la pagina che si apre all'avvio.</p>
+        </div>
+      </div>
+
+      <div class="preview" aria-label="Anteprima della barra del tablet">
+        <div class="preview-label">Barra sul tablet</div>
+        <div id="preview" class="preview-bar"></div>
+      </div>
+
+      <div class="columns">
+        <div class="col">
+          <h3>Nella barra <span id="count" class="count"></span></h3>
+          <ol id="on" class="list on" data-list="on"></ol>
+        </div>
+        <div class="col">
+          <h3>Disponibili</h3>
+          <ol id="off" class="list off" data-list="off"></ol>
+          <p class="hint small">Le pagine disponibili non sono sul tablet, salvo i pulsanti che le aprono. BLENDER e DAVINCI RESOLVE hanno le scorciatoie dei due programmi: aggiungile alla barra se le usi.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="buttons-card" hidden>
+      <div class="card-head">
+        <div>
+          <h2>Pulsanti delle pagine</h2>
+          <p class="hint">Trascina i pulsanti per cambiarne l'ordine, o spostali tra <b>Sul tablet</b> e <b>Nascosti</b>. Con meno pulsanti la griglia si adatta e diventano più grandi.</p>
+        </div>
+        <span id="os-pill" class="pill"></span>
+      </div>
+
+      <div id="bt-pages" class="chips" role="tablist" aria-label="Pagina da modificare"></div>
+
+      <div class="preview bt-preview">
+        <div class="preview-label">Sul tablet <span id="bt-size" class="count"></span></div>
+        <div id="bt-on" class="bt-grid" data-blist="show"></div>
+      </div>
+
+      <div class="bt-hidden-wrap">
+        <div class="bt-hidden-head">
+          <h3>Nascosti</h3>
+          <button id="bt-all" class="btn ghost small-btn" type="button" title="Rimette tutti i pulsanti della pagina, nell'ordine predefinito">Mostra tutti</button>
+        </div>
+        <div id="bt-off" class="bt-hidden" data-blist="hide"></div>
+      </div>
+    </section>
+
+    <section class="card" id="mail-card">
+      <div class="card-head">
+        <div>
+          <h2>Email</h2>
+          <p class="hint">Posta in arrivo sul tablet, in sola lettura: la dock non segna come lette, non sposta e non cancella le email. Aggiungi la pagina <b>EMAIL</b> alla barra qui sopra.</p>
+        </div>
+        <span id="ml-count" class="pill"></span>
+      </div>
+      <div id="ml-accounts"></div>
+      <div id="ml-add"></div>
+    </section>
+
+    <section class="card" id="discord-card">
+      <div class="card-head">
+        <div>
+          <h2>Discord</h2>
+          <p class="hint">Server, canali vocali, chi c'è in stanza e mute dal tablet. Aggiungi la pagina <b>DISCORD</b> alla barra qui sopra.</p>
+        </div>
+        <span id="dc-status" class="pill">…</span>
+      </div>
+      <div id="dc-body"></div>
+    </section>
+
+    <section class="card subtle">
+      <h2>Pulsanti e nuove pagine</h2>
+      <p class="hint">Per creare pulsanti nuovi o cambiare cosa fanno modifica <code>config/dock.json</code>; le app stanno in <code>config/apps.json</code>. Il tablet si aggiorna da solo quando salvi. La dock riconosce da sola se è su Windows o su Linux e mostra i pulsanti adatti (<code>"os"</code> e <code>"linux"</code> nei pulsanti).</p>
+    </section>
+  </main>
+
+  <footer id="savebar" class="savebar">
+    <span id="dirty-msg">Modifiche non salvate</span>
+    <div class="actions">
+      <button id="reset" class="btn ghost" type="button" title="Torna alle pagine e ai pulsanti predefiniti di dock.json">Predefinite</button>
+      <button id="undo" class="btn ghost" type="button">Annulla</button>
+      <button id="save" class="btn primary" type="button">Salva sul tablet</button>
+    </div>
+  </footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/js/icons.js"></script>
+  <script src="/control/control.js"></script>
+</body>
+</html>
