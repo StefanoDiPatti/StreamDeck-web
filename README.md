@@ -141,7 +141,7 @@ Se qualcosa non va: [Problemi comuni](app/README.md#problemi-comuni).
 
 | Pagina | Cosa fa | Windows | Linux |
 |---|---|---|---|
-| HOME | Musica, stato del PC e TODO | ✅ | ✅ (TODO in una lista della dock invece delle Memo) |
+| HOME | Musica, stato del PC e TODO; **la scegli tu dal pannello** (consumi di Claude, GitHub, email, orologio…) | ✅ | ✅ (TODO in una lista della dock invece delle Memo) |
 | MUSICA | Copertina, coda, posizione nel brano, volume dell'app | ✅ | ✅ con `playerctl` |
 | APP | Pulsanti delle app e del sistema | ✅ | ✅ (Terminale, Monitor di sistema, Spectacle al posto di quelli di Windows) |
 | DEV | Strumenti da sviluppatore | ✅ | ✅ |
@@ -164,6 +164,9 @@ Le pagine da DISCORD in giù all'inizio non sono nella barra: le aggiungi dal pa
 Si apre sul PC (doppio clic sull'icona **Vibe Deck**). Da qui:
 
 - **Pagine**: trascinale per cambiare l'ordine della barra, spostale tra *Nella barra* e *Disponibili*; la stella sceglie la pagina iniziale.
+- **HOME**: scegli i widget della pagina HOME tra quelli delle altre pagine (Musica, Note e TODO, PC, Consumi di Claude, GitHub,
+  Email, Orologio, Coda della musica, Audio, Discord e i widget dei plugin), con misura e ordine. L'anteprima mostra la griglia
+  del tablet e avvisa se qualcosa non ci sta. **Salva HOME**; *Torna alla HOME predefinita* annulla tutto.
 - **Pulsanti delle pagine**: riordinali o nascondili; la griglia si adatta da sola. **Salva sul tablet** e il tablet si aggiorna.
 - **Giochi**: *Aggiungi un gioco* apre il selettore di file; scegli nome e icona (quella del file o una trovata sul web).
 - **Email**: stato di Thunderbird, account trovati e quali mostrare sul tablet.
@@ -239,11 +242,14 @@ Per partire da un file già pronto: `npm run new:page -- stream` (oppure `npm ru
 - `"tab": false`: la pagina è disponibile ma non nella barra (la aggiungi dal pannello).
 - `"columns"`/`"rows"`: griglia fissa; `"autoGrid": true`: si adatta al numero di pulsanti.
 - `"buttonGrid": true`: pulsanti in griglia a sinistra e widget a destra (`"widgetWidth": 0.5`), come la pagina VIBER.
-- **Widget** disponibili: `system`, `nowplaying`, `queue`, `github`, `todo`, `clock`, `claude`, `chat` (con `"provider": "ollama"`),
+- **Widget** disponibili: `system`, `nowplaying`, `queue`, `github`, `todo`, `clock`, `claude`, `claudeusage` (solo i consumi), `chat` (con `"provider": "ollama"`),
   `discord`, `screens`, `mail`, `audio`, `vdesk`, `viber`.
 - **Icone**: `home music apps code github chat sparkle check cube film lock play pause stop next prev volup voldown mute shuffle repeat
   folder terminal cpu camera desktop robot refresh save keyboard undo redo fullscreen cut flag back add close send trash power bolt mic link
   headset gamepad cards tank sword layout live camoff window target mail attach`.
+
+**La HOME** si sceglie dal pannello (*HOME*): finisce in `config/layout.json` (`"homePage"`) e vince sulla pagina `main` dei file.
+Per mettere un widget nel catalogo della HOME aggiungilo a `CATALOG` in `server/home.js` (i widget dei plugin ci sono già).
 
 **Cambiare una pagina predefinita:** copia il suo file da `config/defaults/pages/` (es. `apps.json`) in `config/pages/` e modifica
 la copia. Per l'ordine e i pulsanti nascosti basta il pannello, senza toccare i file.
@@ -406,6 +412,7 @@ app/
   server/check.js        controllo della configurazione (problemi mostrati nel pannello)
   server/actions/        motore delle azioni (HANDLERS) e macro
   server/plugins.js      caricatore dei plugin (azioni, rotte, pagine, script del tablet)
+  server/home.js         HOME dal pannello: catalogo dei widget, controlli, disposizione
   plugins/               i plugin, uno per cartella
   server/platform/       windows.js (+ helper PowerShell), linux.js: tutto ciò che dipende dal sistema
   server/services/       un file per funzione: media, discord, mail, games, screens, mixer, claude...

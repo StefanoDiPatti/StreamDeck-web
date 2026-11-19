@@ -896,6 +896,54 @@ var Widgets = (function () {
     };
   }
 
+  // ------------------------------------------------------------ consumi di Claude
+  // Barre dei consumi dell'abbonamento: nella pagina CLAUDE e nel widget "claudeusage" (HOME).
+  function usageWhen(iso) {
+    if (!iso) return '';
+    var d = new Date(iso), now = new Date();
+    var t = D.pad(d.getHours()) + ':' + D.pad(d.getMinutes());
+    if (d.toDateString() === now.toDateString()) return 'alle ' + t;
+    var giorni = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
+    return giorni[d.getDay()] + ' ' + t;
+  }
+  function usageBar(label, w) {
+    if (!w) return '';
+    var lvl = w.percent >= 90 ? ' hot' : w.percent >= 70 ? ' warm' : '';
+    return '<div class="cu-row' + lvl + '"><div class="cu-top"><b>' + D.esc(label) + '</b><span>' + w.percent + '%</span></div>' +
+      '<div class="cu-bar"><i style="width:' + w.percent + '%"></i></div>' +
+      (w.resetsAt ? '<div class="cu-reset">si azzera ' + usageWhen(w.resetsAt) + '</div>' : '') + '</div>';
+  }
+  // models = anche i limiti per modello (pagina CLAUDE)
+  function usageHtml(err, u, models) {
+    if (err || !u || !u.ok) return '<div class="cu-h">CONSUMI</div><div class="cu-err">' + D.esc(err ? err.message : (u && u.error) || 'Non disponibili') + '</div>';
+    var h = '<div class="cu-h">CONSUMI' + (u.stale ? ' <i>(non aggiornati)</i>' : '') + '</div>' + usageBar('Sessione 5 ore', u.fiveHour) + usageBar('Settimana', u.sevenDay);
+    if (models) for (var i = 0; i < u.models.length; i++) h += usageBar(u.models[i].name + ' (settimana)', u.models[i]);
+    return h;
+  }
+
+  // Widget per la HOME: solo i consumi (tocco = aggiorna subito).
+  function claudeUsage(root, tile) {
+    D.addClass(root, 'w-cusage');
+    header(root, tile.title || 'CLAUDE');
+    var box = el('div', 'cu-box scroll');
+    root.appendChild(box);
+    var alive = true, big = false;
+    function load(force) {
+      D.api.get('/api/claude/usage' + (force ? '?refresh=1' : ''), function (err, u) {
+        if (alive) setHtml(box, usageHtml(err, u, big));
+      });
+    }
+    D.bindTap(box, { scrollable: true, onTap: function () { load(true); } });
+    load(false);
+    var timer = D.every(60000, 300000, function () { load(false); });
+    return {
+      update: function () {},
+      // abbastanza alto: anche i limiti per modello
+      resize: function (w, h) { var b = h > 240; if (b !== big) { big = b; load(false); } },
+      destroy: function () { alive = false; D.stop(timer); }
+    };
+  }
+
   // ------------------------------------------------------------ CLAUDE
   // CLAUDE CODE: le sessioni dell'app desktop di Claude, raggruppate per le
   // sezioni della barra laterale del PC. Scrivi qui e il messaggio parte
@@ -1185,28 +1233,10 @@ var Widgets = (function () {
     // conversazione aperta: aggiornata spesso, così vedi le risposte mentre arrivano
     // ---- consumi dell'abbonamento: sessione di 5 ore, settimana, limiti per modello
     var usageEl = q('cl-usage');
-    function hm(iso) {
-      if (!iso) return '';
-      var d = new Date(iso), now = new Date();
-      var t = D.pad(d.getHours()) + ':' + D.pad(d.getMinutes());
-      if (d.toDateString() === now.toDateString()) return 'alle ' + t;
-      var giorni = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
-      return giorni[d.getDay()] + ' ' + t;
-    }
-    function bar(label, w) {
-      if (!w) return '';
-      var lvl = w.percent >= 90 ? ' hot' : w.percent >= 70 ? ' warm' : '';
-      return '<div class="cu-row' + lvl + '"><div class="cu-top"><b>' + D.esc(label) + '</b><span>' + w.percent + '%</span></div>' +
-        '<div class="cu-bar"><i style="width:' + w.percent + '%"></i></div>' +
-        (w.resetsAt ? '<div class="cu-reset">si azzera ' + hm(w.resetsAt) + '</div>' : '') + '</div>';
-    }
     function loadUsage(force) {
       D.api.get('/api/claude/usage' + (force ? '?refresh=1' : ''), function (err, u) {
         if (!alive) return;
-        if (err || !u.ok) { usageEl.innerHTML = '<div class="cu-h">CONSUMI</div><div class="cu-err">' + D.esc(err ? err.message : u.error) + '</div>'; return; }
-        var h = '<div class="cu-h">CONSUMI' + (u.stale ? ' <i>(non aggiornati)</i>' : '') + '</div>' + bar('Sessione 5 ore', u.fiveHour) + bar('Settimana', u.sevenDay);
-        for (var i = 0; i < u.models.length; i++) h += bar(u.models[i].name + ' (settimana)', u.models[i]);
-        usageEl.innerHTML = h;
+        usageEl.innerHTML = usageHtml(err, u, true);
       });
     }
     D.bindTap(usageEl, { onTap: function () { loadUsage(true); } });
@@ -2474,7 +2504,7 @@ var Widgets = (function () {
   }
 
   var CHAT = {};
-  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, discord: discord, screens: screensWidget, mail: mailWidget, audio: audioWidget, vdesk: vdeskWidget, viber: viberWidget };
+  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, claudeusage: claudeUsage, discord: discord, screens: screensWidget, mail: mailWidget, audio: audioWidget, vdesk: vdeskWidget, viber: viberWidget };
 
   function create(type, root, tile, app) {
     var fn = TYPES[type];
