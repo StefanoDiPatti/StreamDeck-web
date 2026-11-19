@@ -30,6 +30,7 @@ module.exports = {
 /* salvaschermo: cifre morbide e arrotondate */
 @font-face { font-family: "VDClockMaterial"; src: url("../../fonts/clock-material.ttf") format("truetype"); }
 .saver-clock { font-family: "VDClockMaterial", Roboto, sans-serif; font-size: 112px; letter-spacing: 0; color: #4a4f63; }
+.clk-time { font-family: "VDClockMaterial", Roboto, sans-serif; letter-spacing: 0; color: #a8c7fa; }
 body { font-family: Roboto, "Droid Sans", "Segoe UI", Arial, sans-serif; }
 #topbar { border-bottom-color: #111318; }
 .tile { border-radius: 24px; border-color: transparent; }

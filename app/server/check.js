@@ -10,7 +10,7 @@ const common = require('./platform/common');
 const plugins = require('./plugins');
 
 // Widget che il tablet sa disegnare (public/js/widgets.js, mappa TYPES); più quelli dei plugin.
-const WIDGETS = ['system', 'nowplaying', 'queue', 'github', 'todo', 'chat', 'clock', 'claude', 'claudeusage', 'discord', 'screens', 'mail', 'audio', 'vdesk', 'viber'];
+const WIDGETS = ['system', 'nowplaying', 'queue', 'github', 'todo', 'chat', 'clock', 'claude', 'claudeusage', 'desks', 'games', 'discordmini', 'discord', 'screens', 'mail', 'audio', 'vdesk', 'viber'];
 
 // Nomi delle icone, letti da public/js/icons.js (riletti se il file cambia).
 let iconCache = { mtime: 0, names: null };

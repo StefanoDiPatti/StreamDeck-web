@@ -33,6 +33,8 @@ module.exports = {
 /* salvaschermo: cifre nere pesanti con ombra piena */
 @font-face { font-family: "VDClockBrutal"; src: url("../../fonts/clock-brutal.ttf") format("truetype"); }
 .saver-clock { font-family: "VDClockBrutal", "Arial Black", sans-serif; font-size: 100px; letter-spacing: 0; color: #6e6656; text-shadow: 6px 6px 0 #4a3d06; }
+.clk-time { font-family: "VDClockBrutal", "Arial Black", sans-serif; letter-spacing: 0; color: ${INK}; text-shadow: 4px 4px 0 ${Y}; }
+.clk-date { color: ${INK}; }
 body { font-family: "Arial Black", "Archivo Black", Roboto, Arial, sans-serif; }
 /* barre nere con testo crema */
 #topbar { background: ${INK}; color: ${CREAM}; border-bottom: 3px solid ${INK}; }

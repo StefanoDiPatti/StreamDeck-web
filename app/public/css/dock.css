@@ -212,7 +212,9 @@ body.phone #offline .pair-msg { margin-bottom: 10px; font-size: 14px; }
 /* ---------------------------------------------------------- widget: comuni */
 .tile.widget { padding: 10px 12px; }
 .w-head { height: 34px; line-height: 30px; position: relative; white-space: nowrap; overflow: hidden; }
-.w-title { font-weight: bold; letter-spacing: 2px; font-size: 14px; color: #9fb3c8; overflow: hidden; text-overflow: ellipsis; margin-right: 150px; }
+.w-title { font-weight: bold; letter-spacing: 2px; font-size: 14px; color: #9fb3c8; overflow: hidden; text-overflow: ellipsis; }
+/* spazio per i pulsanti a destra solo se ci sono */
+.w-head.tools .w-title { margin-right: 150px; }
 .w-head .sbtn, .w-head .chat-tools { position: absolute; right: 0; top: 0; }
 .sbtn {
   display: inline-block; height: 30px; line-height: 30px; padding: 0 10px; border-radius: 8px;
@@ -251,7 +253,7 @@ body.phone #offline .pair-msg { margin-bottom: 10px; font-size: 14px; }
 .np-art img { display: none; width: 100%; height: 100%; }
 .np-art-ph { width: 100%; height: 100%; text-align: center; padding: 26%; }
 .np-art-ph svg.ic { width: 100%; height: 100%; fill: #2a3746; }
-.np-info { position: absolute; top: 12px; bottom: 12px; }
+.np-info { position: absolute; top: 12px; bottom: 88px; overflow: hidden; }
 .np-src { font-size: 0.75em; font-weight: bold; color: #8b9bab; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .np-title {
   font-size: 1.45em; font-weight: bold; margin-top: 0.3em; line-height: 1.2; max-height: 2.4em; overflow: hidden; word-wrap: break-word;
@@ -261,7 +263,8 @@ body.phone #offline .pair-msg { margin-bottom: 10px; font-size: 14px; }
 .np-prog { height: 6px; background: #0b0f14; border-radius: 3px; overflow: hidden; }
 .np-prog i { display: block; height: 100%; width: 0; background: #e8eef4; }
 .np-times { font-size: 0.75em; color: #8b9bab; margin-top: 4px; height: 1.2em; }
-.np-ctr { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; text-align: center; white-space: nowrap; }
+/* fila dei comandi: a tutta larghezza in fondo al widget (posizione da widgets.js) */
+.np-ctr { position: absolute; left: 12px; right: 12px; bottom: 12px; height: 64px; text-align: center; white-space: nowrap; }
 .np-btn {
   display: inline-block; width: 19%; max-width: 92px; height: 64px; margin: 0 1%; border-radius: 12px; background: #243142;
   text-align: center; padding-top: 12px; vertical-align: top;
@@ -272,6 +275,8 @@ body.phone #offline .pair-msg { margin-bottom: 10px; font-size: 14px; }
 .np-btn.np-play svg.ic { fill: #0b0f14; }
 .np-btn.pressed { -webkit-transform: scale(0.92); transform: scale(0.92); background: #3d8bfd; }
 .np-btn.np-vol { width: 13%; background: #18212c; border: 1px solid #2a3746; }
+/* widget stretto: solo indietro / play / avanti, più larghi */
+.np-novol .np-ctr .np-btn { width: 30%; max-width: 120px; }
 .np-compact .np-ctr { height: 50px; }
 .np-compact .np-btn { height: 50px; padding-top: 7px; }
 .np-compact .np-btn svg.ic { width: 34px; height: 34px; }
@@ -279,7 +284,7 @@ body.phone #offline .pair-msg { margin-bottom: 10px; font-size: 14px; }
 .np-compact .np-times { display: none; }
 .np-seek.can .np-prog { height: 9px; }
 .np-tall .np-title { font-size: 1.3em; }
-.np-ctr2 { position: absolute; left: 0; right: 0; bottom: 74px; height: 40px; text-align: center; white-space: nowrap; }
+.np-ctr2 { position: absolute; left: 0; right: 0; bottom: 0; height: 40px; text-align: center; white-space: nowrap; }
 .np-btn.np-opt {
   width: auto; max-width: none; height: 38px; padding: 7px 10px 0; background: #18212c; border: 1px solid #2a3746;
   font-size: 12px; font-weight: bold; letter-spacing: 1px; color: #b6c4d2;
@@ -350,6 +355,8 @@ body.phone #offline .pair-msg { margin-bottom: 10px; font-size: 14px; }
   border: 1px solid #2a3746; border-radius: 8px; padding: 0 6px; vertical-align: top;
 }
 .chat-model-label { font-size: 13px; color: #8b9bab; vertical-align: top; margin-right: 4px; }
+/* chat in un riquadro stretto (HOME): niente etichetta "Modello", pulsanti solo icona */
+.chat-narrow .chat-model-label, .chat-narrow .chat-tools .sbtn span { display: none; }
 .w-chat .w-title { margin-right: 360px; }
 .chat-log {
   position: absolute; left: 10px; right: 10px; top: 48px; bottom: 76px; overflow: auto; -webkit-overflow-scrolling: touch;
@@ -386,9 +393,10 @@ body.phone #offline .pair-msg { margin-bottom: 10px; font-size: 14px; }
 .chat-send.pressed { -webkit-transform: scale(0.94); transform: scale(0.94); }
 
 /* ---------------------------------------------------------- widget: orologio */
+/* orologio: stesso font del salvaschermo del tema; misure e centratura da widgets.js */
 .w-clock { text-align: center; }
-.clk-time { font-size: 80px; font-weight: bold; margin-top: 18%; letter-spacing: 2px; }
-.clk-date { font-size: 18px; color: #9fb3c8; text-transform: capitalize; }
+.clk-time { font-family: "VDClockClassic", Roboto, "Segoe UI", sans-serif; font-size: 80px; font-weight: normal; line-height: 1; letter-spacing: 2px; white-space: nowrap; }
+.clk-date { font-size: 18px; color: #9fb3c8; text-transform: capitalize; margin-top: 0.3em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------------------------------------------------------- widget: coda */
 .w-queue .w-list { top: 48px; }
@@ -802,6 +810,48 @@ body.phone .sc-map { bottom: 120px; }
 .vb-task.doing .vb-chip { background: #1f3b63; color: #6cb6ff; }
 .vb-step { position: relative; font-size: 12px; color: #9fb3c8; padding: 3px 0 0 20px; line-height: 1.3; }
 .vb-step svg.ic { position: absolute; left: 0; top: 4px; width: 14px; height: 14px; fill: #6e7f90; }
+/* HOME: una colonna sola ("show": "projects" | "tasks") */
+.vb-only-projects .vb-colt, .vb-only-tasks .vb-colp { display: none; }
+.vb-only-projects .vb-colp, .vb-only-tasks .vb-colt { left: 0; right: 0; width: auto; border-right: 0; background: transparent; }
+
+/* ---------------------------------------------------------- widget piccoli per la HOME */
+/* desktop virtuali */
+.dk-list { position: absolute; left: 10px; right: 10px; top: 44px; bottom: 10px; overflow: hidden; }
+.dk-item { position: relative; height: 44px; line-height: 44px; padding: 0 10px 0 46px; margin-bottom: 6px; border-radius: 10px; background: #172029; border: 2px solid transparent; white-space: nowrap; overflow: hidden; }
+.dk-item b { position: absolute; left: 8px; top: 8px; width: 26px; height: 24px; line-height: 24px; text-align: center; border-radius: 6px; background: #2a3746; font-size: 14px; }
+.dk-item span { font-weight: bold; font-size: 15px; }
+.dk-item small { float: right; font-size: 12px; color: #8b9bab; }
+.dk-item.on { border-color: #3d8bfd; background: #10203a; }
+.dk-item.on small { color: #6cb6ff; }
+.dk-item.pressed, .dk-item.busy { background: #26354a; }
+.dk-item svg.ic { position: absolute; left: 10px; top: 10px; width: 22px; height: 22px; fill: #8b9bab; }
+.dk-new { border: 2px dashed #2a3746; background: transparent; }
+.dk-row .dk-item { float: left; width: 31.5%; margin-right: 2.7%; height: auto; min-height: 80px; line-height: normal; padding: 34px 6px 6px; text-align: center; }
+.dk-row .dk-item:nth-child(3n) { margin-right: 0; }
+.dk-row .dk-item b { left: 50%; margin-left: -13px; }
+.dk-row .dk-item span { display: block; overflow: hidden; text-overflow: ellipsis; }
+.dk-row .dk-item small { float: none; display: block; }
+.dk-row .dk-item svg.ic { left: 50%; margin-left: -11px; top: 8px; }
+/* giochi ad avvio rapido */
+.gm-list { position: absolute; left: 8px; right: 8px; top: 44px; bottom: 8px; overflow: auto; -webkit-overflow-scrolling: touch; }
+.gm-item { position: relative; float: left; width: 88px; height: 96px; margin: 0 6px 6px 0; padding-top: 6px; border-radius: 10px; background: #172029; text-align: center; overflow: hidden; }
+.gm-item.pressed, .gm-item.busy { background: #26354a; }
+.gm-pic { display: block; width: 56px; height: 56px; margin: 0 auto; border-radius: 8px; background-repeat: no-repeat; background-position: center; -webkit-background-size: contain; background-size: contain; }
+.gm-pic svg.ic { width: 40px; height: 40px; margin-top: 8px; fill: #8b9bab; }
+.gm-item span { display: block; margin-top: 5px; padding: 0 4px; font-size: 11px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gm-item.running:before { content: ""; position: absolute; top: 6px; right: 6px; width: 10px; height: 10px; border-radius: 5px; background: #3fb950; }
+/* Discord compatto */
+.dm-room { font-size: 16px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dm-people { margin-top: 6px; max-height: 58px; overflow: hidden; }
+.dm-p { display: inline-block; margin: 0 4px 4px 0; padding: 2px 8px; border-radius: 10px; background: #172029; font-size: 12px; color: #b6c4d2; border: 1px solid transparent; }
+.dm-p.talk { border-color: #3fb950; color: #fff; }
+.dm-p.off { opacity: 0.5; }
+.dm-ctr { position: absolute; left: 10px; right: 10px; bottom: 10px; height: 52px; }
+.dm-btn { float: left; width: 49%; height: 52px; margin-right: 2%; padding-top: 6px; border-radius: 10px; background: #243142; text-align: center; font-size: 11px; font-weight: bold; }
+.dm-btn:last-child { margin-right: 0; }
+.dm-btn svg.ic { display: block; width: 24px; height: 24px; margin: 0 auto 2px; }
+.dm-btn.on { background: #8b1d1d; }
+.dm-btn.pressed { background: #3d8bfd; }
 .vb-step.done { color: #6e7f90; text-decoration: line-through; }
 .vb-step.done svg.ic { fill: #3fb950; }
 .vb-step.in_progress { color: #ffffff; }

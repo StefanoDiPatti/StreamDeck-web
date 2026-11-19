@@ -164,9 +164,11 @@ Le pagine da DISCORD in giù all'inizio non sono nella barra: le aggiungi dal pa
 Si apre sul PC (doppio clic sull'icona **Vibe Deck**). Da qui:
 
 - **Pagine**: trascinale per cambiare l'ordine della barra, spostale tra *Nella barra* e *Disponibili*; la stella sceglie la pagina iniziale.
-- **HOME**: scegli i widget della pagina HOME tra quelli delle altre pagine (Musica, Note e TODO, PC, Consumi di Claude, GitHub,
-  Email, Orologio, Coda della musica, Audio, Discord e i widget dei plugin), con misura e ordine. L'anteprima mostra la griglia
-  del tablet e avvisa se qualcosa non ci sta. **Salva HOME**; *Torna alla HOME predefinita* annulla tutto.
+- **HOME**: costruisci la pagina HOME sulla griglia del tablet. Dal catalogo a destra (un widget per pagina: Musica, Note e TODO,
+  Diagnostica, Orologio, Consumi di Claude, GitHub, Email, Audio, Discord compatto o completo, Desktop virtuali, Viber progetti
+  e Viber task, Ollama, Giochi, più i widget dei plugin) un tocco mette il widget nel primo posto libero. **Trascina** un widget
+  per spostarlo, trascina **bordi e angoli** per cambiarne la misura: si muove a scatti di una cella, si ferma contro gli altri
+  e non scende sotto la sua misura minima. Le celle tratteggiate sono libere. **Salva HOME**; *Torna alla HOME predefinita* annulla tutto.
 - **Pulsanti delle pagine**: riordinali o nascondili; la griglia si adatta da sola. **Salva sul tablet** e il tablet si aggiorna.
 - **Giochi**: *Aggiungi un gioco* apre il selettore di file; scegli nome e icona (quella del file o una trovata sul web).
 - **Email**: stato di Thunderbird, account trovati e quali mostrare sul tablet.
@@ -248,8 +250,11 @@ Per partire da un file già pronto: `npm run new:page -- stream` (oppure `npm ru
   folder terminal cpu camera desktop robot refresh save keyboard undo redo fullscreen cut flag back add close send trash power bolt mic link
   headset gamepad cards tank sword layout live camoff window target mail attach`.
 
-**La HOME** si sceglie dal pannello (*HOME*): finisce in `config/layout.json` (`"homePage"`) e vince sulla pagina `main` dei file.
-Per mettere un widget nel catalogo della HOME aggiungilo a `CATALOG` in `server/home.js` (i widget dei plugin ci sono già).
+**La HOME** si sceglie dal pannello (*HOME*): finisce in `config/layout.json` (`"homePage"`, ogni widget con colonna `x`, riga `y`,
+larghezza `w` e altezza `h`) e vince sulla pagina `main` dei file. Anche nelle tue pagine `"x"` e `"y"` fissano un widget in una cella;
+senza, i widget si mettono in ordine nella prima cella libera. Per mettere un widget nel catalogo della HOME aggiungilo a `CATALOG`
+in `server/home.js` (i widget dei plugin ci sono già); widget piccoli fatti per la HOME: `claudeusage`, `desks`, `games`,
+`discordmini`, e `viber` con `"show": "projects"` o `"tasks"`.
 
 **Cambiare una pagina predefinita:** copia il suo file da `config/defaults/pages/` (es. `apps.json`) in `config/pages/` e modifica
 la copia. Per l'ordine e i pulsanti nascosti basta il pannello, senza toccare i file.

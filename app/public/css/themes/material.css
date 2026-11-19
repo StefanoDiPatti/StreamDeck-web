@@ -302,6 +302,23 @@ svg.ic.dc-camflag { fill: #7fd99a; }
 .vb-task.doing .vb-chip { background: #0f3b62; color: #a8c7fa; }
 .vb-step { color: #c4c6cf; }
 .vb-step svg.ic { fill: #74777f; }
+.dk-item { background: #1d2024; }
+.dk-item b { background: #32353a; }
+.dk-item small { color: #8e9099; }
+.dk-item.on { border-color: #a8c7fa; background: #22324a; }
+.dk-item.on small { color: #a8c7fa; }
+.dk-item.pressed, .dk-item.busy { background: #2c3a4f; }
+.dk-item svg.ic { fill: #8e9099; }
+.dk-new { border: 2px dashed #3a3d42; }
+.gm-item { background: #1d2024; }
+.gm-item.pressed, .gm-item.busy { background: #2c3a4f; }
+.gm-pic svg.ic { fill: #8e9099; }
+.gm-item.running:before { background: #7fd99a; }
+.dm-p { background: #1d2024; color: #c4c6cf; }
+.dm-p.talk { border-color: #7fd99a; color: #e9e9ee; }
+.dm-btn { background: #32353a; }
+.dm-btn.on { background: #93000a; }
+.dm-btn.pressed { background: #1f5a96; }
 .vb-step.done { color: #74777f; }
 .vb-step.done svg.ic { fill: #7fd99a; }
 .vb-step.in_progress { color: #e9e9ee; }
@@ -320,6 +337,7 @@ svg.ic.dc-camflag { fill: #7fd99a; }
 /* salvaschermo: cifre morbide e arrotondate */
 @font-face { font-family: "VDClockMaterial"; src: url("../../fonts/clock-material.ttf") format("truetype"); }
 .saver-clock { font-family: "VDClockMaterial", Roboto, sans-serif; font-size: 112px; letter-spacing: 0; color: #4a4f63; }
+.clk-time { font-family: "VDClockMaterial", Roboto, sans-serif; letter-spacing: 0; color: #a8c7fa; }
 body { font-family: Roboto, "Droid Sans", "Segoe UI", Arial, sans-serif; }
 #topbar { border-bottom-color: #111318; }
 .tile { border-radius: 24px; border-color: transparent; }

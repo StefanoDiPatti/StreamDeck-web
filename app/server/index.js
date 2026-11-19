@@ -210,7 +210,15 @@ function pageButtons(p) {
 function homeEditor(d) {
   const main = d.pages.filter(function (p) { return p.id === home.HOME_ID; })[0];
   const saved = home.fromLayout(config.get('layout'));
-  const tiles = main ? main.tiles.filter(function (t) { return t.widget; }).map(function (t) { return { widget: t.widget, w: t.w, h: t.h }; }) : [];
+  let tiles;
+  if (saved) tiles = saved.tiles;
+  else {
+    // pagina main dei file: i suoi widget come voci del catalogo, con la posizione che hanno sul tablet
+    const list = main ? main.tiles.filter(function (t) { return t.widget && home.catalogId(t); })
+      .map(function (t) { return { id: home.catalogId(t), x: t.x, y: t.y, w: t.w, h: t.h }; }) : [];
+    const p = home.pack(list, main ? main.columns : 6, main ? main.rows : 4);
+    tiles = p.placed.map(function (x) { return Object.assign({}, list[x.index], { x: x.x, y: x.y, w: x.w, h: x.h }); });
+  }
   return {
     catalog: home.catalog(),
     limits: home.LIMITS,
@@ -268,7 +276,7 @@ app.post('/api/control/layout/reset', controlOnly, route(function () { config.re
 // HOME: widget, misure e griglia scelti dal pannello (reset = torna alla pagina main dei file)
 app.post('/api/control/home', controlOnly, route(function (req) {
   config.saveHome(req.body || {});
-  log.info('control', 'HOME: ' + (req.body.tiles || []).map(function (t) { return t.widget + ' ' + t.w + 'x' + t.h; }).join(', '));
+  log.info('control', 'HOME: ' + (req.body.tiles || []).map(function (t) { return (t.id || t.widget) + ' ' + t.w + 'x' + t.h; }).join(', '));
   return controlInfo();
 }));
 app.post('/api/control/home/reset', controlOnly, route(function () { config.saveHome(null); return controlInfo(); }));
