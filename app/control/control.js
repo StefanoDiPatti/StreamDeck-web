@@ -19,7 +19,6 @@
   let btPage = 'apps';      // pagina dei pulsanti mostrata
   let tdrag = null;         // trascinamento di un pulsante
   let pairSel = 0;          // rete scelta per il QR
-  let mlProvider = '';      // servizio email scelto nel modulo ('' = modulo chiuso)
   let mlKey = '';           // per ridisegnare la sezione email solo se cambia
   let pairShown = '';       // link del QR mostrato
 
@@ -591,89 +590,81 @@
     if (e.key === 'Enter' && e.target && e.target.id === 'gm-q') { e.preventDefault(); gameAction('search'); }
   });
 
-  // ------------------------------------------------------------ Email
+  // ------------------------------------------------------------ Email (da Thunderbird)
 
-  const PROVIDER_ICON = { gmail: 'mail', outlook: 'mail', icloud: 'mail', yahoo: 'mail', libero: 'mail', imap: 'link' };
+  // Passaggi per collegare la posta: tutto passa da Thunderbird, che fa l'accesso con i metodi
+  // ufficiali (anche Gmail con la conferma sul telefono e le mail di università e aziende).
+  function mailSteps(m) {
+    return '<ol class="steps ml-steps">' +
+      '<li>' + (m.installed ? '<b>Thunderbird è installato.</b>' : '<b>Scarica e installa Thunderbird</b> (gratis, open source, di Mozilla): ' +
+        '<a href="' + esc(m.download) + '" target="_blank" rel="noopener">thunderbird.net</a>') + '</li>' +
+      '<li>Aprilo e aggiungi il tuo account: <b>Account email esistente</b>, scrivi nome, indirizzo e lascia vuota la password se è Gmail o Microsoft. ' +
+        'Si apre la pagina di accesso del tuo servizio: entri come sempre (con la conferma sul telefono se ce l\'hai). Funziona anche con le mail di <b>università e aziende</b>, se l\'organizzazione permette Thunderbird.</li>' +
+      '<li>Lascia attivo <b>"Conserva i messaggi di questo account sul computer"</b> (è già così: impostazioni dell\'account → Sincronizzazione e archiviazione). Serve per leggere il testo dal tablet.</li>' +
+      '<li>Aspetta che Thunderbird scarichi la posta: l\'account compare qui da solo. Thunderbird deve restare aperto (anche ridotto a icona) per ricevere le email nuove.</li>' +
+    '</ol>';
+  }
   function renderMail() {
     const m = info.mail;
     if (!m) return;
-    $('ml-count').textContent = m.accounts.length ? m.accounts.length + (m.accounts.length === 1 ? ' ACCOUNT' : ' ACCOUNT') : 'NESSUN ACCOUNT';
-    $('ml-count').className = 'pill' + (m.accounts.length ? ' ok' : '');
-    const st = { ready: 'collegato', loading: 'aggiornamento…', idle: 'collegato', login: 'accesso Microsoft in corso', error: 'errore' };
+    const shown = m.accounts.filter((a) => a.shown).length;
+    $('ml-count').textContent = m.accounts.length ? shown + ' SUL TABLET' : (m.installed ? 'NESSUN ACCOUNT' : 'THUNDERBIRD NON INSTALLATO');
+    $('ml-count').className = 'pill' + (shown ? ' ok' : '');
+    // stato di Thunderbird, sempre visibile, con "Controlla di nuovo" (e "Apri Thunderbird" se c'è)
+    const st = !m.installed ? 'Thunderbird non è installato su questo PC.'
+      : !m.profile ? 'Thunderbird è installato ma non è ancora stato aperto: aprilo e aggiungi il tuo account.'
+      : !m.accounts.length ? 'Thunderbird è collegato, ma non ha account di posta: aggiungili in Thunderbird.'
+      : 'Thunderbird è collegato: ' + m.accounts.length + (m.accounts.length === 1 ? ' account trovato.' : ' account trovati.');
+    $('ml-status').innerHTML = '<span class="dot' + (m.accounts.length ? ' ok' : '') + '"></span><span class="txt">' + esc(st) + '</span>' +
+      (m.exe ? '<button class="btn ghost small-btn" type="button" data-mlact="open">Apri Thunderbird</button>' : '') +
+      '<button class="btn ghost small-btn" type="button" data-mlact="check">Controlla di nuovo</button>';
+    const accDesc = (a) => a.status === 'error' ? a.error
+      : a.unread != null ? a.unread + ' da leggere' + (a.offline ? '' : ' · il testo delle email non è sul PC: attiva "Conserva i messaggi sul computer"')
+      : 'lettura della posta in corso…';
     $('ml-accounts').innerHTML = m.accounts.map((a) =>
-      '<div class="ml-acc" data-acc="' + esc(a.id) + '">' +
-        '<span class="ico">' + icon(PROVIDER_ICON[a.provider] || 'mail') + '</span>' +
+      '<div class="ml-acc' + (a.shown ? '' : ' off') + '" data-acc="' + esc(a.id) + '">' +
+        '<span class="ico">' + icon('mail') + '</span>' +
         '<span class="txt"><span class="name">' + esc(a.label) + '</span> <span class="hint">' + esc(a.email) + '</span>' +
-          '<span class="desc' + (a.status === 'error' ? ' err' : '') + '">' + esc(a.status === 'error' ? a.error : (st[a.status] || a.status) + (a.unread != null ? ' · ' + a.unread + ' da leggere' : '')) + '</span></span>' +
-        (a.auth === 'oauth' && (a.needsLogin || a.status === 'error') ? '<button class="btn ghost small-btn" type="button" data-mlact="login">Accedi a Microsoft</button>' : '') +
-        '<button class="ibtn rm" type="button" data-mlact="remove" title="Scollega" aria-label="Scollega ' + esc(a.email) + '">' + icon('close') + '</button>' +
-      '</div>' +
-      (a.login ? '<div class="ml-login">Apri <a href="' + esc(a.login.uri) + '" target="_blank" rel="noopener">' + esc(a.login.uri) + '</a>, accedi con <b>' + esc(a.email) + '</b> e scrivi questo codice:<div class="code">' + esc(a.login.code) + '</div><span class="hint small">La pagina si aggiorna da sola quando hai finito.</span></div>' : '')
+          '<span class="desc' + (a.status === 'error' ? ' err' : '') + '">' + esc(accDesc(a)) + '</span></span>' +
+        '<button class="chip' + (a.shown ? ' on' : '') + '" type="button" data-mlact="' + (a.shown ? 'hide' : 'show') + '">' + (a.shown ? 'Sul tablet' : 'Nascosto') + '</button>' +
+      '</div>'
     ).join('');
-
-    // il modulo si ridisegna solo se cambia il servizio scelto (non perdere quello che stai scrivendo)
-    const key = mlProvider + '|' + m.providers.length;
+    // i passaggi si ridisegnano solo se cambia qualcosa (non far saltare la pagina ogni 5 secondi)
+    const key = m.installed + '|' + m.profile + '|' + m.accounts.length;
     if (key === mlKey) return;
     mlKey = key;
-    if (!mlProvider) {
-      $('ml-add').innerHTML = '<button class="btn add-acc" type="button" data-mlact="new">' + icon('add') + ' Aggiungi un account</button>';
-      return;
-    }
-    const p = m.providers.find((x) => x.id === mlProvider);
-    const chips = '<div class="chips ml-providers">' + m.providers.map((x) => '<button class="chip' + (x.id === mlProvider ? ' on' : '') + '" type="button" data-mlprov="' + esc(x.id) + '">' + esc(x.label) + '</button>').join('') + '</div>';
-    const help = '<p class="ml-help">' + esc(p.help) + (p.helpUrl ? ' <a href="' + esc(p.helpUrl) + '" target="_blank" rel="noopener">Apri la pagina</a>' : '') + '</p>';
-    let fields = '<div><label for="ml-email">Indirizzo email</label><input id="ml-email" type="text" autocomplete="off" spellcheck="false" placeholder="nome@esempio.com"></div>' +
-      '<div><label for="ml-label">Nome sul tablet (facoltativo)</label><input id="ml-label" type="text" autocomplete="off" placeholder="' + esc(p.label) + '"></div>';
-    if (p.auth === 'oauth') {
-      fields += '<ol class="steps wide">' +
-        '<li>Sul <a href="' + esc(p.helpUrl) + '" target="_blank" rel="noopener">portale Azure</a> (App registrations) premi <b>New registration</b>: nome a piacere, tipo di account <b>Personal Microsoft accounts</b> (o "any organizational directory and personal").</li>' +
-        '<li>In <b>Authentication</b> attiva <b>Allow public client flows</b> e salva.</li>' +
-        '<li>Copia l\'<b>Application (client) ID</b> dalla pagina Overview e incollalo qui sotto.</li>' +
-      '</ol>' +
-      '<div class="wide"><label for="ml-client">Application (client) ID</label><input id="ml-client" type="text" autocomplete="off" spellcheck="false" placeholder="1a2b3c4d-0000-0000-0000-000000000000"></div>';
-    } else {
-      fields += '<div class="wide"><label for="ml-pass">' + (p.id === 'libero' || p.id === 'imap' ? 'Password' : 'Password per le app') + '</label><input id="ml-pass" type="password" autocomplete="off" spellcheck="false"></div>';
-      if (p.id === 'imap') {
-        fields += '<div><label for="ml-host">Server IMAP</label><input id="ml-host" type="text" autocomplete="off" spellcheck="false" placeholder="imap.example.com"></div>' +
-          '<div><label for="ml-port">Porta</label><input id="ml-port" type="text" inputmode="numeric" value="993"></div>';
-      }
-    }
-    $('ml-add').innerHTML = chips + help + '<div class="ml-form">' + fields + '</div>' +
-      '<div class="row-actions"><button class="btn primary" type="button" data-mlact="add">' + (p.auth === 'oauth' ? 'Continua con Microsoft' : 'Collega') + '</button>' +
-      '<button class="btn ghost" type="button" data-mlact="cancel">Annulla</button></div>' +
-      '<p class="hint small">Le credenziali restano su questo PC, cifrate in <code>data/mail.json</code> (chiave nel portachiavi del sistema), e non vengono mai inviate al tablet.</p>';
+    $('ml-add').innerHTML = (m.accounts.length
+      ? '<details class="ml-more"><summary>Aggiungere un altro account</summary>' + mailSteps(m) + '</details>'
+      : mailSteps(m)) +
+      '<p class="hint small">Riservatezza: la dock non chiede e non salva password. Legge in sola lettura i file che Thunderbird tiene su questo PC e manda le email solo al tuo tablet, sulla rete di casa. ' +
+      'I file della posta non sono cifrati: proteggi l\'account del PC con una password (e, se puoi, la cifratura del disco).</p>';
   }
 
   async function mailAction(act, id, btn) {
-    const val = (x) => ($(x) ? $(x).value : '');
-    if (act === 'new') { mlProvider = 'gmail'; renderMail(); return; }
-    if (act === 'cancel') { mlProvider = ''; renderMail(); return; }
     if (btn) btn.disabled = true;
     try {
-      if (act === 'add') {
-        toast(mlProvider === 'outlook' ? 'Chiedo il codice a Microsoft…' : 'Provo l\'accesso alla casella…', '');
-        info = await api('POST', '/api/control/mail', {
-          provider: mlProvider, email: val('ml-email'), label: val('ml-label'), password: val('ml-pass'),
-          host: val('ml-host'), port: val('ml-port'), clientId: val('ml-client')
-        });
-        mlProvider = '';
+      if (act === 'check') {
+        toast('Cerco Thunderbird e leggo la posta…', '');
+        info = await api('POST', '/api/control/mail/check', {});
         adopt();
-        toast('Account collegato: aggiungi la pagina EMAIL alla barra se non c\'è', 'ok');
-      } else if (act === 'remove') {
-        const a = info.mail.accounts.find((x) => x.id === id);
-        if (!confirm('Scollegare ' + (a ? a.email : 'l\'account') + ' dalla dock?')) { if (btn) btn.disabled = false; return; }
-        info = await api('POST', '/api/control/mail/remove', { id: id });
-        adopt();
-      } else if (act === 'login') {
-        info = await api('POST', '/api/control/mail/login', { id: id });
-        adopt();
+        const n = info.mail.accounts.length;
+        toast(n ? 'Thunderbird collegato: ' + n + (n === 1 ? ' account' : ' account') : (info.mail.profile ? 'Nessun account in Thunderbird' : 'Thunderbird non trovato'), n ? 'ok' : 'err');
+        if (btn) btn.disabled = false;
+        return;
       }
+      if (act === 'open') {
+        await api('POST', '/api/control/mail/open', {});
+        toast('Thunderbird aperto', 'ok');
+        if (btn) btn.disabled = false;
+        return;
+      }
+      info = await api('POST', '/api/control/mail/show', { id: id, shown: act === 'show' });
+      adopt();
+      if (act === 'show') toast('Account sul tablet: aggiungi la pagina EMAIL alla barra se non c\'è', 'ok');
     } catch (e) { toast(e.message, 'err'); }
     if (btn) btn.disabled = false;
   }
   document.addEventListener('click', (e) => {
-    const prov = e.target.closest('[data-mlprov]');
-    if (prov) { mlProvider = prov.dataset.mlprov; renderMail(); return; }
     const b = e.target.closest('[data-mlact]');
     if (!b) return;
     const row = b.closest('[data-acc]');
