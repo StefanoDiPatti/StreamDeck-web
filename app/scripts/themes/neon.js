@@ -31,6 +31,7 @@ module.exports = {
 @font-face { font-family: "VDClockNeon"; src: url("../../fonts/clock-neon.ttf") format("truetype"); }
 .saver-clock { font-family: "VDClockNeon", "Roboto Condensed", sans-serif; font-size: 88px; letter-spacing: 6px; color: #1b8fb3; text-shadow: 0 0 14px rgba(65, 209, 255, 0.45), 0 0 34px rgba(65, 209, 255, 0.2); }
 body { font-family: "Roboto Condensed", "Arial Narrow", Roboto, Arial, sans-serif; }
+.clk-time { font-family: "VDClockNeon", "Roboto Condensed", sans-serif; letter-spacing: 6px; color: ${CY}; text-shadow: 0 0 12px rgba(65, 209, 255, 0.6), 0 0 30px rgba(65, 209, 255, 0.25); }
 #topbar { border-bottom-color: #000; }
 .tb-left, #page-title { text-transform: uppercase; letter-spacing: 3px; }
 #status-dot.on { -webkit-box-shadow: 0 0 8px #39ff88; box-shadow: 0 0 8px #39ff88; }

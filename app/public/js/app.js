@@ -77,24 +77,31 @@
     D.toggleClass(b, 'phone', phone);
   }
 
-  // Dispone le tile nella griglia: da sinistra a destra, prima cella libera.
+  // Dispone le tile nella griglia. Quelle con "x" e "y" (HOME scelta dal pannello) restano
+  // al loro posto; le altre vanno da sinistra a destra nella prima cella libera.
   function pack(tiles, cols, rows) {
-    var grid = [], out = [], r, c;
+    var grid = [], out = [], rest = [], r, c, k, t, w, h;
     for (r = 0; r < rows; r++) { grid[r] = []; for (c = 0; c < cols; c++) grid[r][c] = false; }
     function fits(x, y, w, h) {
-      if (x + w > cols || y + h > rows) return false;
+      if (x < 0 || y < 0 || x + w > cols || y + h > rows) return false;
       for (var i = y; i < y + h; i++) for (var j = x; j < x + w; j++) if (grid[i][j]) return false;
       return true;
     }
-    for (var k = 0; k < tiles.length; k++) {
-      var t = tiles[k], w = Math.min(t.w || 1, cols), h = Math.min(t.h || 1, rows), placed = false;
+    function take(t, x, y, w, h) {
+      for (var i = y; i < y + h; i++) for (var j = x; j < x + w; j++) grid[i][j] = true;
+      out.push({ tile: t, x: x, y: y, w: w, h: h });
+    }
+    for (k = 0; k < tiles.length; k++) {
+      t = tiles[k]; w = Math.min(t.w || 1, cols); h = Math.min(t.h || 1, rows);
+      if (typeof t.x === 'number' && typeof t.y === 'number' && fits(t.x, t.y, w, h)) take(t, t.x, t.y, w, h);
+      else rest.push(t);
+    }
+    for (k = 0; k < rest.length; k++) {
+      t = rest[k]; w = Math.min(t.w || 1, cols); h = Math.min(t.h || 1, rows);
+      var placed = false;
       for (r = 0; r < rows && !placed; r++) {
         for (c = 0; c < cols && !placed; c++) {
-          if (fits(c, r, w, h)) {
-            for (var i = r; i < r + h; i++) for (var j = c; j < c + w; j++) grid[i][j] = true;
-            out.push({ tile: t, x: c, y: r, w: w, h: h });
-            placed = true;
-          }
+          if (fits(c, r, w, h)) { take(t, c, r, w, h); placed = true; }
         }
       }
       if (!placed && window.console) console.warn('Tile senza spazio:', t.label || t.widget);

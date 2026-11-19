@@ -320,6 +320,23 @@ svg.ic.dc-camflag { fill: #127a3a; }
 .vb-task.doing .vb-chip { background: #9cc4ff; color: #1f5fd1; }
 .vb-step { color: #2b2b2b; }
 .vb-step svg.ic { fill: #5a5446; }
+.dk-item { background: #fffdf7; }
+.dk-item b { background: #efe8d8; }
+.dk-item small { color: #5a5446; }
+.dk-item.on { border-color: #111111; background: #fff0b3; }
+.dk-item.on small { color: #1f5fd1; }
+.dk-item.pressed, .dk-item.busy { background: #ffd23f; }
+.dk-item svg.ic { fill: #5a5446; }
+.dk-new { border: 2px dashed #111111; }
+.gm-item { background: #fffdf7; }
+.gm-item.pressed, .gm-item.busy { background: #ffd23f; }
+.gm-pic svg.ic { fill: #5a5446; }
+.gm-item.running:before { background: #2bd96b; }
+.dm-p { background: #fffdf7; color: #2b2b2b; }
+.dm-p.talk { border-color: #2bd96b; color: #111111; }
+.dm-btn { background: #efe8d8; }
+.dm-btn.on { background: #ff6b5b; }
+.dm-btn.pressed { background: #4d9dff; }
 .vb-step.done { color: #5a5446; }
 .vb-step.done svg.ic { fill: #127a3a; }
 .vb-step.in_progress { color: #111111; }
@@ -339,6 +356,8 @@ svg.ic.dc-camflag { fill: #127a3a; }
 /* salvaschermo: cifre nere pesanti con ombra piena */
 @font-face { font-family: "VDClockBrutal"; src: url("../../fonts/clock-brutal.ttf") format("truetype"); }
 .saver-clock { font-family: "VDClockBrutal", "Arial Black", sans-serif; font-size: 100px; letter-spacing: 0; color: #6e6656; text-shadow: 6px 6px 0 #4a3d06; }
+.clk-time { font-family: "VDClockBrutal", "Arial Black", sans-serif; letter-spacing: 0; color: #111111; text-shadow: 4px 4px 0 #ffd23f; }
+.clk-date { color: #111111; }
 body { font-family: "Arial Black", "Archivo Black", Roboto, Arial, sans-serif; }
 /* barre nere con testo crema */
 #topbar { background: #111111; color: #f4efe3; border-bottom: 3px solid #111111; }

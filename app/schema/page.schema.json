@@ -186,6 +186,18 @@
           "pattern": "^#[0-9a-fA-F]{6}$",
           "description": "Colore del pulsante (si adatta al tema)."
         },
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 7,
+          "description": "Colonna fissa (da 0). Senza x e y la tile va nella prima cella libera."
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Riga fissa (da 0)."
+        },
         "w": {
           "type": "integer",
           "minimum": 1,
@@ -242,6 +254,9 @@
                 "clock",
                 "claude",
                 "claudeusage",
+                "desks",
+                "games",
+                "discordmini",
                 "discord",
                 "screens",
                 "mail",
@@ -256,6 +271,13 @@
               "description": "Widget di un plugin."
             }
           ]
+        },
+        "show": {
+          "enum": [
+            "projects",
+            "tasks"
+          ],
+          "description": "Per il widget viber: solo la colonna dei progetti o delle task."
         },
         "provider": {
           "enum": [

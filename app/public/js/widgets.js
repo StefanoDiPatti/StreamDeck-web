@@ -8,7 +8,8 @@ var Widgets = (function () {
   function level(v, warn, hot) { return v === null || v === undefined ? '' : v >= hot ? 'hot' : v >= warn ? 'warn' : 'ok'; }
 
   function header(root, title, right) {
-    var h = el('div', 'w-head');
+    // con i pulsanti a destra il titolo lascia loro spazio; senza, usa tutta la larghezza
+    var h = el('div', 'w-head' + (right ? ' tools' : ''));
     var t = el('div', 'w-title', title);
     h.appendChild(t);
     if (right) h.appendChild(right);
@@ -108,7 +109,7 @@ var Widgets = (function () {
   // un riquadro basso. Il testo si adatta all'altezza disponibile.
   function system(root) {
     D.addClass(root, 'w-system');
-    var title = header(root, 'PC');
+    var title = header(root, 'DIAGNOSTICA');
     var list = el('div', 'm-list');
     root.appendChild(list);
     var rows = {};
@@ -142,8 +143,7 @@ var Widgets = (function () {
       update: function (s) {
         var sys = s && s.system;
         if (!sys) return;
-        setText(title, 'PC · ' + sys.hostname);
-        var c = sys.cpu;
+        var c = sys.cpu;   // il nome del PC è già nella barra in alto
         set('cpu', (c.usage === null ? '…' : c.usage + '%') + deg(c.temp), c.usage, level(Math.max(c.usage || 0, c.temp ? c.temp - 15 : 0), 60, 85));
         var g = sys.gpu;
         if (g) {
@@ -192,8 +192,9 @@ var Widgets = (function () {
     var ctr = el('div', 'np-ctr');
     var ctr2 = el('div', 'np-ctr2');
     info.appendChild(src); info.appendChild(title); info.appendChild(artist);
-    info.appendChild(seek); info.appendChild(times); info.appendChild(ctr2); info.appendChild(ctr);
-    root.appendChild(art); root.appendChild(info);
+    info.appendChild(seek); info.appendChild(times); info.appendChild(ctr2);
+    // i comandi stanno sotto copertina e testo, a tutta larghezza: non si schiacciano e non coprono il titolo
+    root.appendChild(art); root.appendChild(info); root.appendChild(ctr);
 
     var cur = null, artKey = null, offset = 0, receivedAt = 0, timer = null, optimisticUntil = 0;
     img.onload = function () { img.style.display = 'block'; artPh.style.display = 'none'; };
@@ -271,8 +272,8 @@ var Widgets = (function () {
     function paintStatus() {
       var playing = cur && cur.status === 'playing';
       playBtn.innerHTML = Icons.html(playing ? 'pause' : 'play') || (playing ? '||' : '>');
-      var label = cur ? (cur.appName || '') + (cur.status === 'paused' ? ' · IN PAUSA' : cur.status === 'playing' ? ' · IN RIPRODUZIONE' : '') : '';
-      setText(src, label.toUpperCase());
+      // solo il nome dell'app: lo stato si vede già dal tasto play/pausa
+      setText(src, cur ? String(cur.appName || '').toUpperCase() : '');
       var vol = cur && typeof cur.volume === 'number' ? Math.round(cur.volume * 100) : null;
       setText(volLabel, vol === null ? '' : (cur.muted ? 'MUTO' : 'VOL ' + vol + '%'));
       D.toggleClass(shufBtn, 'on', !!(cur && cur.shuffle));
@@ -319,28 +320,42 @@ var Widgets = (function () {
       },
       resize: function (w, h) {
         var pad = 12;
-        var showArt = w > h * 1.15 && h > 110;
-        var tall = h > 330;
-        var size = showArt ? Math.min(h - pad * 2, w * 0.42) : 0;
-        // In verticale servono ~280px sotto la copertina per testo e due file di tasti
-        if (tall && showArt) size = Math.max(90, Math.min(w - pad * 2, h - 290));
+        // disposizione "pagina MUSICA" solo in un riquadro grande e alto
+        var tall = h > 380 && w > 420 && w < h * 1.6;
+        var compact = h <= 190;
+        var ctrH = compact ? 50 : 64;
+        // comandi in basso a tutta larghezza; sopra, copertina (piccola) e testo
+        var free = h - ctrH - pad * 3;          // altezza sopra i comandi
+        var size, showArt;
+        if (tall) {
+          // pagina MUSICA: copertina sopra, testo e due file di tasti sotto (~240px)
+          size = Math.max(0, Math.min(w - pad * 2, h - 240 - ctrH));
+          showArt = size >= 90;
+        } else {
+          size = Math.min(free, Math.round(w * 0.3));
+          showArt = size >= 60 && w - size > 170;
+        }
+        if (!showArt) size = 0;
         art.style.display = showArt ? 'block' : 'none';
         art.style.width = size + 'px'; art.style.height = size + 'px';
-        // Pagina musica (alta): copertina sopra, testo sotto. Altrove: copertina a sinistra.
-        if (tall && showArt) {
+        if (tall) {
           art.style.left = Math.round((w - size) / 2) + 'px'; art.style.top = pad + 'px';
-          info.style.left = pad + 'px'; info.style.top = (size + pad * 2) + 'px';
+          info.style.left = pad + 'px'; info.style.top = (showArt ? size + pad * 2 : pad) + 'px';
         } else {
-          art.style.left = pad + 'px'; art.style.top = Math.round((h - size) / 2) + 'px';
+          art.style.left = pad + 'px'; art.style.top = pad + 'px';
           info.style.left = (showArt ? size + pad * 2 : pad) + 'px'; info.style.top = pad + 'px';
         }
         info.style.right = pad + 'px';
+        info.style.bottom = (ctrH + pad * 2) + 'px';
+        ctr.style.left = pad + 'px'; ctr.style.right = pad + 'px'; ctr.style.bottom = pad + 'px';
         D.toggleClass(root, 'np-tall', tall);
-        D.toggleClass(root, 'np-compact', h <= 170);
+        D.toggleClass(root, 'np-compact', compact);
         // shuffle / ripeti / muto solo dove c'è spazio (pagina MUSICA)
-        ctr2.style.display = tall || (!showArt && h > 260) ? '' : 'none';
-        var infoW = w - (showArt && !tall ? size + pad * 3 : pad * 2);
-        volDown.style.display = volUp.style.display = infoW > 300 ? '' : 'none';
+        ctr2.style.display = tall ? '' : 'none';
+        // tasti del volume solo se la fila è abbastanza larga (altrimenti 3 tasti più grandi)
+        var vol = w - pad * 2 > 330;
+        volDown.style.display = volUp.style.display = vol ? '' : 'none';
+        D.toggleClass(root, 'np-novol', !vol);
       },
       destroy: function () { D.stop(timer); }
     };
@@ -869,7 +884,13 @@ var Widgets = (function () {
     loadInfo();
     return {
       update: function () {},
-      resize: function () { log.scrollTop = log.scrollHeight; },
+      // riquadro stretto (HOME): menu dei modelli più corto e titolo che lascia solo lo spazio che serve
+      resize: function (w) {
+        D.toggleClass(root, 'chat-narrow', w < 560);
+        if (select) select.style.maxWidth = (w < 560 ? Math.max(90, Math.round(w * 0.32)) : 280) + 'px';
+        title.style.marginRight = (right.offsetWidth ? right.offsetWidth + 12 : 0) + 'px';
+        log.scrollTop = log.scrollHeight;
+      },
       destroy: function () { if (st.render === render) st.render = null; }
     };
   }
@@ -891,7 +912,17 @@ var Widgets = (function () {
     var timer = D.every(5000, 30000, paint);
     return {
       update: function () {},
-      resize: function (w, h) { t.style.fontSize = Math.round(Math.min(w / 3.2, h / 2.6)) + 'px'; },
+      // ora e data al centro, grandi quanto il riquadro permette (anche in una cella sola)
+      resize: function (w, h) {
+        var inner = h - 20;
+        var tf = Math.round(Math.min((w - 24) / 3.1, inner * 0.62));
+        var df = Math.max(11, Math.min(20, Math.round(tf * 0.24)));
+        t.style.fontSize = tf + 'px';
+        d.style.fontSize = df + 'px';
+        d.style.display = inner > tf + df * 1.6 ? '' : 'none';
+        var used = tf + (d.style.display ? 0 : df * 1.6);
+        t.style.marginTop = Math.max(0, Math.round((inner - used) / 2)) + 'px';
+      },
       destroy: function () { D.stop(timer); }
     };
   }
@@ -2135,7 +2166,9 @@ var Widgets = (function () {
   var VB_STATES = { question: 'ti aspetta', working: 'al lavoro', completed: 'pronto', idle: '' };
   function viberWidget(root, tile, app) {
     D.addClass(root, 'w-viber');
-    root.innerHTML = '<div class="vb-col vb-colp"><div class="vb-h">PROGETTI<span class="vb-sub"></span></div><div class="vb-projs scroll"></div></div>' +
+    // "show": "projects" o "tasks" = una colonna sola (HOME); senza, tutte e due (pagina VIBER)
+    if (tile.show === 'projects' || tile.show === 'tasks') D.addClass(root, 'vb-only-' + tile.show);
+    root.innerHTML ='<div class="vb-col vb-colp"><div class="vb-h">PROGETTI<span class="vb-sub"></span></div><div class="vb-projs scroll"></div></div>' +
       '<div class="vb-col vb-colt"><div class="vb-h">TASK<span class="vb-tsub"></span></div><div class="vb-tasks scroll"></div></div>';
     function q(c) { return root.querySelector('.' + c); }
     var sub = q('vb-sub'), projEl = q('vb-projs'), tasksEl = q('vb-tasks'), tsub = q('vb-tsub');
@@ -2503,8 +2536,165 @@ var Widgets = (function () {
     };
   }
 
+  // ------------------------------------------------------------ widget piccoli per la HOME
+  // Desktop virtuali (dalla pagina SCHERMI): tocco = passa a quel desktop, + = nuovo.
+  function desksWidget(root, tile, app) {
+    D.addClass(root, 'w-desks');
+    header(root, tile.title || 'DESKTOP');
+    var list = el('div', 'dk-list');
+    root.appendChild(list);
+    var data = null, alive = true, busy = false, last = '';
+    function render() {
+      if (!data) { list.innerHTML = '<div class="empty">Carico…</div>'; return; }
+      if (!data.supported) { list.innerHTML = '<div class="empty">' + D.esc(data.message || 'Non disponibili su questo sistema') + '</div>'; return; }
+      var h = '';
+      for (var i = 0; i < data.desktops.length; i++) {
+        var d = data.desktops[i], n = d.windows ? d.windows.length : 0;
+        h += '<div class="dk-item' + (d.current ? ' on' : '') + '" data-desk="' + D.esc(d.id) + '"><b>' + d.n + '</b><span>' + D.esc(d.name) + '</span>' +
+          '<small>' + (d.current ? 'sei qui' : n + (n === 1 ? ' finestra' : ' finestre')) + '</small></div>';
+      }
+      if (data.desktops.length < (data.max || 3)) h += '<div class="dk-item dk-new" data-new="1">' + Icons.html('add') + '<span>Nuovo</span></div>';
+      setHtml(list, h);
+    }
+    function load() {
+      if (busy) return;
+      D.api.get('/api/screens/desktops', function (err, d) {
+        if (!alive || busy) return;
+        if (err) { if (!data) list.innerHTML = '<div class="empty err">' + D.esc(err.message) + '</div>'; return; }
+        var k = JSON.stringify(d);
+        if (k === last) return;
+        last = k; data = d; render();
+      });
+    }
+    D.bindTap(list, { onTap: function (t) {
+      if (busy) return;
+      var body = null;
+      if (D.closestAttr(t, 'data-new', list)) body = { action: 'create' };
+      else {
+        var c = D.closestAttr(t, 'data-desk', list);
+        if (c && !D.hasClass(c, 'on')) { D.addClass(c, 'busy'); body = { action: 'switch', desktop: c.getAttribute('data-desk') }; }
+      }
+      if (!body) return;
+      busy = true;
+      D.api.post('/api/screens/desktops', body, function (err, d) {
+        busy = false;
+        if (err) { app.toast(err.message, 'err'); last = ''; load(); return; }
+        data = d; last = JSON.stringify(d); render();
+      }, 15000);
+    } });
+    render(); load();
+    var timer = D.every(3000, 15000, load);
+    return {
+      update: function () {},
+      // in un riquadro basso i desktop stanno in fila, in uno alto uno sotto l'altro
+      resize: function (w, h) { D.toggleClass(root, 'dk-row', w > h * 1.3); },
+      destroy: function () { alive = false; D.stop(timer); }
+    };
+  }
+
+  // Giochi (dalla pagina GAMES): icone piccole, tocco = avvia (pallino verde se è aperto).
+  function gamesWidget(root, tile, app) {
+    D.addClass(root, 'w-games');
+    header(root, tile.title || 'GIOCHI');
+    var list = el('div', 'gm-list scroll');
+    root.appendChild(list);
+    var games = [];
+    function pageGames() {
+      var pages = (app.cfg && app.cfg.pages) || [];
+      for (var i = 0; i < pages.length; i++) if (pages[i].id === 'games') return pages[i].tiles || [];
+      return [];
+    }
+    function render() {
+      games = pageGames();
+      var h = '';
+      for (var i = 0; i < games.length; i++) {
+        var g = games[i];
+        var pic = g.image ? '<i class="gm-pic" style="background-image:url(\'' + D.esc(g.image).replace(/'/g, '%27') + '\')"></i>' : '<i class="gm-pic">' + Icons.html(g.icon || 'gamepad') + '</i>';
+        h += '<div class="gm-item" data-i="' + i + '">' + pic + '<span>' + D.esc(g.label) + '</span></div>';
+      }
+      setHtml(list, h || '<div class="empty">Aggiungi i giochi dal pannello di controllo sul PC</div>');
+    }
+    D.bindTap(list, { scrollable: true, onTap: function (t) {
+      var it = D.closestAttr(t, 'data-i', list);
+      var g = it && games[+it.getAttribute('data-i')];
+      if (!g || D.hasClass(it, 'busy')) return;
+      if (g.action && g.action.type === 'page') { app.toast('Aggiungi i giochi dal pannello di controllo sul PC', 'info'); return; }
+      D.addClass(it, 'busy');
+      D.api.post('/api/press', { page: 'games', tile: g.id }, function (err, r) {
+        D.removeClass(it, 'busy');
+        if (err) return app.toast(err.message, 'err');
+        if (r && r.message) app.toast(r.message, 'ok');
+      }, 60000);
+    } });
+    render();
+    return {
+      update: function (s) {
+        if (!s || !s.apps) return;
+        var items = list.querySelectorAll('.gm-item');
+        for (var i = 0; i < items.length; i++) {
+          var g = games[+items[i].getAttribute('data-i')];
+          D.toggleClass(items[i], 'running', !!(g && g.showRunning && s.apps[g.showRunning]));
+        }
+      },
+      resize: function () {},
+      destroy: function () {}
+    };
+  }
+
+  // Discord compatto: stanza in cui sei, chi parla, mute e silenzia.
+  function discordMini(root, tile, app) {
+    D.addClass(root, 'w-dcmini');
+    header(root, tile.title || 'DISCORD');
+    var room = el('div', 'dm-room', '…');
+    var people = el('div', 'dm-people', '');
+    var ctr = el('div', 'dm-ctr');
+    root.appendChild(room); root.appendChild(people); root.appendChild(ctr);
+    var st = null, alive = true;
+    function btn(icon, label, what) {
+      var b = el('div', 'dm-btn');
+      b.innerHTML = Icons.html(icon) + '<span>' + label + '</span>';
+      D.bindTap(b, { onTap: function () {
+        D.api.post('/api/discord/toggle', { what: what }, function (err, d) {
+          if (err) return app.toast(err.message, 'err');
+          if (d.message) app.toast(d.message, 'info');
+          st = d; render();
+        });
+      } });
+      ctr.appendChild(b);
+      return b;
+    }
+    var muteB = btn('mic', 'MUTE', 'mute'), deafB = btn('headset', 'SILENZIA', 'deaf');
+    function render() {
+      if (!st) return;
+      var ready = st.status === 'ready';
+      if (!ready) setText(room, st.status === 'setup' ? 'Collega Discord dal pannello sul PC' : (st.message || 'Discord non collegato'));
+      else if (!st.channel) setText(room, 'Non sei in una stanza');
+      else setText(room, st.channel.name + (st.channel.guild ? ' · ' + st.channel.guild : ''));
+      var h = '';
+      var mem = st.channel ? st.channel.members : [];
+      for (var i = 0; i < mem.length && i < 8; i++) {
+        h += '<span class="dm-p' + (mem[i].speaking ? ' talk' : '') + (mem[i].mute || mem[i].deaf ? ' off' : '') + '">' + D.esc(mem[i].name) + '</span>';
+      }
+      if (mem.length > 8) h += '<span class="dm-p">+' + (mem.length - 8) + '</span>';
+      setHtml(people, h);
+      var v = st.voice || {};
+      D.toggleClass(muteB, 'on', !!v.mute);
+      D.toggleClass(deafB, 'on', !!v.deaf);
+    }
+    function load() {
+      D.api.get('/api/discord/state', function (err, d) {
+        if (!alive) return;
+        st = err ? { status: 'offline', message: err.message } : d;
+        render();
+      });
+    }
+    load();
+    var timer = D.every(2000, 8000, load);
+    return { update: function () {}, resize: function () {}, destroy: function () { alive = false; D.stop(timer); } };
+  }
+
   var CHAT = {};
-  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, claudeusage: claudeUsage, discord: discord, screens: screensWidget, mail: mailWidget, audio: audioWidget, vdesk: vdeskWidget, viber: viberWidget };
+  var TYPES = { system: system, nowplaying: nowplaying, queue: queue, github: github, todo: todo, chat: chat, clock: clock, claude: claudeWidget, claudeusage: claudeUsage, desks: desksWidget, games: gamesWidget, discordmini: discordMini, discord: discord, screens: screensWidget, mail: mailWidget, audio: audioWidget, vdesk: vdeskWidget, viber: viberWidget };
 
   function create(type, root, tile, app) {
     var fn = TYPES[type];
