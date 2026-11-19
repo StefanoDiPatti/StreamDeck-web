@@ -144,7 +144,8 @@ body.rot {
 body.phone #topbar { height: 38px; line-height: 38px; font-size: 14px; }
 body.phone .tb-left, body.phone .tb-right, body.phone #theme-btn { height: 38px; }
 body.phone #banner { top: 38px; }
-body.phone #stage { top: 38px; bottom: 48px; }
+/* 6 px in più sotto: tra le tile e la barra delle pagine resta un po' d'aria (l'ombra del Neo-brutalista si vede) */
+body.phone #stage { top: 38px; bottom: 54px; }
 body.phone.no-tabs #stage { bottom: 0; }
 body.phone.kb-open #stage { top: 0; bottom: 0; }
 body.phone #tabs, body.phone .tab { height: 48px; }
@@ -166,7 +167,7 @@ body.phone .tile.btn.short .t-label { letter-spacing: 0; }
 #toast.err { background: #8b1d1d; }
 @media (max-width: 600px) { #toast { width: 90%; left: 5%; margin-left: 0; } }
 
-#modal, #pair, #boot {
+#modal, #pair, #boot, #offline {
   position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 60; background: rgba(5, 8, 12, 0.88);
 }
 .modal-box {
@@ -199,6 +200,12 @@ body.phone .tile.btn.short .t-label { letter-spacing: 0; }
 .pair-go { height: 56px; line-height: 56px; background: #3d8bfd; border-radius: 10px; font-weight: bold; font-size: 18px; letter-spacing: 2px; }
 .pair-go.pressed { background: #2f6fd0; }
 #boot { background: #0b0f14; }
+/* PC non raggiungibile (altra rete o dock spenta): sopra a tutto tranne il salvaschermo */
+#offline { z-index: 65; background: rgba(5, 8, 12, 0.94); }
+#offline-host { color: #fff; }
+#offline-wait { margin-bottom: 12px; font-size: 13px; }
+body.phone #offline .pair-box { top: 4%; padding: 14px 18px; }
+body.phone #offline .pair-msg { margin-bottom: 10px; font-size: 14px; }
 .boot-title { position: absolute; left: 0; right: 0; top: 38%; font-size: 26px; font-weight: bold; letter-spacing: 6px; }
 #boot-msg { position: absolute; left: 0; right: 0; top: 50%; text-align: center; color: #8b9bab; font-size: 16px; }
 

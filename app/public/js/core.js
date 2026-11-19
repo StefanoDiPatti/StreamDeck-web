@@ -142,8 +142,11 @@ var D = (function () {
       if (!pressed) return;
       // con "hold" parte solo tenendo premuto: un tocco breve non fa niente
       var go = !moved && !fired && !opts.hold;
+      var brief = opts.hold && opts.onShort && !moved && !fired;
       cancel();
       if (go) fire();
+      // tocco breve su un pulsante da tenere premuto: spiega cosa fare invece di non fare niente
+      if (brief) { try { opts.onShort(target); } catch (e) { if (window.console) console.error(e); } }
     }
 
     node.addEventListener('touchstart', function (e) {

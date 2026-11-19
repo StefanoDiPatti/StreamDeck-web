@@ -407,7 +407,9 @@ async function toggle(what) {
 async function join(channelId) {
   await ready();
   if (channelId !== null && !/^\d+$/.test(String(channelId || ''))) throw Object.assign(new Error('Canale non valido'), { code: 'BAD_REQUEST' });
-  const ch = await ipc.request('SELECT_VOICE_CHANNEL', { channel_id: channelId === null ? null : String(channelId), force: true });
+  // per uscire basta channel_id null (senza "force", che serve solo per entrare in un'altra stanza)
+  const args = channelId === null ? { channel_id: null } : { channel_id: String(channelId), force: true };
+  const ch = await ipc.request('SELECT_VOICE_CHANNEL', args);
   await followChannel(channelId === null ? null : ch);
   return state();
 }

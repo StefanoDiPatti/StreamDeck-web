@@ -1505,6 +1505,7 @@ var Widgets = (function () {
     D.bindTap(liveBtn, { onTap: function () { media('stream'); } });
     D.bindTap(leaveBtn, {
       hold: 700,
+      onShort: function () { if (st && st.channel) app.toast('Tieni premuto ESCI per uscire dalla stanza', 'info'); },
       onTap: function () {
         if (!st || !st.channel) return;
         D.api.post('/api/discord/join', { channel: null }, function (err, d) {
@@ -2025,7 +2026,8 @@ var Widgets = (function () {
       var lay = layout(SC.layout);
       if (!lay) return;
       D.addClass(d.row, 'busy');
-      D.api.post('/api/screens/place', { window: d.id, monitor: monId, layout: lay.id, zone: zone }, function (err) {
+      // trascinata: cambia posto ma non prende il primo piano (quello solo col tocco)
+      D.api.post('/api/screens/place', { window: d.id, monitor: monId, layout: lay.id, zone: zone, focus: false }, function (err) {
         D.removeClass(d.row, 'busy');
         if (err) return app.toast(err.message, 'err');
         SC.placed[monId + '|' + lay.id + '|' + zone] = d.title;

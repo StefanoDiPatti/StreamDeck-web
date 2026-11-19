@@ -331,10 +331,28 @@
     app.online = on;
     D.toggleClass(D.$('status-dot'), 'on', on);
     D.setText(D.$('host'), on ? (app.cfg ? app.cfg.hostname : 'PC') : 'OFFLINE');
-    if (on) { D.addClass(banner, 'hidden'); return; }
+    if (on) { D.addClass(banner, 'hidden'); showOffline(false); return; }
     D.removeClass(banner, 'hidden');
     D.setText(banner, 'CONNESSIONE PERSA  ·  nuovo tentativo tra ' + Math.round(retryMs / 1000) + 's');
   }
+
+  // PC non raggiungibile da un po' (dispositivo su un'altra rete, dock spenta):
+  // schermata a tutto schermo che spiega cosa fare. Sparisce da sola quando il PC risponde.
+  var offlineRetry = null;
+  function showOffline(on, retryMs, retry) {
+    var el = D.$('offline');
+    if (!on) { offlineRetry = null; D.addClass(el, 'hidden'); return; }
+    offlineRetry = retry;
+    D.setText(D.$('offline-host'), window.location.host || 'il PC');
+    D.setText(D.$('offline-wait'), 'Nuovo tentativo automatico tra ' + Math.round(retryMs / 1000) + ' s');
+    D.removeClass(el, 'hidden');
+  }
+  D.bindTap(D.$('offline-go'), { onTap: function () {
+    var f = offlineRetry;
+    if (!f) return;
+    D.setText(D.$('offline-wait'), 'Provo a collegarmi…');
+    f();
+  } });
 
   function poll() {
     clearTimeout(app.pollTimer);
@@ -344,6 +362,7 @@
         var wait = BACKOFF[Math.min(app.failures, BACKOFF.length - 1)];
         app.failures++;
         if (app.failures >= 2) setOnline(false, wait);
+        if (app.failures >= 3) showOffline(true, wait, function () { app.failures = 2; poll(); });
         app.pollTimer = setTimeout(poll, wait);
         return;
       }
@@ -422,7 +441,9 @@
       if (err) {
         if (err.status === 401) return;
         setOnline(false, 4000);
-        setTimeout(loadConfig, 4000);
+        showOffline(true, 4000, loadConfig);
+        clearTimeout(app.cfgTimer);
+        app.cfgTimer = setTimeout(loadConfig, 4000);
         return;
       }
       var first = !app.cfg;
@@ -640,14 +661,19 @@
   document.addEventListener('webkitvisibilitychange', onVisibility, false);
 
   // ------------------------------------------------------------ avvio
+  var bootFails = 0, bootTimer = null;
   function boot() {
+    clearTimeout(bootTimer);
     layout();
     D.api.get('/api/health', function (err, h) {
       if (err) {
+        bootFails++;
         D.setText(D.$('boot-msg'), 'Il PC non risponde. Nuovo tentativo…');
-        setTimeout(boot, 3000);
+        if (bootFails >= 2) showOffline(true, 3000, boot);
+        bootTimer = setTimeout(boot, 3000);
         return;
       }
+      showOffline(false);
       if (!h.paired) { showPair(); return; }
       loadConfig();
     }, 6000);

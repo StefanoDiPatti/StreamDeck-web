@@ -113,7 +113,8 @@ async function findWindow(id) {
 }
 
 // Mette una finestra in una zona di una disposizione su un monitor.
-async function place(windowId, monitorId, layoutId, zone) {
+// focus = la porta anche in primo piano (tocco sulla finestra); false col trascinamento.
+async function place(windowId, monitorId, layoutId, zone, focus) {
   const w = await findWindow(windowId);
   const list = await monitors();
   const mon = list.filter(function (m) { return m.id === monitorId; })[0];
@@ -124,7 +125,7 @@ async function place(windowId, monitorId, layoutId, zone) {
   const z = zones[parseInt(zone, 10)];
   if (!z) throw Object.assign(new Error('Zona non valida'), { code: 'BAD_REQUEST' });
   // "Intero" = massimizzata su quel monitor (come il doppio clic sulla barra del titolo)
-  await platform.placeWindow(w.id, zoneRect(mon, z), layout.id === 'full', true);
+  await platform.placeWindow(w.id, zoneRect(mon, z), layout.id === 'full', focus !== false);
   return { placed: w.title };
 }
 
