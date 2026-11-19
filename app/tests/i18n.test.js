@@ -1,0 +1,57 @@
+// Lingua del tablet: i18n.js + lang-en.js caricati come nel browser, con l'inglese scelto.
+const test = require('node:test');
+const assert = require('node:assert');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+function load(lang) {
+  const store = { 'dock:lang': JSON.stringify(lang) };
+  const ctx = { window: { localStorage: { getItem: function (k) { return store[k] || null; }, setItem: function (k, v) { store[k] = v; } } } };
+  ctx.window.window = ctx.window;
+  vm.createContext(ctx);
+  ['i18n.js', 'lang-en.js'].forEach(function (f) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'public', 'js', f), 'utf8') + '\nwindow.I18n = I18n;', ctx, { filename: f });
+  });
+  return ctx.window.I18n;
+}
+
+test('italiano: i testi restano come sono', function () {
+  const I = load('it');
+  assert.strictEqual(I.lang(), 'it');
+  assert.strictEqual(I.t('SALVA'), 'SALVA');
+});
+
+test('inglese: parole, maiuscole, pezzi separati da " · " e testi con numeri', function () {
+  const I = load('en');
+  assert.strictEqual(I.lang(), 'en');
+  assert.strictEqual(I.t('SALVA'), 'SAVE');
+  assert.strictEqual(I.t('Salva'), 'Save');
+  assert.strictEqual(I.t('  MUSICA '), '  MUSIC ', 'spazi intorno conservati');
+  assert.strictEqual(I.t('RIPETI'), 'REDO', 'nelle scorciatoie è Redo (la Musica usa il suo testo)');
+  assert.strictEqual(I.t('TASK · vibe-deck'), 'TASKS · vibe-deck');
+  assert.strictEqual(I.t('3 finestre'), '3 windows');
+  assert.strictEqual(I.t('si azzera dom 12:37'), 'resets Sun 12:37');
+  assert.strictEqual(I.t('si azzera alle 03:07'), 'resets at 03:07');
+  assert.strictEqual(I.t('PR aperte 2 · Issue 0 · CI falliti 1'), 'Open PRs 2 · Issue 0 · Failed CI 1');
+  assert.strictEqual(I.t('Niente in riproduzione'), 'Nothing playing');
+  assert.strictEqual(I.t('Neon Skyline'), 'Neon Skyline', 'testo sconosciuto: invariato');
+  // un plugin aggiunge le sue traduzioni
+  I.add({ 'Meteo di casa': 'Home weather' });
+  assert.strictEqual(I.t('METEO DI CASA'), 'HOME WEATHER');
+});
+
+test('dizionario: niente traduzioni vuote; titoli delle pagine predefinite tradotti', function () {
+  const I = load('en');
+  const config = require('../server/config');
+  const dir = path.join(__dirname, '..', 'config', 'defaults', 'pages');
+  const missing = [];
+  fs.readdirSync(dir).forEach(function (f) {
+    const p = config.parseJson(fs.readFileSync(path.join(dir, f), 'utf8'));
+    const title = p.title || p.id.toUpperCase();
+    // nomi propri (HOME, GITHUB, AUDIO, BLENDER...) restano uguali; gli altri devono cambiare
+    if (/[ÀÈÉÌÒÙ]|MUSICA|SCHERMI|GIOCHI|DESKTOP VIRTUALI/.test(title) && I.t(title) === title) missing.push(title);
+    if (p.description && I.t(p.description) === p.description) missing.push(f + ': ' + p.description);
+  });
+  assert.deepStrictEqual(missing, []);
+});

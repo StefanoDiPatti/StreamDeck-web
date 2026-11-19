@@ -40,6 +40,9 @@ svg.ic { fill: #ffffff; display: inline-block; vertical-align: middle; }
 #theme-btn { display: inline-block; width: 40px; height: 44px; text-align: center; margin-right: 6px; vertical-align: top; }
 #theme-btn svg.ic { width: 22px; height: 22px; fill: #9fb3c8; margin-top: -3px; }
 #theme-btn.pressed svg.ic { fill: #3d8bfd; }
+/* lingua: IT / EN (un tocco cambia) */
+#lang-btn { display: inline-block; min-width: 34px; height: 44px; text-align: center; margin-right: 4px; vertical-align: top; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #9fb3c8; }
+#lang-btn.pressed { color: #3d8bfd; }
 .theme-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 70; }
 .theme-menu { position: absolute; right: 10px; top: 50px; width: 270px; padding: 10px; background: #141c25; border: 1px solid #2a3746; border-radius: 14px;
   -webkit-box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55); }
@@ -142,7 +145,7 @@ body.rot {
   -webkit-transform: rotate(90deg) translateY(-100%); transform: rotate(90deg) translateY(-100%);
 }
 body.phone #topbar { height: 38px; line-height: 38px; font-size: 14px; }
-body.phone .tb-left, body.phone .tb-right, body.phone #theme-btn { height: 38px; }
+body.phone .tb-left, body.phone .tb-right, body.phone #theme-btn, body.phone #lang-btn { height: 38px; }
 body.phone #banner { top: 38px; }
 /* 6 px in più sotto: tra le tile e la barra delle pagine resta un po' d'aria (l'ombra del Neo-brutalista si vede) */
 body.phone #stage { top: 38px; bottom: 54px; }

@@ -627,6 +627,13 @@
   }
   D.bindTap(themeBtn, { onTap: function () { if (themeMenu) closeThemes(); else openThemes(); } });
 
+  // Lingua (accanto al tema): IT / EN, un tocco passa all'altra e ricarica la pagina
+  var langBtn = D.$('lang-btn');
+  D.setText(langBtn, I18n.lang() === 'en' ? 'EN' : 'IT');
+  langBtn.className = 'notr';
+  D.bindTap(langBtn, { onTap: function () { I18n.set(I18n.lang() === 'en' ? 'it' : 'en'); } });
+  I18n.watch();
+
   // ------------------------------------------------------------ orologio, fullscreen
   function clock() {
     var n = new Date();

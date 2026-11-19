@@ -131,7 +131,8 @@ Se qualcosa non va: [Problemi comuni](app/README.md#problemi-comuni).
 - **Barra in basso**: le pagine. Quali e in che ordine lo scegli dal pannello di controllo.
 - **Pulsanti**: un tocco esegue l'azione. Quelli con la barra arancione in basso (es. BLOCCA) vanno **tenuti premuti** circa
   un secondo. Volume e annulla si ripetono se tieni premuto. Il **pallino verde** dice che l'app è aperta.
-- **In alto a destra**: rete del PC, velocità, il pulsante dei **temi** (tavolozza) e l'orologio (toccalo per lo schermo intero).
+- **In alto a destra**: rete del PC, velocità, la **lingua** (IT / EN: un tocco cambia), il pulsante dei **temi** (tavolozza) e l'orologio
+  (toccalo per lo schermo intero). La lingua si ricorda sul tablet; il pannello di controllo sul PC resta in italiano.
 - **Batteria**: dopo un minuto senza tocchi la dock aggiorna i dati più lentamente; dopo 10 minuti parte il **salvaschermo**
   (orologio fioco). Un tocco la riattiva.
 - **Telefono**: funziona anche da telefono, in orizzontale.
@@ -462,6 +463,12 @@ Come aggiungere le cose più comuni **dentro il progetto** (per le tue aggiunte 
   Prima di cambiare un JSON in `config/defaults/` (non le pagine) aggiungi l'impronta della versione vecchia in
   `config/defaults/history.json` (così chi non l'ha modificato riceve l'aggiornamento).
 - **Un tipo di azione nuovo**: aggiungilo anche a `schema/page.schema.json` (i test controllano che siano allineati).
+
+**Lingua del tablet.** Il testo si scrive in italiano (codice e pagine); con l'inglese scelto il tablet traduce al volo quello che
+compare sullo schermo con il dizionario `public/js/lang-en.js` (`I18n.add({ 'Testo': 'Text' })`, senza badare alle maiuscole;
+per i testi con numeri o nomi `I18n.rules([[/^(\d+) finestre$/, '$1 windows']])`). Testo nuovo sul tablet = una riga nel dizionario.
+I testi dell'utente (brani, attività, messaggi) vanno in un elemento con `class="notr"`, così non vengono mai tradotti.
+Un plugin aggiunge le sue traduzioni con `I18n.add` nei suoi script.
 
 Regole da rispettare:
 
