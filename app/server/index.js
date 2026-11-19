@@ -277,7 +277,7 @@ app.post('/api/screens/window', route(function (req) {
 app.get('/api/viber/state', route(function () { return viber.state(); }));
 app.get('/api/viber/tasks', route(function () { return viber.tasks(); }));
 app.post('/api/viber/panel', route(function (req) { return viber.focusPanel(String((req.body || {}).panel || '')); }));
-app.post('/api/viber/sidebar', route(function (req) { return viber.sidebar(String((req.body || {}).mode || 'toggle')); }));
+app.post('/api/viber/view', route(function (req) { return viber.view(String((req.body || {}).mode || '')); }));
 
 // desktop virtuali: elenco, passa a uno, crea, chiudi
 app.get('/api/screens/desktops', route(function () { return vdesk.list(); }));

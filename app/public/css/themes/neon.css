@@ -286,8 +286,9 @@ svg.ic.dc-camflag { fill: #39ff88; }
 .vb-p { background: #141414; border: 1px solid #161616; }
 .vb-p.on { background: #06323d; border-color: #41d1ff; -webkit-box-shadow: inset 0 0 0 2px #41d1ff; box-shadow: inset 0 0 0 2px #41d1ff; }
 .vb-p.pressed, .vb-p.busy { background: #06323d; }
-.vb-side { background: #1c1c1c; }
-.vb-side.pressed, .vb-side.busy { background: #06323d; }
+.vb-v { background: #1c1c1c; }
+.vb-v.pressed, .vb-v.busy { background: #06323d; }
+.vb-note { color: #808080; }
 .vb-right { background: #0d0d0d; border-left: 1px solid #161616; }
 .vb-thead { color: #8f8f8f; }
 .vb-tsub { color: #808080; }

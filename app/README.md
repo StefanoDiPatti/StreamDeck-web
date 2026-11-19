@@ -96,17 +96,27 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | SCHERMI *(solo Windows)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app, **desktop virtuali** (passa, crea, chiudi) e pulsante **GUIDA** con le scorciatoie |
 | AUDIO | uscite e microfoni (predefinito, volume, mute), volume e mute di ogni app che usa l'audio |
 | DESKTOP VIRTUALI *(solo Linux)* | guida alle scorciatoie dei desktop virtuali (KDE Plasma, GNOME, anche Windows); su Windows la stessa guida è nella pagina SCHERMI |
-| VIBER *(aggiungila dal pannello)* | passa a terminale, git, browser, chat, task e file di Viber, apre/chiude la barra laterale, mostra le task del progetto aperto |
+| VIBER *(aggiungila dal pannello)* | passa ai pannelli aperti di Viber (terminale, git, browser, chat, task, file), cambia vista (schede, agenti, focus), mostra le task del progetto aperto |
 | BLENDER, DAVINCI *(disponibili: aggiungile alla barra dal pannello)* | scorciatoie dei due programmi |
 
 ## Viber
 
 La pagina **VIBER** comanda la finestra di Viber in primo piano sul PC (Windows e Linux):
 
-- sei pulsanti per passare a **terminale, git, browser, chat, task e file** (quello attivo è evidenziato) e **BARRA LATERALE** per aprire o chiudere le worktree;
-- a destra le **task** del progetto aperto, prima quelle in corso, con i loro passi; un tocco apre il pannello delle task.
+- i pulsanti per passare a **terminale, git, browser, chat, task e file**, solo per quelli che sono tra le schede aperte in Viber (quello attivo è evidenziato). Gli altri non compaiono: l'API di Viber sa solo passare a una scheda già aperta;
+- **SCHEDE / AGENTI / FOCUS** cambiano vista con le scorciatoie di Viber (Ctrl+Alt+1/2/3): AGENTI è quella con la barra degli agenti a sinistra, SCHEDE quella con i progetti in alto. Viber viene portato in primo piano prima di premere i tasti;
+- a destra le **task** del progetto aperto, prima quelle in corso, con i loro passi. Il riquadro *Tasks* della barra del titolo di Viber non ha comandi nell'API: dal tablet non si apre.
 
-La dock usa l'API locale di Viber: porta e token stanno in `~/.viber/browser-mcp.json`, che Viber scrive quando è aperto (si parla solo con `127.0.0.1`). Se hai più finestre di Viber, vale quella in primo piano.
+La dock usa l'API locale di Viber: porta e token stanno in `~/.viber/browser-mcp.json`, che Viber scrive quando è aperto (si parla solo con `127.0.0.1`). Se hai più finestre di Viber, vale quella in primo piano. Se Viber rifiuta un comando (ad esempio una scheda chiusa nel frattempo) il tablet mostra l'avviso.
+
+## Telefono
+
+La dock funziona anche da telefono (inquadra il QR del pannello). La disposizione è sempre quella orizzontale del tablet:
+
+- con il telefono in orizzontale la pagina occupa lo schermo, con le barre in alto e in basso un po' più basse;
+- con il telefono in verticale (o con il blocco della rotazione) la pagina appare **girata di 90°**: gira il telefono con la parte alta verso sinistra e la leggi dritta.
+
+Vale per gli schermi con il lato corto sotto i 600 px; il tablet non cambia.
 ## Temi del tablet
 
 Il pulsante con la **tavolozza** nella barra in alto, accanto all'orario, apre il menu dei temi:

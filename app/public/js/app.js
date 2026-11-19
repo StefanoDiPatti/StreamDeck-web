@@ -51,8 +51,30 @@
   D.bindTap(D.$('modal-close'), { onTap: function () { D.addClass(D.$('modal'), 'hidden'); } });
 
   // ------------------------------------------------------------ layout
-  function viewport() {
+  function screenSize() {
     return { w: window.innerWidth || document.documentElement.clientWidth, h: window.innerHeight || document.documentElement.clientHeight };
+  }
+  // Misure "logiche" della dock: col telefono in verticale sono girate (vedi rotate).
+  function viewport() {
+    var s = screenSize();
+    return app.rotated ? { w: s.h, h: s.w } : s;
+  }
+
+  // Telefono (lato corto sotto i 600 px): la dock è sempre orizzontale. Tenuto in
+  // verticale (o col blocco rotazione) si gira tutta la pagina di 90°: si legge
+  // girando il telefono con la parte alta a sinistra. Il tablet non cambia.
+  // Con la tastiera aperta non si gira: lo schermo che si accorcia non è una rotazione.
+  function rotate(focused) {
+    var s = screenSize();
+    var phone = Math.min(s.w, s.h) < 600;
+    var want = phone && s.h > s.w;
+    if (focused && app.rotated !== undefined) want = app.rotated;
+    app.rotated = want;
+    var b = document.body;
+    D.toggleClass(b, 'rot', want);
+    b.style.width = want ? s.h + 'px' : '';
+    b.style.height = want ? s.w + 'px' : '';
+    D.toggleClass(b, 'phone', phone);
   }
 
   // Dispone le tile nella griglia: da sinistra a destra, prima cella libera.
@@ -81,8 +103,9 @@
   }
 
   function layout() {
-    var v = viewport();
     var focused = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    rotate(focused);
+    var v = viewport();
     // Tastiera aperta (schermo molto basso): nasconde barre per fare spazio
     var kb = focused && v.h < 380;
     D.toggleClass(document.body, 'kb-open', kb);
@@ -310,7 +333,7 @@
   function paintSaver() {
     var n = new Date();
     D.setText(saverClock, D.pad(n.getHours()) + ':' + D.pad(n.getMinutes()));
-    var v = { w: window.innerWidth || 800, h: window.innerHeight || 480 };
+    var v = viewport();
     saverClock.style.left = Math.round(Math.random() * Math.max(0, v.w - 220)) + 'px';
     saverClock.style.top = Math.round(Math.random() * Math.max(0, v.h - 120)) + 'px';
   }

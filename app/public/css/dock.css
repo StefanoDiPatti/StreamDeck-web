@@ -129,6 +129,26 @@ body.kb-open #stage { top: 0; bottom: 0; }
 .tab.pressed { background: #223041; }
 body.kb-open #topbar, body.kb-open #tabs { display: none; }
 
+/* ---------------------------------------------------------- telefono
+ * Lato corto sotto i 600 px: la dock resta orizzontale. In verticale app.js dà al
+ * body le misure girate (larghezza = altezza dello schermo) e qui lo si ruota di 90°.
+ * Barre più basse per lasciare spazio alle tile. Il tablet non ha la classe "phone". */
+body.rot {
+  right: auto; bottom: auto;
+  -webkit-transform-origin: 0 0; transform-origin: 0 0;
+  -webkit-transform: rotate(90deg) translateY(-100%); transform: rotate(90deg) translateY(-100%);
+}
+body.phone #topbar { height: 38px; line-height: 38px; font-size: 14px; }
+body.phone .tb-left, body.phone .tb-right, body.phone #theme-btn { height: 38px; }
+body.phone #banner { top: 38px; }
+body.phone #stage { top: 38px; bottom: 48px; }
+body.phone.no-tabs #stage { bottom: 0; }
+body.phone.kb-open #stage { top: 0; bottom: 0; }
+body.phone #tabs, body.phone .tab { height: 48px; }
+body.phone .tab { padding-top: 5px; font-size: 10px; letter-spacing: 0; }
+body.phone .tab svg.ic { width: 20px; height: 20px; margin-bottom: 2px; }
+body.phone #toast { bottom: 60px; }
+
 /* ---------------------------------------------------------- toast e modale */
 #toast {
   position: absolute; left: 50%; bottom: 76px; width: 520px; margin-left: -260px; z-index: 50;
@@ -606,6 +626,19 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .sc-dkn { position: absolute; left: 50%; top: 22px; width: 24px; margin-left: -12px; font-size: 14px; line-height: 20px; color: #fff; }
 .sc-dkname { display: block; margin-top: 6px; padding: 0 4px; font-size: 15px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-dksub { display: block; margin-top: 2px; font-size: 12px; color: #8b9bab; white-space: nowrap; overflow: hidden; }
+/* telefono: pagina più bassa, finestre (scorrono) e desktop virtuali più compatti */
+body.phone .sc-wins { height: 104px; }
+body.phone .sc-dhead { top: 144px; }
+body.phone .sc-desks { top: 176px; }
+body.phone .sc-dk { height: 88px; padding-top: 8px; }
+body.phone .sc-dk svg.sc-dkic { width: 30px; height: 30px; }
+body.phone .sc-dkn { top: 12px; font-size: 12px; }
+body.phone .sc-dkname { margin-top: 3px; font-size: 13px; }
+body.phone .sc-layouts { bottom: 56px; height: 58px; }
+body.phone .sc-lay { height: 58px; padding-top: 5px; }
+body.phone .sc-lbox { height: 22px; margin-bottom: 4px; }
+body.phone .sc-lay.tall .sc-lbox { height: 24px; }
+body.phone .sc-map { bottom: 120px; }
 .sc-dk.on .sc-dksub { color: #6cb6ff; }
 .sc-dkx { position: absolute; right: -2px; top: -2px; width: 34px; height: 34px; line-height: 34px; text-align: center; border-radius: 0 9px 0 10px; background: rgba(90, 31, 36, 0.92); z-index: 2; }
 .sc-dkx svg.ic { width: 16px; height: 16px; vertical-align: -3px; }
@@ -723,10 +756,19 @@ svg.ic.dc-camflag { fill: #3fb950; }
 .vb-p span { position: absolute; left: 4px; right: 4px; bottom: 16%; font-size: 15px; font-weight: bold; letter-spacing: 1px; white-space: nowrap; overflow: hidden; }
 .vb-p.on { background: #1f3b63; border-color: #3d8bfd; -webkit-box-shadow: inset 0 0 0 2px #3d8bfd; box-shadow: inset 0 0 0 2px #3d8bfd; }
 .vb-p.pressed, .vb-p.busy { background: #26354a; }
-.vb-side { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 60px; line-height: 60px; border-radius: 12px; background: #243142; text-align: center; font-size: 15px; font-weight: bold; letter-spacing: 1px; }
-.vb-side svg.ic { width: 26px; height: 26px; margin: -4px 10px 0 0; }
-.vb-side.pressed, .vb-side.busy { background: #26354a; }
-.vb-off .vb-p, .vb-off .vb-side { opacity: 0.35; }
+/* tile bassa (telefono in orizzontale): icona piccola sopra la scritta, senza sovrapporsi */
+.w-viber.vb-low .vb-p svg.ic { top: 12%; width: 26px; height: 26px; margin-left: -13px; }
+.w-viber.vb-low .vb-p span { bottom: 10%; font-size: 12px; letter-spacing: 0; }
+.w-viber.vb-low .vb-panels { bottom: 54px; }
+.w-viber.vb-low .vb-views { height: 42px; }
+.w-viber.vb-low .vb-v { height: 42px; line-height: 42px; font-size: 12px; letter-spacing: 0; }
+.vb-views { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 60px; }
+.vb-v { position: relative; float: left; width: 32%; height: 60px; line-height: 60px; margin-right: 2%; border-radius: 12px; background: #243142; text-align: center; font-size: 14px; font-weight: bold; letter-spacing: 1px; white-space: nowrap; overflow: hidden; }
+.vb-v:last-child { margin-right: 0; }
+.vb-v svg.ic { width: 22px; height: 22px; margin: -3px 6px 0 0; }
+.vb-v.pressed, .vb-v.busy { background: #26354a; }
+.vb-off .vb-p, .vb-off .vb-v { opacity: 0.35; }
+.vb-note { font-size: 11px; color: #6e7f90; padding: 6px 4px 2px; line-height: 1.35; }
 .vb-right { position: absolute; right: 0; top: 0; bottom: 0; width: 44%; background: #141c25; border-left: 1px solid #222e3b; }
 .vb-thead { position: absolute; left: 12px; right: 12px; top: 8px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; white-space: nowrap; overflow: hidden; }
 .vb-tsub { font-weight: normal; letter-spacing: 0; color: #6e7f90; }

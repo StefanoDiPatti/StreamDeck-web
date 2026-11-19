@@ -12,7 +12,9 @@ const platform = require('../platform');
 const log = require('../log');
 
 const PANELS = ['terminal', 'git', 'browser', 'chat', 'tasks', 'files'];
-const SIDEBAR = ['toggle', 'collapse', 'expand'];
+// Viste della finestra (scorciatoie di Viber: Ctrl+Alt+1/2/3). La barra degli agenti
+// non ha un comando nell'API (toggle-sidebar apre/chiude solo la colonnina dei worktree).
+const VIEWS = { tabs: '1', agents: '2', focus: '3' };
 // nomi dei pannelli nel layout -> pulsanti del tablet
 const ALIAS = { 'git-diff': 'git', 'git-graph': 'git', todos: 'tasks' };
 function panelId(p) { const id = String(p).split(':')[0]; return ALIAS[id] || id; }
@@ -28,6 +30,12 @@ function readConfig() {
 }
 
 function err(msg, code) { return Object.assign(new Error(msg), { code: code || 'UNAVAILABLE' }); }
+
+function friendly(msg) {
+  if (/is not open in this layout/i.test(msg)) return 'Questo pannello non è tra le schede aperte in Viber';
+  if (/is hidden for this project/i.test(msg)) return 'Questo pannello è nascosto in Viber per questo progetto';
+  return 'Viber: ' + msg;
+}
 
 function call(endpoint, body, timeout) {
   const cfg = readConfig();
@@ -45,6 +53,8 @@ function call(endpoint, body, timeout) {
         let j = null;
         try { j = JSON.parse(b); } catch (e) { /* risposta non JSON */ }
         if (res.statusCode >= 400 || !j) return reject(err('Viber: ' + ((j && j.error) || ('errore ' + res.statusCode))));
+        // Viber risponde 200 anche quando il comando non riesce, con { error }
+        if (j.error) return reject(err(friendly(String(j.error))));
         resolve(j);
       });
     });
@@ -94,11 +104,15 @@ async function focusPanel(panel) {
   return state();
 }
 
-async function sidebar(mode) {
-  if (SIDEBAR.indexOf(mode) < 0) mode = 'toggle';
-  await call('/viber/toggle-sidebar', { mode: mode });
-  await bringFront();
-  return state();
+// Cambia vista (schede, agenti, focus) con la scorciatoia di Viber: serve Viber in
+// primo piano, altrimenti i tasti finirebbero in un'altra finestra.
+async function view(mode) {
+  if (!Object.prototype.hasOwnProperty.call(VIEWS, mode)) throw err('Vista non valida', 'BAD_REQUEST');
+  const st = await state();
+  if (!st.online) throw err(st.message);
+  try { await platform.focus('Viber'); } catch (e) { throw err('Non riesco a portare Viber in primo piano'); }
+  await platform.sendKeys(['CTRL', 'ALT', VIEWS[mode]]);
+  return st;
 }
 
 // Task del progetto aperto in Viber (non chiuse), con le sottotask sotto la loro task.
@@ -131,4 +145,4 @@ async function tasks() {
   return { project: path.basename(project), tasks: out };
 }
 
-module.exports = { state: state, focusPanel: focusPanel, sidebar: sidebar, tasks: tasks, PANELS: PANELS, _summarize: summarize };
+module.exports = { state: state, focusPanel: focusPanel, view: view, VIEWS: VIEWS, tasks: tasks, PANELS: PANELS, _summarize: summarize };

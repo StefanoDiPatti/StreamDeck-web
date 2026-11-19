@@ -214,7 +214,7 @@
       "id": "viber",
       "title": "VIBER",
       "icon": "code",
-      "description": "Viber: passa a terminale, git, browser, chat, task e file, barra laterale, task del progetto",
+      "description": "Viber: passa ai pannelli aperti (terminale, git, browser, chat, task, file), viste schede/agenti/focus, task del progetto",
       "tab": false,
       "tiles": [ { "widget": "viber", "w": 5, "h": 3 } ]
     },

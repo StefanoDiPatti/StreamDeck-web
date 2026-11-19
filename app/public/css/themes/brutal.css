@@ -297,8 +297,9 @@ svg.ic.dc-camflag { fill: #127a3a; }
 .vb-p { background: #ffffff; border: 1px solid #111111; }
 .vb-p.on { background: #9cc4ff; border-color: #111111; -webkit-box-shadow: inset 0 0 0 2px #111111; box-shadow: inset 0 0 0 2px #111111; }
 .vb-p.pressed, .vb-p.busy { background: #ffd23f; }
-.vb-side { background: #efe8d8; }
-.vb-side.pressed, .vb-side.busy { background: #ffd23f; }
+.vb-v { background: #efe8d8; }
+.vb-v.pressed, .vb-v.busy { background: #ffd23f; }
+.vb-note { color: #5a5446; }
 .vb-right { background: #fffdf7; border-left: 1px solid #111111; }
 .vb-thead { color: #5a5446; }
 .vb-tsub { color: #5a5446; }
