@@ -294,6 +294,8 @@ svg.ic.dc-camflag { fill: #39ff88; }
 .vb-pmeta { color: #8f8f8f; }
 .vb-pmeta b { color: #bdbdbd; }
 .vb-pr.st-question .vb-pmeta b { color: #ff5c7a; }
+.vb-pr.st-working .vb-pmeta b { color: #ffd23f; }
+.vb-pr.st-completed .vb-pmeta b { color: #39ff88; }
 .vb-tsub { color: #808080; }
 .vb-task { background: #111111; }
 .vb-task.doing { -webkit-box-shadow: inset 3px 0 0 #41d1ff; box-shadow: inset 3px 0 0 #41d1ff; }

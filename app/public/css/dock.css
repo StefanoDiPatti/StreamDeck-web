@@ -764,8 +764,8 @@ body.phone .sc-map { bottom: 120px; }
 .vb-pmeta { font-size: 11px; color: #8b9bab; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vb-pmeta b { color: #c6d1dc; margin-right: 6px; }
 .vb-pr.st-question .vb-pmeta b { color: #ff9c94; }
-.vb-pr.st-working .vb-pmeta b { color: #e3b341; }
-.vb-pr.st-completed .vb-pmeta b { color: #56d364; }
+.vb-pr.st-working .vb-pmeta b { color: #ffb454; }
+.vb-pr.st-completed .vb-pmeta b { color: #3fb950; }
 .vb-tsub { font-weight: normal; letter-spacing: 0; color: #6e7f90; }
 .vb-task { padding: 8px 10px; border-radius: 10px; background: #172029; margin-bottom: 6px; }
 .vb-task.doing { -webkit-box-shadow: inset 3px 0 0 #3d8bfd; box-shadow: inset 3px 0 0 #3d8bfd; }

@@ -87,7 +87,7 @@
         { "id": "blender", "label": "BLENDER", "icon": "cube", "color": "#d9730d", "action": { "type": "launch", "app": "blender" } },
         { "id": "davinci", "label": "DAVINCI", "icon": "film", "color": "#6b4fa0", "action": { "type": "launch", "app": "davinci" } },
         { "id": "vscode", "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
-        { "id": "viber", "os": "linux", "label": "VIBER", "icon": "window", "color": "#5b45c9", "action": { "type": "launch", "app": "viber" } },
+        { "id": "viber", "label": "VIBER", "icon": "code", "color": "#5b45c9", "action": { "type": "launch", "app": "viber" } },
         // Windows: app Claude. Linux: la web app di Claude (vedi apps.json)
         { "id": "claude", "label": "CLAUDE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_desktop" } },
         { "id": "apple_music", "label": "APPLE MUSIC", "icon": "music", "color": "#c2334d", "action": { "type": "launch", "app": "apple_music" } },
@@ -225,6 +225,7 @@
       "widgetWidth": 0.5,
       "tiles": [
         { "widget": "viber", "label": "PROGETTI E TASK" },
+        { "id": "open", "label": "APRI", "icon": "code", "sub": "Viber", "color": "#5b45c9", "action": { "type": "launch", "app": "viber" } },
         { "id": "terminal", "label": "TERMINALE", "icon": "terminal", "action": { "type": "viber", "panel": "terminal" } },
         { "id": "git", "label": "GIT", "icon": "git", "action": { "type": "viber", "panel": "git" } },
         { "id": "browser", "label": "BROWSER", "icon": "globe", "action": { "type": "viber", "panel": "browser" } },
