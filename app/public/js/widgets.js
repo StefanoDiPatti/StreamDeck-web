@@ -1260,7 +1260,7 @@ var Widgets = (function () {
         (m.video ? Icons.html('camera', 'dc-flag dc-camflag') : '') +
         (m.deaf ? Icons.html('headsetoff', 'dc-flag') : m.mute ? Icons.html('micoff', 'dc-flag') : '') +
         (m.localMute ? '<span class="dc-local">muto per te</span>' :
-          (!m.me && typeof m.volume === 'number' && m.volume !== 100 ? '<span class="dc-local">' + m.volume + '%</span>' : ''));
+          (!m.me && typeof m.volume === 'number' && Math.round(m.volume) !== 100 ? '<span class="dc-local">' + Math.round(m.volume) + '%</span>' : ''));
     }
 
     function findMem(id) {
@@ -1275,7 +1275,7 @@ var Widgets = (function () {
       var m = findMem(popUser);
       if (!m) return closePop();            // è uscito dalla stanza
       if (popBusy) return;                   // non sovrascrivere mentre parte un cambio
-      var v = typeof m.volume === 'number' ? m.volume : 100, pre = [50, 100, 150, 200], ph = '';
+      var v = typeof m.volume === 'number' ? Math.round(m.volume) : 100, pre = [50, 100, 150, 200], ph = '';
       for (var i = 0; i < pre.length; i++) ph += '<span class="dc-ppre' + (pre[i] === v ? ' on' : '') + '" data-vol="' + pre[i] + '">' + pre[i] + '%</span>';
       var html =
         '<div class="dc-phead">' + av(m, 'dc-av') + '<span class="dc-pname">' + D.esc(m.name) + '</span>' +
@@ -1317,7 +1317,7 @@ var Widgets = (function () {
         var act = D.closestAttr(t, 'data-act', pop);
         if (!act) return;
         var a = act.getAttribute('data-act');
-        var v = typeof m.volume === 'number' ? m.volume : 100;
+        var v = typeof m.volume === 'number' ? Math.round(m.volume) : 100;
         if (a === 'close') return closePop();
         if (a === 'mute') return setUser({ mute: !m.localMute }, m.localMute ? 'Di nuovo udibile' : 'Mutato per te');
         if (a === 'up' || a === 'down') return setUser({ volume: Math.max(0, Math.min(200, v + (a === 'up' ? 10 : -10))) });
