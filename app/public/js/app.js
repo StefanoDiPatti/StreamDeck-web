@@ -247,6 +247,8 @@
       flash(node, 'ok');
       // stato aperto/chiuso aggiornato subito dopo un avvio o una chiusura
       if (a.type === 'launch') { clearTimeout(app.pollTimer); app.pollTimer = setTimeout(poll, 1800); }
+      // pulsanti della pagina VIBER: il riquadro progetti/task si aggiorna subito
+      if (r && r.viber) for (var i = 0; i < app.tiles.length; i++) if (app.tiles[i].widget && app.tiles[i].widget.viber) app.tiles[i].widget.viber(r.viber);
       if (r && r.output !== undefined) showModal(tile.label || 'Output', r.output);
       else if (r && r.message) app.toast(r.message, 'ok');
     }, 125000);

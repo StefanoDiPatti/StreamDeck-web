@@ -283,14 +283,17 @@ svg.ic.dc-camflag { fill: #39ff88; }
 .vb-title { color: #8f8f8f; }
 .vb-sub { color: #41d1ff; }
 .vb-sub .err { color: #ff5c7a; }
-.vb-p { background: #141414; border: 1px solid #161616; }
-.vb-p.on { background: #06323d; border-color: #41d1ff; -webkit-box-shadow: inset 0 0 0 2px #41d1ff; box-shadow: inset 0 0 0 2px #41d1ff; }
-.vb-p.pressed, .vb-p.busy { background: #06323d; }
-.vb-v { background: #1c1c1c; }
-.vb-v.pressed, .vb-v.busy { background: #06323d; }
-.vb-note { color: #808080; }
-.vb-right { background: #0d0d0d; border-left: 1px solid #161616; }
-.vb-thead { color: #8f8f8f; }
+.vb-pr { background: #111111; }
+.vb-pr.on { background: #06323d; border-color: #41d1ff; }
+.vb-pr.pressed, .vb-pr.busy { background: #06323d; }
+.vb-dot { background: #333333; }
+.vb-pr.st-working .vb-dot { background: #ffd23f; }
+.vb-pr.st-question .vb-dot { background: #ff3b5c; }
+.vb-pr.st-completed .vb-dot { background: #39ff88; }
+.vb-pmeta { color: #8f8f8f; }
+.vb-pmeta b { color: #bdbdbd; }
+.vb-pr.st-question .vb-pmeta b { color: #ff5c7a; }
+.vb-thead { color: #8f8f8f; border-top: 1px solid #161616; }
 .vb-tsub { color: #808080; }
 .vb-task { background: #111111; }
 .vb-task.doing { -webkit-box-shadow: inset 3px 0 0 #41d1ff; box-shadow: inset 3px 0 0 #41d1ff; }
@@ -303,6 +306,7 @@ svg.ic.dc-camflag { fill: #39ff88; }
 .vb-step.done svg.ic { fill: #39ff88; }
 .vb-step.in_progress { color: #f5f5f5; }
 .vb-step.in_progress svg.ic { fill: #41d1ff; }
+.tile.btn.vb-on { border-color: #41d1ff; -webkit-box-shadow: inset 0 0 0 3px #41d1ff; box-shadow: inset 0 0 0 3px #41d1ff; }
 .gh-tools .sbtn.on { background: #06323d; }
 .gg-sec { color: #41d1ff; }
 .gg-note { color: #8f8f8f; }

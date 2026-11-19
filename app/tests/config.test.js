@@ -46,12 +46,19 @@ test('ogni pulsante di default punta ad app, comandi, pagine e tasti esistenti',
       case 'key': keys.parseCombo([a.key]); break;
       case 'macro': a.steps.forEach(function (s, i) { checkAction(s, where + ' passo ' + i); }); break;
       case 'discord': assert.ok(['mute', 'deaf', 'video', 'stream'].indexOf(a.command) >= 0, where + ': discord ' + a.command); break;
+      case 'viber': {
+        const viber = require('../server/services/viber');
+        const ok = (a.panel && viber.PANELS.indexOf(a.panel) >= 0) || (a.layout && viber.LAYOUTS.indexOf(a.layout) >= 0) ||
+          (a.view && viber.VIEWS[a.view]) || a.project === 'next' || a.project === 'prev';
+        assert.ok(ok, where + ': viber ' + JSON.stringify(a));
+        break;
+      }
       case 'media': case 'open_url': case 'text': case 'wait': case 'open_path': case 'focus': break;
       default: assert.fail(where + ': tipo sconosciuto ' + a.type);
     }
   }
   dock.pages.forEach(function (p) {
-    p.tiles.forEach(function (t) {
+    p.allTiles.forEach(function (t) {
       if (t.widget) assert.ok(widgets.indexOf(t.widget) >= 0, 'widget ' + t.widget);
       else checkAction(t.action, p.id + '/' + (t.label || t.id));
     });

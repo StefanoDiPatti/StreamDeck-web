@@ -223,18 +223,20 @@
 
   // Stessa regola del server (config.js -> autoGrid): niente buchi inutili,
   // celle di forma comoda sul tablet orizzontale.
-  function autoGrid(tiles) {
+  // fixedCols = colonne del riquadro fisso a sinistra (pagina VIBER)
+  function autoGrid(tiles, fixedCols) {
+    fixedCols = fixedCols || 0;
     let cells = 0, minCols = 1, minRows = 1;
     tiles.forEach((t) => { cells += (t.w || 1) * (t.h || 1); minCols = Math.max(minCols, t.w || 1); minRows = Math.max(minRows, t.h || 1); });
     cells = Math.max(1, cells);
     let best = null;
     for (let r = minRows; r <= 6; r++) {
       const c = Math.max(minCols, Math.ceil(cells / r));
-      if (c > 8) continue;
-      const score = (c * r - cells) + 3 * Math.abs(Math.log((c / r) / 1.7));
+      if (c + fixedCols > 8) continue;
+      const score = (c * r - cells) + 3 * Math.abs(Math.log(((c + fixedCols) / r) / 1.7));
       if (!best || score < best.score - 1e-9) best = { columns: c, rows: r, score: score };
     }
-    return best || { columns: 8, rows: 6 };
+    return best || { columns: 8 - fixedCols, rows: 6 };
   }
 
   function tileHtml(t, on) {
@@ -259,16 +261,20 @@
     const byId = {};
     b.all.forEach((t) => { byId[t.id] = t; });
     const shown = st.show.map((id) => byId[id]).filter(Boolean);
-    const g = autoGrid(shown);
+    const fixed = b.fixed || [];
+    const fixedCols = fixed.reduce((n, f) => n + Math.max(1, Math.min(4, f.w || 1)), 0);
+    const g = autoGrid(shown, fixedCols);
     const grid = $('bt-on');
-    grid.style.gridTemplateColumns = 'repeat(' + g.columns + ', minmax(0, 1fr))';
+    grid.style.gridTemplateColumns = 'repeat(' + (g.columns + fixedCols) + ', minmax(0, 1fr))';
     grid.style.gridTemplateRows = 'repeat(' + g.rows + ', minmax(0, 1fr))';
     let cells = 0;
     shown.forEach((t) => { cells += (t.w || 1) * (t.h || 1); });
-    let html = shown.map((t) => tileHtml(t, true)).join('');
+    // riquadro fisso (non si sposta), poi i pulsanti
+    let html = fixed.map((f) => '<div class="bfixed" style="grid-column:span ' + Math.max(1, Math.min(4, f.w || 1)) + ';grid-row:span ' + g.rows + '">' + esc(f.label) + '<small>fisso</small></div>').join('');
+    html += shown.map((t) => tileHtml(t, true)).join('');
     for (let i = cells; i < g.columns * g.rows; i++) html += '<div class="bcell" aria-hidden="true"></div>';
     grid.innerHTML = html;
-    $('bt-size').textContent = shown.length + (shown.length === 1 ? ' pulsante' : ' pulsanti') + ' · griglia ' + g.columns + ' × ' + g.rows;
+    $('bt-size').textContent = shown.length + (shown.length === 1 ? ' pulsante' : ' pulsanti') + ' · griglia ' + (g.columns + fixedCols) + ' × ' + g.rows;
     const hidden = st.hide.map((id) => byId[id]).filter(Boolean);
     $('bt-off').innerHTML = hidden.length
       ? hidden.map((t) => tileHtml(t, false)).join('')

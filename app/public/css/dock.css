@@ -742,40 +742,33 @@ body.phone .sc-map { bottom: 120px; }
 .au-ctl.muted .au-mute { background: #8b1d1d; }
 .au-ctl.muted .au-bar i { background: #4d5d70; }
 
-/* ---- Viber: pannelli, barra laterale, task */
+/* ---- Viber: riquadro progetti e task (i pulsanti della pagina sono tile normali) */
 .w-viber { padding: 0 !important; }
-.vb-left { position: absolute; left: 0; top: 0; bottom: 0; width: 56%; }
 .vb-head { position: absolute; left: 12px; right: 12px; top: 8px; height: 24px; line-height: 24px; white-space: nowrap; overflow: hidden; }
 .vb-title { font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; }
 .vb-sub { font-size: 13px; color: #6cb6ff; margin-left: 10px; }
 .vb-sub .err { color: #ff9c94; font-weight: normal; }
-.vb-panels { position: absolute; left: 8px; right: 8px; top: 38px; bottom: 76px; }
-.vb-p { position: relative; float: left; width: 32%; height: 48%; margin: 0 2% 2% 0; border-radius: 12px; background: #1d2835; border: 1px solid #222e3b; text-align: center; overflow: hidden; }
-.vb-p:nth-child(3n) { margin-right: 0; }
-.vb-p svg.ic { position: absolute; left: 50%; top: 22%; width: 44px; height: 44px; margin-left: -22px; }
-.vb-p span { position: absolute; left: 4px; right: 4px; bottom: 16%; font-size: 15px; font-weight: bold; letter-spacing: 1px; white-space: nowrap; overflow: hidden; }
-.vb-p.on { background: #1f3b63; border-color: #3d8bfd; -webkit-box-shadow: inset 0 0 0 2px #3d8bfd; box-shadow: inset 0 0 0 2px #3d8bfd; }
-.vb-p.pressed, .vb-p.busy { background: #26354a; }
-/* tile bassa (telefono in orizzontale): icona piccola sopra la scritta, senza sovrapporsi */
-.w-viber.vb-low .vb-p svg.ic { top: 12%; width: 26px; height: 26px; margin-left: -13px; }
-.w-viber.vb-low .vb-p span { bottom: 10%; font-size: 12px; letter-spacing: 0; }
-.w-viber.vb-low .vb-panels { bottom: 54px; }
-.w-viber.vb-low .vb-views { height: 42px; }
-.w-viber.vb-low .vb-v { height: 42px; line-height: 42px; font-size: 12px; letter-spacing: 0; }
-.vb-views { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 60px; }
-.vb-v { position: relative; float: left; width: 32%; height: 60px; line-height: 60px; margin-right: 2%; border-radius: 12px; background: #243142; text-align: center; font-size: 14px; font-weight: bold; letter-spacing: 1px; white-space: nowrap; overflow: hidden; }
-.vb-v:last-child { margin-right: 0; }
-.vb-v svg.ic { width: 22px; height: 22px; margin: -3px 6px 0 0; }
-.vb-v.pressed, .vb-v.busy { background: #26354a; }
-.vb-off .vb-p, .vb-off .vb-v { opacity: 0.35; }
-.vb-note { font-size: 11px; color: #6e7f90; padding: 6px 4px 2px; line-height: 1.35; }
-.vb-right { position: absolute; right: 0; top: 0; bottom: 0; width: 44%; background: #141c25; border-left: 1px solid #222e3b; }
-.vb-thead { position: absolute; left: 12px; right: 12px; top: 8px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; white-space: nowrap; overflow: hidden; }
+.vb-off .vb-projs, .vb-off .vb-tasks { opacity: 0.45; }
+.vb-projs { position: absolute; left: 6px; right: 6px; top: 36px; height: 46%; overflow: auto; -webkit-overflow-scrolling: touch; }
+.vb-pr { position: relative; padding: 7px 10px 7px 28px; border-radius: 10px; background: #172029; margin-bottom: 5px; border: 1px solid transparent; }
+.vb-pr.on { background: #1f3b63; border-color: #3d8bfd; }
+.vb-pr.pressed, .vb-pr.busy { background: #26354a; }
+.vb-dot { position: absolute; left: 11px; top: 13px; width: 9px; height: 9px; border-radius: 5px; background: #4d5d70; }
+.vb-pr.st-working .vb-dot { background: #d29922; }
+.vb-pr.st-question .vb-dot { background: #e5534b; }
+.vb-pr.st-completed .vb-dot { background: #3fb950; }
+.vb-pname { font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vb-pmeta { font-size: 11px; color: #8b9bab; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vb-pmeta b { color: #c6d1dc; margin-right: 6px; }
+.vb-pr.st-question .vb-pmeta b { color: #ff9c94; }
+.vb-pr.st-working .vb-pmeta b { color: #e3b341; }
+.vb-pr.st-completed .vb-pmeta b { color: #56d364; }
+.vb-thead { position: absolute; left: 12px; right: 12px; top: 49%; margin-top: 36px; height: 24px; line-height: 24px; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #8b9bab; white-space: nowrap; overflow: hidden; border-top: 1px solid #222e3b; padding-top: 4px; }
 .vb-tsub { font-weight: normal; letter-spacing: 0; color: #6e7f90; }
-.vb-tasks { position: absolute; left: 6px; right: 6px; top: 36px; bottom: 6px; overflow: auto; -webkit-overflow-scrolling: touch; }
-.vb-task { padding: 9px 10px; border-radius: 10px; background: #172029; margin-bottom: 6px; }
+.vb-tasks { position: absolute; left: 6px; right: 6px; top: 49%; margin-top: 66px; bottom: 6px; overflow: auto; -webkit-overflow-scrolling: touch; }
+.vb-task { padding: 8px 10px; border-radius: 10px; background: #172029; margin-bottom: 6px; }
 .vb-task.doing { -webkit-box-shadow: inset 3px 0 0 #3d8bfd; box-shadow: inset 3px 0 0 #3d8bfd; }
-.vb-ttext { font-size: 14px; font-weight: bold; line-height: 1.3; }
+.vb-ttext { font-size: 13px; font-weight: bold; line-height: 1.3; }
 .vb-tmeta { font-size: 11px; color: #8b9bab; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vb-chip { display: inline-block; font-size: 10px; font-weight: bold; letter-spacing: 0.5px; padding: 1px 6px; border-radius: 5px; background: #2a3746; color: #c6d1dc; margin-right: 6px; }
 .vb-task.doing .vb-chip { background: #1f3b63; color: #6cb6ff; }
@@ -785,6 +778,9 @@ body.phone .sc-map { bottom: 120px; }
 .vb-step.done svg.ic { fill: #3fb950; }
 .vb-step.in_progress { color: #ffffff; }
 .vb-step.in_progress svg.ic { fill: #6cb6ff; }
+/* pulsanti dei pannelli: acceso quello attivo, spenti quelli non aperti in Viber */
+.tile.btn.vb-on { border-color: #3d8bfd; -webkit-box-shadow: inset 0 0 0 3px #3d8bfd; box-shadow: inset 0 0 0 3px #3d8bfd; }
+.tile.btn.vb-off { opacity: 0.35; }
 
 /* ---- GitHub: guida ai comandi git */
 .gh-tools { position: absolute; right: 0; top: 0; white-space: nowrap; }

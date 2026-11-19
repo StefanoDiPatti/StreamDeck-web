@@ -66,3 +66,50 @@ test('Viber: vista non valida rifiutata, viste con le scorciatoie Ctrl+Alt+1/2/3
   await assert.rejects(viber.view('barra'), /Vista non valida/);
   assert.deepStrictEqual(viber.VIEWS, { tabs: '1', agents: '2', focus: '3' });
 });
+
+test('Viber: scorciatoie di Viber tradotte in tasti della dock', function () {
+  assert.deepStrictEqual(viber._comboOf({ key: ']', ctrl: true, meta: false }), ['CTRL', 'RBRACKET']);
+  assert.deepStrictEqual(viber._comboOf({ key: 'PageDown', ctrl: true }), ['CTRL', 'PAGEDOWN']);
+  assert.deepStrictEqual(viber._comboOf({ key: '2', ctrl: true, alt: true }), ['CTRL', 'ALT', '2']);
+  assert.strictEqual(viber._comboOf({ key: '§', ctrl: true }), null);
+});
+
+test('Viber: progetto di una cartella (anche worktree accanto), vince il nome più lungo', function () {
+  const list = ['C:/P/Naruto Android Game', 'C:/P/vibe', 'C:/P/vibe-deck'];
+  assert.strictEqual(viber._projectOf('C:/P/Naruto Android Game-feature-start', list), list[0]);
+  assert.strictEqual(viber._projectOf('C:/P/vibe-deck/', list), list[2]);
+  assert.strictEqual(viber._projectOf('C:/Altro', list), null);
+});
+
+test('Viber: progetti con lo stato più urgente dei loro agenti', async function (t) {
+  await fakeViber(t, function (url) {
+    if (url === '/agents/projects') return { projects: ['/p/a', '/p/b'] };
+    if (url === '/agents/list') return [{ agent: '/p/a', title: 'Uno', state: 'idle' }, { agent: '/p/a-wt', title: 'Due', state: 'question' }, { agent: '/p/b', title: 'Tre', state: 'working' }];
+    return { layout: { leaves: [] }, worktree: { path: '/p/b' } };
+  });
+  const r = await viber.projects();
+  assert.deepStrictEqual(r.projects.map(function (p) { return [p.name, p.state, p.active, p.title]; }), [['a', 'question', false, 'Due'], ['b', 'working', true, 'Tre']]);
+});
+
+test('Viber: azione di un pulsante senza campi validi rifiutata', async function () {
+  await assert.rejects(viber.action({ type: 'viber' }), /senza "panel"/);
+  await assert.rejects(viber.action({ type: 'viber', layout: 'griglia' }), /Disposizione non valida/);
+});
+
+test('Pagina VIBER: riquadro fisso a sinistra + pulsanti personalizzabili, "hidden" nascosti', function () {
+  const config = require('../server/config');
+  const raw = { pages: [{ id: 'viber', autoGrid: true, tiles: [
+    { widget: 'viber', w: 2 },
+    { id: 'a', label: 'A' }, { id: 'b', label: 'B' }, { id: 'c', label: 'C', hidden: true }
+  ] }] };
+  const p = config.normalizeDock(raw, {}, 'windows').pages[0];
+  assert.strictEqual(p.editable, true);
+  assert.deepStrictEqual(p.tiles.map(function (x) { return x.widget || x.id; }), ['viber', 'a', 'b']);
+  assert.strictEqual(p.tiles[0].h, p.rows);
+  // dal pannello: C mostrato per primo, A nascosto; il riquadro resta sempre
+  const q = config.normalizeDock(raw, { tiles: { viber: { show: ['c', 'b'], hide: ['a'] } } }, 'windows').pages[0];
+  assert.deepStrictEqual(q.tiles.map(function (x) { return x.widget || x.id; }), ['viber', 'c', 'b']);
+  // senza autoGrid una pagina con widget non è modificabile
+  const r = config.normalizeDock({ pages: [{ id: 'x', tiles: [{ widget: 'clock' }, { id: 'a' }] }] }, {}, 'windows').pages[0];
+  assert.strictEqual(r.editable, false);
+});

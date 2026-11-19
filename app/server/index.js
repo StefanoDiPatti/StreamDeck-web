@@ -172,7 +172,10 @@ function pageSummary(p) {
 // Pulsanti di una pagina modificabile dal pannello: tutti (anche nascosti) e quelli mostrati in ordine.
 function pageButtons(p) {
   const btn = function (t) { return { id: t.id, label: t.label || '', sub: t.sub || '', icon: t.icon || null, color: t.color || null, w: t.w || 1, h: t.h || 1 }; };
-  return { id: p.id, title: p.title, icon: p.icon, columns: p.columns, rows: p.rows, all: p.allTiles.map(btn), shown: p.tiles.map(function (t) { return t.id; }) };
+  const isBtn = function (t) { return !t.widget; };
+  // riquadri fissi (pagina VIBER): solo per l'anteprima, non si spostano
+  const fixed = p.allTiles.filter(function (t) { return t.widget; }).map(function (t) { return { label: t.label || t.widget.toUpperCase(), w: t.w || 1 }; });
+  return { id: p.id, title: p.title, icon: p.icon, columns: p.columns, rows: p.rows, fixed: fixed, all: p.allTiles.filter(isBtn).map(btn), shown: p.tiles.filter(isBtn).map(function (t) { return t.id; }) };
 }
 function controlInfo() {
   const d = config.dock();
@@ -278,6 +281,9 @@ app.get('/api/viber/state', route(function () { return viber.state(); }));
 app.get('/api/viber/tasks', route(function () { return viber.tasks(); }));
 app.post('/api/viber/panel', route(function (req) { return viber.focusPanel(String((req.body || {}).panel || '')); }));
 app.post('/api/viber/view', route(function (req) { return viber.view(String((req.body || {}).mode || '')); }));
+app.post('/api/viber/layout', route(function (req) { return viber.setLayout(String((req.body || {}).preset || '')); }));
+app.get('/api/viber/projects', route(function () { return viber.projects(); }));
+app.post('/api/viber/project', route(function (req) { return viber.project(String((req.body || {}).target || '')); }));
 
 // desktop virtuali: elenco, passa a uno, crea, chiudi
 app.get('/api/screens/desktops', route(function () { return vdesk.list(); }));

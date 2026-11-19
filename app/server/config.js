@@ -173,23 +173,27 @@ function forOs(item, osKey) {
 
 // Griglia scelta in base al numero di celle occupate: niente buchi inutili e
 // celle di forma comoda sul tablet (orizzontale). Meno pulsanti = pulsanti più grandi.
-function autoGrid(tiles) {
+// fixedCols = colonne già prese da un riquadro fisso a tutta altezza (pagina VIBER).
+function autoGrid(tiles, fixedCols) {
+  fixedCols = fixedCols || 0;
   let cells = 0, minCols = 1, minRows = 1;
   tiles.forEach(function (t) { cells += (t.w || 1) * (t.h || 1); minCols = Math.max(minCols, t.w || 1); minRows = Math.max(minRows, t.h || 1); });
   cells = Math.max(1, cells);
   let best = null;
   for (let r = minRows; r <= 6; r++) {
     const c = Math.max(minCols, Math.ceil(cells / r));
-    if (c > 8) continue;
-    const score = (c * r - cells) + 3 * Math.abs(Math.log((c / r) / 1.7));
+    if (c + fixedCols > 8) continue;
+    const score = (c * r - cells) + 3 * Math.abs(Math.log(((c + fixedCols) / r) / 1.7));
     if (!best || score < best.score - 1e-9) best = { columns: c, rows: r, score: score };
   }
-  return best ? { columns: best.columns, rows: best.rows } : { columns: 8, rows: 6 };
+  return best ? { columns: best.columns, rows: best.rows } : { columns: 8 - fixedCols, rows: 6 };
 }
 
-// Le pagine i cui pulsanti si scelgono e ordinano dal pannello: solo pulsanti, niente widget.
+// Le pagine i cui pulsanti si scelgono e ordinano dal pannello: solo pulsanti, oppure
+// (con "autoGrid") pulsanti più riquadri fissi a tutta altezza sulla sinistra.
 function editablePage(p) {
-  return p.tiles.length > 0 && p.tiles.every(function (t) { return !t.widget; });
+  const buttons = p.tiles.filter(function (t) { return !t.widget; });
+  return buttons.length > 0 && (buttons.length === p.tiles.length || !!p.autoGrid);
 }
 
 function clampInt(v, min, max, def) {
@@ -230,20 +234,30 @@ function normalizeDock(raw, layout, osKey) {
 
     // Pulsanti scelti dal pannello: "show" in ordine, "hide" nascosti,
     // quelli nuovi (in nessuna delle due liste) in fondo.
+    // "hidden": true = pulsante disponibile ma nascosto finché non lo mostri dal pannello.
     const custom = tileLayout[p.id];
-    let tiles = all;
-    if (custom && Array.isArray(custom.show) && editablePage({ tiles: all })) {
+    const editable = editablePage({ tiles: all, autoGrid: p.autoGrid });
+    const fixed = all.filter(function (t) { return t.widget; });
+    const buttons = all.filter(function (t) { return !t.widget; });
+    let shownButtons = buttons.filter(function (t) { return !t.hidden; });
+    const useCustom = !!(custom && Array.isArray(custom.show) && editable);
+    if (useCustom) {
       const byId = {};
-      all.forEach(function (t) { byId[t.id] = t; });
+      buttons.forEach(function (t) { byId[t.id] = t; });
       const hide = Array.isArray(custom.hide) ? custom.hide : [];
       const shown = custom.show.filter(function (id, i) { return byId[id] && custom.show.indexOf(id) === i; });
-      tiles = shown.map(function (id) { return byId[id]; })
-        .concat(all.filter(function (t) { return shown.indexOf(t.id) < 0 && hide.indexOf(t.id) < 0; }));
+      shownButtons = shown.map(function (id) { return byId[id]; })
+        .concat(buttons.filter(function (t) { return shown.indexOf(t.id) < 0 && hide.indexOf(t.id) < 0 && !t.hidden; }));
     }
-    if (p.autoGrid || (custom && tiles !== all)) {
-      const g = autoGrid(tiles.map(function (t) { return { w: clampInt(t.w, 1, 8, 1), h: clampInt(t.h, 1, 6, 1) }; }));
-      cols = g.columns;
+    // riquadri fissi prima (a sinistra, a tutta altezza), poi i pulsanti
+    let tiles = editable ? fixed.concat(shownButtons) : all;
+    const changed = tiles.length !== all.length || tiles.some(function (t, i) { return t !== all[i]; });
+    if (p.autoGrid || useCustom || changed) {
+      const fixedCols = editable ? fixed.reduce(function (n, t) { return n + clampInt(t.w, 1, 4, 1); }, 0) : 0;
+      const g = autoGrid((editable ? shownButtons : tiles).map(function (t) { return { w: clampInt(t.w, 1, 8, 1), h: clampInt(t.h, 1, 6, 1) }; }), fixedCols);
+      cols = g.columns + fixedCols;
       rws = g.rows;
+      if (editable) fixed.forEach(function (t) { t.h = rws; });
     }
     tiles.forEach(function (t) {
       t.w = clampInt(t.w, 1, cols, 1);
@@ -259,7 +273,7 @@ function normalizeDock(raw, layout, osKey) {
       rows: rws,
       tiles: tiles,
       allTiles: all,
-      editable: editablePage({ tiles: all })
+      editable: editable
     });
   });
   if (!pages.length) {
@@ -374,7 +388,7 @@ function saveLayout(tabs, home, tiles) {
       if (!page || !page.editable || !t) return;
       // pulsanti di altri sistemi (es. Windows se sei su Linux): restano dove sono
       const known = {};
-      page.allTiles.forEach(function (x) { known[x.id] = true; });
+      page.allTiles.forEach(function (x) { if (!x.widget) known[x.id] = true; });
       const clean = function (list) { return (Array.isArray(list) ? list : []).map(String).filter(function (id, i, a) { return known[id] && a.indexOf(id) === i; }); };
       const show = clean(t.show);
       const hide = clean(t.hide).filter(function (id) { return show.indexOf(id) < 0; });

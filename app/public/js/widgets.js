@@ -1964,66 +1964,63 @@ var Widgets = (function () {
   }
 
   // ------------------------------------------------------------ Viber
-  // Pannelli di Viber (terminale, git, browser, chat, task, file), viste della finestra
-  // e task del progetto aperto. Comandi per la finestra di Viber in primo piano.
-  // Si vedono solo i pannelli che sono tra le schede aperte in Viber (gli altri non
-  // si possono aprire dall'API). Il riquadro Tasks della barra del titolo non ha comandi.
-  var VB_VIEWS = [
-    { id: 'tabs', label: 'SCHEDE', icon: 'layout' },
-    { id: 'agents', label: 'AGENTI', icon: 'robot' },
-    { id: 'focus', label: 'FOCUS', icon: 'fullscreen' }
-  ];
-  var VB_PANELS = [
-    { id: 'terminal', label: 'TERMINALE', icon: 'terminal' },
-    { id: 'git', label: 'GIT', icon: 'git' },
-    { id: 'browser', label: 'BROWSER', icon: 'globe' },
-    { id: 'chat', label: 'CHAT', icon: 'chat' },
-    { id: 'tasks', label: 'TASK', icon: 'check' },
-    { id: 'files', label: 'FILE', icon: 'folder' }
-  ];
+  // Riquadro fisso della pagina VIBER: progetti aperti in Viber (con lo stato dei loro
+  // agenti; tocco = passa a quel progetto) e task del progetto mostrato. I pulsanti della
+  // pagina (pannelli, disposizioni, viste) sono tile normali, personalizzabili dal
+  // pannello: qui si accendono quello del pannello attivo e si spengono i pannelli che
+  // non sono tra le schede aperte in Viber.
+  var VB_STATES = { question: 'ti aspetta', working: 'al lavoro', completed: 'pronto', idle: '' };
   function viberWidget(root, tile, app) {
     D.addClass(root, 'w-viber');
-    var html = '<div class="vb-left"><div class="vb-head"><span class="vb-title">VIBER</span><span class="vb-sub"></span></div><div class="vb-panels"></div><div class="vb-views">';
-    for (var i = 0; i < VB_VIEWS.length; i++) {
-      var v = VB_VIEWS[i];
-      html += '<div class="vb-v" data-view="' + v.id + '">' + Icons.html(v.icon) + '<span>' + v.label + '</span></div>';
-    }
-    html += '</div></div>' +
-      '<div class="vb-right"><div class="vb-thead">TASK<span class="vb-tsub"></span></div><div class="vb-tasks scroll"></div></div>';
-    root.innerHTML = html;
+    root.innerHTML = '<div class="vb-head"><span class="vb-title">VIBER</span><span class="vb-sub"></span></div>' +
+      '<div class="vb-projs scroll"></div>' +
+      '<div class="vb-thead">TASK<span class="vb-tsub"></span></div><div class="vb-tasks scroll"></div>';
     function q(c) { return root.querySelector('.' + c); }
-    var sub = q('vb-sub'), panelsEl = q('vb-panels'), viewsEl = q('vb-views'), tasksEl = q('vb-tasks'), tsub = q('vb-tsub');
-    var st = null, alive = true, busy = false, lastTasks = '', lastPanels = null;
+    var sub = q('vb-sub'), projEl = q('vb-projs'), tasksEl = q('vb-tasks'), tsub = q('vb-tsub');
+    var st = null, alive = true, busy = false, lastTasks = '', lastProjs = '';
 
-    // pulsanti dei soli pannelli aperti in Viber (tutti, spenti, finché non si sa)
-    function renderPanels() {
-      var open = st && st.online && st.open ? st.open : null;
-      var key = open ? ',' + open.join(',') + ',' : '*';
-      if (key === lastPanels) return;
-      lastPanels = key;
-      var h = '';
-      for (var i = 0; i < VB_PANELS.length; i++) {
-        var p = VB_PANELS[i];
-        if (open && key.indexOf(',' + p.id + ',') < 0) continue;
-        h += '<div class="vb-p" data-panel="' + p.id + '">' + Icons.html(p.icon) + '<span>' + p.label + '</span></div>';
+    // pulsanti { "type": "viber", "panel": ... } della pagina
+    function paintButtons() {
+      var open = st && st.online && st.open ? ',' + st.open.join(',') + ',' : null;
+      for (var i = 0; i < app.tiles.length; i++) {
+        var p = app.tiles[i], a = p.tile.action;
+        if (!a || a.type !== 'viber' || !a.panel) continue;
+        D.toggleClass(p.el, 'vb-on', !!(st && st.online && st.active === a.panel));
+        D.toggleClass(p.el, 'vb-off', !open || open.indexOf(',' + a.panel + ',') < 0);
       }
-      panelsEl.innerHTML = h || '<div class="empty">Nessuno di questi pannelli è tra le schede aperte in Viber</div>';
     }
     function renderState() {
       D.toggleClass(root, 'vb-off', !(st && st.online));
-      renderPanels();
+      paintButtons();
       if (!st) { sub.innerHTML = 'collegamento…'; return; }
       if (!st.online) { sub.innerHTML = '<b class="err">' + D.esc(st.message || 'Viber non è aperto') + '</b>'; return; }
       sub.innerHTML = D.esc(st.name || '');
-      var els = panelsEl.querySelectorAll('.vb-p');
-      for (var i = 0; i < els.length; i++) D.toggleClass(els[i], 'on', els[i].getAttribute('data-panel') === st.active);
     }
     function loadState() {
-      if (busy) return;
       D.api.get('/api/viber/state', function (err, d) {
-        if (!alive || busy) return;
+        if (!alive) return;
         st = err ? { online: false, message: err.message } : d;
         renderState();
+      });
+    }
+    function renderProjects(d) {
+      var key = JSON.stringify(d.projects);
+      if (key === lastProjs) return;
+      lastProjs = key;
+      var h = '';
+      for (var i = 0; i < d.projects.length; i++) {
+        var p = d.projects[i], what = VB_STATES[p.state] || '';
+        h += '<div class="vb-pr st-' + p.state + (p.active ? ' on' : '') + '" data-path="' + D.esc(p.path) + '"><i class="vb-dot"></i>' +
+          '<div class="vb-pname">' + D.esc(p.name) + '</div>' +
+          '<div class="vb-pmeta">' + (what ? '<b>' + what + '</b>' : '') + D.esc(p.title || (p.agents ? '' : 'nessun agente')) + '</div></div>';
+      }
+      projEl.innerHTML = h || '<div class="empty">Nessun progetto aperto in Viber</div>';
+    }
+    function loadProjects() {
+      D.api.get('/api/viber/projects', function (err, d) {
+        if (!alive) return;
+        if (err) { if (!lastProjs) projEl.innerHTML = '<div class="empty">' + D.esc(err.message) + '</div>'; return; }
+        renderProjects(d);
       });
     }
     function loadTasks() {
@@ -2045,44 +2042,42 @@ var Widgets = (function () {
           }
           h += '</div>';
         }
-        tasksEl.innerHTML = (h || '<div class="empty">Nessuna task aperta in questo progetto</div>') +
-          '<div class="vb-note">Il riquadro Tasks in alto in Viber non si apre dal tablet: qui vedi le stesse task.</div>';
+        tasksEl.innerHTML = h || '<div class="empty">Nessuna task aperta in questo progetto</div>';
       });
     }
-    function post(url, body, el) {
-      if (busy) return;
-      busy = true;
-      if (el) D.addClass(el, 'busy');
-      D.api.post(url, body, function (err, d) {
-        busy = false;
-        if (el) D.removeClass(el, 'busy');
-        if (err) { app.toast(err.message, 'err'); loadState(); return; }
-        st = d; renderState();
-      });
-    }
-    D.bindTap(panelsEl, {
+    // tocco su un progetto: Viber passa a quel progetto (scorciatoie di Viber, verificate)
+    D.bindTap(projEl, {
+      scrollable: true,
       onTap: function (t) {
-        var p = D.closestAttr(t, 'data-panel', panelsEl);
-        if (!p) return;
-        post('/api/viber/panel', { panel: p.getAttribute('data-panel') }, p);
-        if (p.getAttribute('data-panel') === 'tasks') { lastTasks = ''; loadTasks(); }
-      }
-    });
-    D.bindTap(viewsEl, {
-      onTap: function (t) {
-        var v = D.closestAttr(t, 'data-view', viewsEl);
-        if (v) post('/api/viber/view', { mode: v.getAttribute('data-view') }, v);
+        var p = D.closestAttr(t, 'data-path', projEl);
+        if (!p || busy || D.hasClass(p, 'on')) return;
+        busy = true;
+        D.addClass(p, 'busy');
+        D.api.post('/api/viber/project', { target: p.getAttribute('data-path') }, function (err, d) {
+          busy = false;
+          D.removeClass(p, 'busy');
+          if (err) { app.toast(err.message, 'err'); return; }
+          renderProjects(d);
+          lastTasks = ''; loadState(); loadTasks();
+        }, 20000);
       }
     });
 
     renderState();
-    loadState(); loadTasks();
+    loadState(); loadProjects(); loadTasks();
     var fast = D.every(3000, 15000, loadState);
+    var mid = D.every(6000, 30000, loadProjects);
     var slow = D.every(10000, 60000, loadTasks);
     return {
       update: function () {},
-      resize: function (w, h) { D.toggleClass(root, 'vb-low', h < 380); },
-      destroy: function () { alive = false; D.stop(fast); D.stop(slow); }
+      resize: function () {},
+      // risposta di un pulsante "viber" della pagina: stato aggiornato subito
+      viber: function (d) {
+        if (!d) return;
+        if (d.projects) { renderProjects(d); lastTasks = ''; loadState(); loadTasks(); return; }
+        if (d.online !== undefined) { st = d; renderState(); }
+      },
+      destroy: function () { alive = false; D.stop(fast); D.stop(mid); D.stop(slow); }
     };
   }
 
