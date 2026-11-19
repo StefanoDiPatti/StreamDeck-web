@@ -31,6 +31,7 @@ const claudeusage = require('./services/claudeusage');
 const viber = require('./services/viber');
 const pairing = require('./services/pairing');
 const mail = require('./services/mail');
+const games = require('./services/games');
 const pkg = require('../package.json');
 
 const PORT = parseInt(process.env.PORT, 10) || 8787;
@@ -191,6 +192,7 @@ function controlInfo() {
     tablet: urls,
     pairing: pairing.links(PORT),
     mail: mail.panelInfo(),
+    games: games.panelInfo(),
     version: pkg.version,
     platform: platform.name
   };
@@ -223,8 +225,38 @@ app.post('/api/control/mail/open', controlOnly, route(function () { return mail.
 app.post('/api/control/mail/show', controlOnly, route(function (req) { const b = req.body || {}; mail.setShown(String(b.id || ''), b.shown !== false); return controlInfo(); }));
 app.post('/api/control/discord/logout', controlOnly, route(function () { discord.logout(); return controlInfo(); }));
 
+// --- Giochi della pagina GAMES (dati personali in data/games.json, fuori da git) ---
+// selettore di file del sistema, poi nome proposto, processo e icona del file
+app.post('/api/control/games/pick', controlOnly, route(async function () {
+  const picked = await games.pickFile();
+  if (!picked.path) return { path: '' };
+  const info = await games.fileInfo(picked.path);
+  const icon = await games.fileIcon(picked.path).catch(function (e) { log.debug('games', 'icona del file: ' + e.message); return { token: '' }; });
+  return Object.assign(info, { iconToken: icon.token });
+}));
+// icona del file di un gioco già salvato (per cambiarla dal pannello)
+app.post('/api/control/games/fileicon', controlOnly, route(function (req) { return games.fileIconOf((req.body || {}).id); }));
+app.post('/api/control/games/search', controlOnly, route(function (req) { return games.searchIcons((req.body || {}).name); }));
+app.post('/api/control/games', controlOnly, route(async function (req) { await games.add(req.body || {}); return controlInfo(); }));
+app.post('/api/control/games/remove', controlOnly, route(function (req) { games.remove((req.body || {}).id); return controlInfo(); }));
+app.post('/api/control/games/icon', controlOnly, route(async function (req) { const b = req.body || {}; await games.setIcon(b.id, b.icon); return controlInfo(); }));
+app.post('/api/control/games/order', controlOnly, route(function (req) { games.reorder((req.body || {}).ids); return controlInfo(); }));
+// immagini per il pannello (solo da questo PC: un <img> non manda l'intestazione del pannello)
+function sendImage(res, file) { res.setHeader('Cache-Control', 'no-cache'); res.sendFile(file); }
+app.get('/api/control/games/preview/:token', localPage, function (req, res) {
+  try { sendImage(res, games.previewFile(req.params.token)); } catch (e) { res.status(404).end(); }
+});
+app.get('/api/control/games/icon/:id', localPage, function (req, res) {
+  try { sendImage(res, games.icon(req.params.id)); } catch (e) { res.status(404).end(); }
+});
+
 // --- tutto il resto richiede il token ---
 app.use('/api', auth.requireToken);
+
+// icona di un gioco per i pulsanti della pagina GAMES
+app.get('/api/games/icon/:id', function (req, res) {
+  try { res.setHeader('Cache-Control', 'private, max-age=86400'); res.sendFile(games.icon(req.params.id)); } catch (e) { res.status(404).end(); }
+});
 
 // --- Email (tablet): letta da Thunderbird sul PC, in sola lettura ---
 app.get('/api/mail', route(function () { return mail.state(); }));

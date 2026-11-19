@@ -8,7 +8,7 @@ Il PC (Windows o Linux) fa girare un piccolo server Node.js. Il tablet apre una 
 - **Claude**: le sessioni di Claude Code dell'app desktop, divise per le sezioni del PC. Scrivi (o detti) dal tablet e il messaggio parte dall'app sul PC, con i permessi della sessione.
 - Monitor PC: CPU, RAM, GPU NVIDIA (uso, temperatura, VRAM), rete.
 - **Discord**: server, canali vocali, chi c'è in stanza e chi parla, mute e audio, webcam e Go Live.
-- **Games**: avvio di Hearthstone, World of Tanks e League of Legends (se il gioco è già aperto lo porta in primo piano).
+- **Games**: i tuoi giochi, aggiunti dal pannello con il selettore di file e un'icona (se il gioco è già aperto lo porta in primo piano).
 - **Audio**: scegli uscita (casse, cuffie, monitor) e microfono predefiniti, con volume e mute, e regola il volume di ogni app.
 - **Schermi**: scegli su quale monitor si aprono le app dal tablet e disponi le finestre nelle zone, come Snap di Windows.
 - **Pannello di controllo sul PC** per scegliere e ordinare con il trascinamento le pagine del tablet e i pulsanti di ogni pagina.
@@ -91,8 +91,13 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | OLLAMA | chat con i modelli locali |
 | CLAUDE | chat, sessioni di Claude Code, dettatura, scrittura sul PC |
 | DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, volume e muto di una persona solo per te |
+<<<<<<< HEAD
+| GAMES | i giochi scelti dal pannello, con la loro icona (pallino verde se aperti; se già aperto lo porta in primo piano) |
+| EMAIL *(disponibile)* | posta in arrivo degli account scelti dal pannello, lettura dei messaggi, apertura della webmail sul PC |
+=======
 | GAMES | Hearthstone, World of Tanks, League of Legends (pallino verde se aperti; se già aperto lo porta in primo piano) |
 | EMAIL *(disponibile)* | posta in arrivo degli account di Thunderbird scelti dal pannello, lettura dei messaggi, apertura di Thunderbird sul PC |
+>>>>>>> origin/main
 | SCHERMI *(Windows; Linux con KDE Plasma 6 + kdotool)* | monitor del PC, disposizioni delle finestre, monitor su cui aprire le app, **desktop virtuali** (passa, crea, chiudi, trascinaci una finestra) e pulsante **GUIDA** con le scorciatoie |
 | AUDIO | uscite e microfoni (predefinito, volume, mute), volume e mute di ogni app che usa l'audio |
 | DESKTOP VIRTUALI *(solo Linux)* | guida alle scorciatoie dei desktop virtuali (KDE Plasma, GNOME, anche Windows); su Windows la stessa guida è nella pagina SCHERMI |
@@ -168,6 +173,17 @@ Sul tablet vedi la posta in arrivo (le non lette in evidenza), apri un messaggio
 
 Profili cercati: `%APPDATA%\Thunderbird` su Windows; `~/.thunderbird`, Flatpak (`~/.var/app/org.mozilla.Thunderbird/.thunderbird`) e Snap su Linux. `DOCK_THUNDERBIRD_DIR` indica un'altra cartella (quella con `profiles.ini`).
 
+### Giochi
+
+Nella sezione **Giochi** del pannello premi **Aggiungi un gioco**: si apre il selettore di file del sistema (Windows: `.exe`, collegamenti `.lnk` e `.url` di Steam; Linux: file `.desktop`, script, AppImage). La dock propone il nome (dalle informazioni del file) e le icone:
+
+- l'icona del file stesso (fino a 256 px);
+- le immagini del gioco trovate sul web: copertina e intestazione di **Steam**, immagine della voce di **Wikipedia** e loghi di **Wikimedia Commons** (nessuna chiave API). Puoi cercare con un altro nome; senza icona resta quella di riserva.
+
+Il campo **Processo del gioco** serve per il pallino verde e per riportare il gioco in primo piano: se il file è un launcher (Battle.net, Riot, Game Center...) scrivi il nome del processo del gioco vero (più nomi separati da virgola). Con le frecce cambi l'ordine dei pulsanti, con **Icona** ne scegli un'altra.
+
+I giochi sono dati personali: stanno in `data/games.json` e le icone in `data/game-icons/`, solo su questo PC. Il progetto non contiene giochi né percorsi di un PC.
+
 ### Discord
 
 Usa il collegamento locale dell'app Discord (lo stesso delle Stream Deck): niente bot, funziona con Discord aperto sul PC. Discord lo concede solo alle applicazioni registrate, quindi serve una configurazione, una volta sola, guidata dal pannello:
@@ -176,7 +192,7 @@ Usa il collegamento locale dell'app Discord (lo stesso delle Stream Deck): nient
 2. in *OAuth2* copia **Client ID** e **Client Secret**; sotto *Redirects* premi *Add Redirect*, scrivi `http://localhost` (senza barra finale) e premi **Save Changes**. Se manca, Discord risponde *"invalid_request: missing redirect_uri"*;
 3. incollali nel pannello e premi **Collega**: Discord chiede di autorizzare la dock.
 
-Dal tablet: tocca un server, poi un canale per entrarci; tocca una persona nella tua stanza per aprire il suo menu: **volume per te** da 0 a 200% (barra, − e +, 50/100/150/200%) e **MUTA PER ME**, come il tasto destro su Discord (gli altri non lo vedono); **MIC** e **AUDIO** per mutarti o silenziare; **CAM** accende la webcam; **LIVE** avvia il Go Live del gioco aperto (Hearthstone, World of Tanks, LoL, o qualsiasi app con `"game": true`); **ESCI** (tieni premuto) per lasciare la stanza.
+Dal tablet: tocca un server, poi un canale per entrarci; tocca una persona nella tua stanza per aprire il suo menu: **volume per te** da 0 a 200% (barra, − e +, 50/100/150/200%) e **MUTA PER ME**, come il tasto destro su Discord (gli altri non lo vedono); **MIC** e **AUDIO** per mutarti o silenziare; **CAM** accende la webcam; **LIVE** avvia il Go Live del gioco aperto (uno di quelli della pagina GAMES, o qualsiasi app con `"game": true`); **ESCI** (tieni premuto) per lasciare la stanza.
 
 Webcam e Go Live usano due comandi di Discord non documentati (`TOGGLE_VIDEO`, `TOGGLE_SCREENSHARE`) e un permesso in più: se avevi già collegato la dock, premi **Riautorizza** nel pannello. Se Discord non concede quel permesso, l'autorizzazione prosegue senza, e CAM e LIVE restano spenti. Senza configurazione MIC e AUDIO funzionano lo stesso, con le scorciatoie predefinite di Discord (Ctrl+Shift+M / Ctrl+Shift+D). Le credenziali stanno in `data/discord.json`, solo su questo PC.
 

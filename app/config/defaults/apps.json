@@ -9,7 +9,7 @@
 //           (come la X della finestra: l'app può chiedere di salvare)
 //  path : può essere anche una lista di percorsi possibili: vale il primo che esiste
 //  process: nome del processo, se diverso dal file (es. "discord"); anche una lista
-//  whenRunning: "focus" = se è già aperta il pulsante la porta in primo piano (giochi)
+//  whenRunning: "focus" = se è già aperta il pulsante la porta in primo piano
 //  game : true = è un gioco: il Go Live di Discord trasmette questo, se è aperto
 //  title  : regex sul titolo della finestra, per distinguere app con lo stesso processo
 //  bridge : "apple" | "youtube" | "ytmusic" = web app riconosciuta dall'estensione del browser
@@ -141,33 +141,7 @@
       "process": "discord",
       "windows": { "path": "%LOCALAPPDATA%\\Discord\\Update.exe", "args": ["--processStart", "Discord.exe"] },
       "linux": { "path": "discord" }
-    },
-    // ---- Giochi (pagina GAMES). Per un altro gioco copia una voce e cambia percorso e processo.
-    "hearthstone": {
-      "label": "Hearthstone",
-      "game": true,
-      "whenRunning": "focus",
-      "process": "hearthstone",
-      // il launcher di Hearthstone apre Battle.net e avvia il gioco
-      "windows": { "path": ["D:\\Hearthstone\\Hearthstone Beta Launcher.exe", "C:\\Program Files (x86)\\Hearthstone\\Hearthstone Beta Launcher.exe"] }
-    },
-    "world_of_tanks": {
-      "label": "World of Tanks",
-      "game": true,
-      "whenRunning": "focus",
-      "process": "worldoftanks",
-      // come il collegamento del Game Center sul desktop
-      "windows": { "path": ["D:\\World_of_Tanks_EU\\wgc_api.exe", "C:\\Games\\World_of_Tanks_EU\\wgc_api.exe"], "args": ["--open"] }
-    },
-    "league_of_legends": {
-      "label": "League of Legends",
-      "game": true,
-      "whenRunning": "focus",
-      "process": ["league of legends", "leagueclientux"],
-      "windows": {
-        "path": ["D:\\Riot Games\\Riot Client\\RiotClientServices.exe", "C:\\Riot Games\\Riot Client\\RiotClientServices.exe"],
-        "args": ["--launch-product=league_of_legends", "--launch-patchline=live"]
-      }
     }
+    // I giochi (pagina GAMES) si aggiungono dal pannello di controllo: stanno in data/games.json, non qui.
   }
 }

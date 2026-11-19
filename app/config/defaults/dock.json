@@ -166,15 +166,11 @@
       "id": "games",
       "title": "GAMES",
       "icon": "gamepad",
-      "description": "Hearthstone, World of Tanks e League of Legends (pallino verde se aperti)",
+      "description": "I tuoi giochi, aggiunti dal pannello di controllo (pallino verde se aperti)",
       "tab": false,
-      "columns": 3,
-      "rows": 1,
-      "tiles": [
-        { "id": "hearthstone", "label": "HEARTHSTONE", "icon": "cards", "color": "#8a5a1c", "showRunning": "hearthstone", "action": { "type": "launch", "app": "hearthstone" } },
-        { "id": "world_of_tanks", "label": "WORLD OF TANKS", "icon": "tank", "color": "#5b3a1e", "showRunning": "world_of_tanks", "action": { "type": "launch", "app": "world_of_tanks" } },
-        { "id": "league_of_legends", "label": "LEAGUE OF LEGENDS", "icon": "sword", "color": "#1d4a5e", "showRunning": "league_of_legends", "action": { "type": "launch", "app": "league_of_legends" } }
-      ]
+      // i pulsanti sono i giochi scelti dal pannello (data/games.json)
+      "source": "games",
+      "tiles": []
     },
     {
       "id": "mail",

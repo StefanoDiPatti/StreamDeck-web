@@ -83,6 +83,9 @@ body.kb-open #stage { top: 0; bottom: 0; }
 .tile.btn.busy .t-icon { opacity: 0.45; }
 .t-icon { position: absolute; left: 0; right: 0; top: 14%; height: 40%; text-align: center; }
 .t-icon svg { height: 100%; width: 100%; }
+/* immagine al posto dell'icona (pulsanti dei giochi): più grande, adattata senza deformarla */
+.t-img { left: 8%; right: 8%; top: 8%; height: 62%; background-repeat: no-repeat; background-position: center; -webkit-background-size: contain; background-size: contain; }
+.tile.short .t-img { top: 6%; height: 56%; }
 .t-label {
   position: absolute; left: 6px; right: 6px; bottom: 24%; text-align: center;
   font-weight: bold; font-size: 1em; letter-spacing: 1px; text-transform: uppercase;
