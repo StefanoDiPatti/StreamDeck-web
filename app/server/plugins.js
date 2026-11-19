@@ -6,6 +6,7 @@
 //     apps/*.json       app      commands/*.json   comandi consentiti
 //     public/*.js       script del tablet (ES5): Widgets.register(...), Icons.register(...)
 //     public/*.css      stile dei widget (niente flexbox: browser di Android 4)
+//     home.json         come compaiono i widget nel catalogo della HOME (nome, icona, misure)
 //
 // index.js esporta:
 //   {
@@ -173,6 +174,51 @@ function registered(kind) {
   return out;
 }
 function widgets() { return registered('Widgets'); }
+
+// Widget del plugin per il catalogo della HOME: plugins/<nome>/home.json (JSON con commenti,
+// riletto da solo). Ogni voce: { "label", "icon", "description", "w", "h", "minW", "minH",
+// "widget" (se diverso dalla chiave), "props" (campi in più per la tile, es. { "città": "Roma" }) }.
+// I widget registrati senza voce in home.json entrano lo stesso, con nome e misure di partenza.
+function homeWidgets() {
+  const out = [];
+  const reg = widgets();
+  const parse = require('./config').parseJson;
+  const int = function (v, min, max, def) { const n = parseInt(v, 10); return isNaN(n) ? def : Math.max(min, Math.min(max, n)); };
+  names().forEach(function (name) {
+    const file = path.join(dirOf(name), 'home.json');
+    let data = null;
+    try { data = parse(fs.readFileSync(file, 'utf8')); } catch (e) {
+      if (e.code !== 'ENOENT') log.warn('plugin', name + '/home.json non valido: ' + e.message);
+    }
+    const declared = {};
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      Object.keys(data).forEach(function (id) {
+        const d = data[id] || {};
+        const widget = typeof d.widget === 'string' && d.widget ? d.widget : id;
+        if (!NAME_RE.test(id) || reg[widget] !== name) {
+          log.warn('plugin', name + '/home.json: "' + id + '" ignorato (il widget "' + widget + '" non è registrato da questo plugin con Widgets.register)');
+          return;
+        }
+        declared[widget] = true;
+        const minW = int(d.minW, 1, 8, 1), minH = int(d.minH, 1, 6, 1);
+        out.push({
+          id: id, widget: widget, plugin: name, page: 'PLUGIN ' + name.toUpperCase(),
+          label: typeof d.label === 'string' && d.label ? d.label : id.toUpperCase(),
+          icon: typeof d.icon === 'string' && d.icon ? d.icon : 'apps',
+          description: typeof d.description === 'string' ? d.description : 'Widget del plugin ' + name,
+          w: Math.max(minW, int(d.w, 1, 8, 2)), h: Math.max(minH, int(d.h, 1, 6, 2)), minW: minW, minH: minH,
+          props: d.props && typeof d.props === 'object' && !Array.isArray(d.props) ? d.props : null
+        });
+      });
+    }
+    Object.keys(reg).forEach(function (w) {
+      if (reg[w] !== name || declared[w]) return;
+      out.push({ id: w, widget: w, plugin: name, page: 'PLUGIN ' + name.toUpperCase(), label: w.toUpperCase(), icon: 'apps',
+        description: 'Widget del plugin ' + name + ' (nome e misure: plugins/' + name + '/home.json)', w: 2, h: 2, minW: 1, minH: 1, props: null });
+    });
+  });
+  return out;
+}
 function icons() { return registered('Icons'); }
 
 // Per il pannello e il controllo della configurazione.
@@ -211,5 +257,5 @@ function reset() {
 module.exports = {
   baseDir: baseDir, names: names, configDirs: configDirs, load: load,
   registerActions: registerActions, mountRoutes: mountRoutes,
-  scripts: scripts, styles: styles, widgets: widgets, icons: icons, info: info, reset: reset, NAME_RE: NAME_RE
+  scripts: scripts, styles: styles, widgets: widgets, homeWidgets: homeWidgets, icons: icons, info: info, reset: reset, NAME_RE: NAME_RE
 };

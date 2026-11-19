@@ -34,14 +34,13 @@ function clamp(v, min, max, def) {
   return Math.max(min, Math.min(max, n));
 }
 
-// Catalogo completo: quelli del progetto più i widget dei plugin (misura proposta 2x2).
+// Catalogo completo: quelli del progetto più i widget dei plugin (plugins/<nome>/home.json).
 function catalog() {
   const out = CATALOG.map(function (c) { return Object.assign({ plugin: '', props: null }, c); });
-  let fromPlugins = {};
-  try { fromPlugins = require('./plugins').widgets(); } catch (e) { fromPlugins = {}; }
-  Object.keys(fromPlugins).forEach(function (w) {
-    if (out.some(function (c) { return c.id === w; })) return;
-    out.push({ id: w, widget: w, props: null, label: w.toUpperCase(), icon: 'apps', page: 'PLUGIN', description: 'Widget del plugin ' + fromPlugins[w], w: 2, h: 2, minW: 1, minH: 1, plugin: fromPlugins[w] });
+  let fromPlugins = [];
+  try { fromPlugins = require('./plugins').homeWidgets(); } catch (e) { fromPlugins = []; }
+  fromPlugins.forEach(function (c) {
+    if (!out.some(function (o) { return o.id === c.id; })) out.push(c);
   });
   return out;
 }
