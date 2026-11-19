@@ -384,15 +384,17 @@
     var n = new Date();
     D.setText(saverClock, D.pad(n.getHours()) + ':' + D.pad(n.getMinutes()));
     var v = viewport();
-    saverClock.style.left = Math.round(Math.random() * Math.max(0, v.w - 220)) + 'px';
-    saverClock.style.top = Math.round(Math.random() * Math.max(0, v.h - 120)) + 'px';
+    // misure vere dell'orario (cambiano con il font del tema)
+    var cw = saverClock.offsetWidth || 300, ch = saverClock.offsetHeight || 110;
+    saverClock.style.left = Math.round(Math.random() * Math.max(0, v.w - cw - 10)) + 'px';
+    saverClock.style.top = Math.round(Math.random() * Math.max(0, v.h - ch - 40)) + 'px';
   }
   function sleepNow() {
     if (D.power.state() === 'asleep') return;
     D.power.sleep();
     clearTimeout(app.pollTimer);
+    D.removeClass(saver, 'hidden');   // prima visibile: paintSaver misura l'orario
     paintSaver();
-    D.removeClass(saver, 'hidden');
   }
   function wakeUp(e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }

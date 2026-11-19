@@ -132,6 +132,8 @@ Il pulsante con la **tavolozza** nella barra in alto, accanto all'orario, apre i
 | Neon Elgato | tasti neri in rilievo come uno Stream Deck, icone colorate che brillano |
 | Neo-brutalista | chiaro: fondo crema, bordi neri spessi, ombra piena, colori pastello |
 
+Anche l'orario del salvaschermo cambia con il tema: sottile (Classico), arrotondato (Material), digitale con bagliore (Neon), pesante con ombra piena (Neo-brutalista). I font sono in `public/fonts`, ridotti alle sole cifre (licenze in `public/fonts/LICENSE.md`).
+
 La scelta resta su quel tablet. I pulsanti con `"color"` cambiano con il tema: nel Neon il colore va sull'icona, nel Neo-brutalista diventa pastello.
 
 Per chi modifica lo stile: i file in `public/css/themes/` sono generati da `public/css/dock.css` e `scripts/themes/<tema>.js` (tabelle dei colori e forme del tema). Dopo una modifica a `dock.css` esegui `npm run themes`.

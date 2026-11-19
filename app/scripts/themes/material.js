@@ -27,6 +27,9 @@ module.exports = {
     '#3d8bfd': '#a8c7fa', '#6cb6ff': '#a8c7fa', '#3fb950': '#7fd99a', 'rgb(63,185,80)': '#7fd99a', '#e5534b': '#ffb4ab'
   },
   css: `
+/* salvaschermo: cifre morbide e arrotondate */
+@font-face { font-family: "VDClockMaterial"; src: url("../../fonts/clock-material.ttf") format("truetype"); }
+.saver-clock { font-family: "VDClockMaterial", Roboto, sans-serif; font-size: 112px; letter-spacing: 0; color: #4a4f63; }
 body { font-family: Roboto, "Droid Sans", "Segoe UI", Arial, sans-serif; }
 #topbar { border-bottom-color: #111318; }
 .tile { border-radius: 24px; border-color: transparent; }

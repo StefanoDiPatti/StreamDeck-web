@@ -30,6 +30,9 @@ module.exports = {
     '#3d8bfd': INK, '#6cb6ff': INK, '#3fb950': G, 'rgb(63,185,80)': G, '#e5534b': R, '#d29922': Y
   },
   css: `
+/* salvaschermo: cifre nere pesanti con ombra piena */
+@font-face { font-family: "VDClockBrutal"; src: url("../../fonts/clock-brutal.ttf") format("truetype"); }
+.saver-clock { font-family: "VDClockBrutal", "Arial Black", sans-serif; font-size: 100px; letter-spacing: 0; color: #6e6656; text-shadow: 6px 6px 0 #4a3d06; }
 body { font-family: "Arial Black", "Archivo Black", Roboto, Arial, sans-serif; }
 /* barre nere con testo crema */
 #topbar { background: ${INK}; color: ${CREAM}; border-bottom: 3px solid ${INK}; }
