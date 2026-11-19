@@ -96,20 +96,22 @@ test('Viber: azione di un pulsante senza campi validi rifiutata', async function
   await assert.rejects(viber.action({ type: 'viber', layout: 'griglia' }), /Disposizione non valida/);
 });
 
-test('Pagina VIBER: riquadro fisso a sinistra + pulsanti personalizzabili, "hidden" nascosti', function () {
+test('Pagina VIBER: widget sopra e una fila di pulsanti personalizzabili, "hidden" nascosti', function () {
   const config = require('../server/config');
-  const raw = { pages: [{ id: 'viber', autoGrid: true, tiles: [
-    { widget: 'viber', w: 2 },
+  const raw = { pages: [{ id: 'viber', columns: 1, rows: 1, buttonRow: true, tiles: [
+    { widget: 'viber' },
     { id: 'a', label: 'A' }, { id: 'b', label: 'B' }, { id: 'c', label: 'C', hidden: true }
   ] }] };
   const p = config.normalizeDock(raw, {}, 'windows').pages[0];
   assert.strictEqual(p.editable, true);
+  assert.strictEqual(p.buttonRow, true);
+  assert.strictEqual(p.columns + 'x' + p.rows, '1x1');
   assert.deepStrictEqual(p.tiles.map(function (x) { return x.widget || x.id; }), ['viber', 'a', 'b']);
-  assert.strictEqual(p.tiles[0].h, p.rows);
-  // dal pannello: C mostrato per primo, A nascosto; il riquadro resta sempre
+  // dal pannello: C mostrato per primo, A nascosto; il widget resta sempre e la griglia non cambia
   const q = config.normalizeDock(raw, { tiles: { viber: { show: ['c', 'b'], hide: ['a'] } } }, 'windows').pages[0];
   assert.deepStrictEqual(q.tiles.map(function (x) { return x.widget || x.id; }), ['viber', 'c', 'b']);
-  // senza autoGrid una pagina con widget non è modificabile
+  assert.strictEqual(q.columns + 'x' + q.rows, '1x1');
+  // senza buttonRow una pagina con widget non è modificabile
   const r = config.normalizeDock({ pages: [{ id: 'x', tiles: [{ widget: 'clock' }, { id: 'a' }] }] }, {}, 'windows').pages[0];
   assert.strictEqual(r.editable, false);
 });

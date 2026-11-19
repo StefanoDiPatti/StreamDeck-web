@@ -280,8 +280,9 @@ svg.ic.dc-camflag { fill: #39ff88; }
 .au-bar i { background: #007a99; }
 .au-ctl.muted .au-mute { background: #7a0020; }
 .au-ctl.muted .au-bar i { background: #333333; }
-.vb-title { color: #8f8f8f; }
-.vb-sub { color: #41d1ff; }
+.vb-colp { border-right: 1px solid #161616; }
+.vb-colt { background: #0d0d0d; }
+.vb-h { color: #8f8f8f; }
 .vb-sub .err { color: #ff5c7a; }
 .vb-pr { background: #111111; }
 .vb-pr.on { background: #06323d; border-color: #41d1ff; }
@@ -293,7 +294,6 @@ svg.ic.dc-camflag { fill: #39ff88; }
 .vb-pmeta { color: #8f8f8f; }
 .vb-pmeta b { color: #bdbdbd; }
 .vb-pr.st-question .vb-pmeta b { color: #ff5c7a; }
-.vb-thead { color: #8f8f8f; border-top: 1px solid #161616; }
 .vb-tsub { color: #808080; }
 .vb-task { background: #111111; }
 .vb-task.doing { -webkit-box-shadow: inset 3px 0 0 #41d1ff; box-shadow: inset 3px 0 0 #41d1ff; }

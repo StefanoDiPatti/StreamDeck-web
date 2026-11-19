@@ -101,13 +101,13 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 
 ## Viber
 
-La pagina **VIBER** comanda la finestra di Viber in primo piano sul PC (Windows e Linux). A sinistra un riquadro fisso, a destra i pulsanti, che si scelgono e ordinano dal pannello di controllo come per BLENDER:
+La pagina **VIBER** comanda la finestra di Viber in primo piano sul PC (Windows e Linux). In alto due liste, **Progetti** e **Task**; sotto **una fila di pulsanti**, che si scelgono e ordinano dal pannello di controllo come per BLENDER:
 
-- **Progetti** (riquadro): i progetti aperti in Viber, quello mostrato evidenziato, con lo stato dei loro agenti (pallino rosso *ti aspetta*, arancione *al lavoro*, verde *pronto*). Un tocco passa a quel progetto con le scorciatoie di Viber "progetto successivo/precedente", lette dalle sue impostazioni; dopo ogni passo la dock controlla che il progetto sia cambiato. Con la tastiera italiana le scorciatoie di default (Ctrl+] e Ctrl+[) non si possono premere: in Viber > Impostazioni > Scorciatoie scegline altre (es. Ctrl+PagGiù / Ctrl+PagSu).
-- **Task** (riquadro): le task del progetto mostrato, prima quelle in corso, con i loro passi. Il riquadro *Tasks* della barra del titolo di Viber non ha comandi nell'API: dal tablet non si apre.
-- **Pannelli**: terminale, git, browser, chat, task, file, team, note (e, nascosti, pull request, deploy, debug, simulatore). Quello attivo è acceso; quelli che non sono tra le schede aperte in Viber sono spenti (l'API sa solo passare a una scheda già aperta: **TUTTE** le rimette).
-- **Disposizioni** (API di Viber): **TUTTE** (un riquadro con tutte le schede), **DIVIDI** (browser + terminale), **REVIEW** (git + file + terminale), **INTERO** (il pannello attivo a schermo intero).
-- **Viste** (scorciatoie Ctrl+Alt+1/2/3): **SCHEDE** (progetti in alto), **AGENTI** (barra degli agenti a sinistra), **FOCUS**. Viber viene portato in primo piano prima di premere i tasti.
+- **Progetti**: i progetti aperti in Viber, quello mostrato evidenziato, con lo stato dei loro agenti (pallino rosso *ti aspetta*, arancione *al lavoro*, verde *pronto*). Un tocco passa a quel progetto con le scorciatoie di Viber "progetto successivo/precedente", lette dalle sue impostazioni; dopo ogni passo la dock controlla che il progetto sia cambiato. Con la tastiera italiana le scorciatoie di default (Ctrl+] e Ctrl+[) non si possono premere: in Viber > Impostazioni > Scorciatoie scegline altre (es. Ctrl+PagGiù / Ctrl+PagSu).
+- **Task**: le task del progetto mostrato, prima quelle in corso, con i loro passi. Il riquadro *Tasks* della barra del titolo di Viber non ha comandi nell'API: dal tablet non si apre.
+- **Pannelli**: terminale, git, browser, chat, task, file (e, disponibili ma nascosti, team, note, pull request, deploy, debug, simulatore). Quello attivo è acceso. Un pannello che non è tra le schede aperte in Viber non si può usare (l'API sa solo passare a una scheda già aperta): esce dalla fila da solo e ritorna quando lo apri in Viber (**TUTTE** le rimette tutte).
+- **Disposizioni** (API di Viber): **TUTTE** (un riquadro con tutte le schede); disponibili anche **DIVIDI** (browser + terminale), **REVIEW** (git + file + terminale), **INTERO** (il pannello attivo a schermo intero).
+- **Viste** (scorciatoie Ctrl+Alt+1/2/3): **SCHEDE** (progetti in alto), **AGENTI** (barra degli agenti a sinistra); disponibile anche **FOCUS**. Viber viene portato in primo piano prima di premere i tasti.
 
 Per i pulsanti in `dock.json`: `{ "type": "viber", "panel": "terminal" }`, `{ "type": "viber", "layout": "review" }`, `{ "type": "viber", "view": "agents" }`, `{ "type": "viber", "project": "next" }`.
 
@@ -142,7 +142,7 @@ Doppio clic sull'icona **Vibe Deck** (desktop o vicino all'orologio): si apre ne
 
 - **Trascina** le pagine per cambiare l'ordine della barra in basso, o spostale tra *Nella barra* e *Disponibili*.
 - La **stella** sceglie la pagina che si apre all'avvio.
-- **Pulsanti delle pagine**: scegli una pagina di pulsanti (APP, DEV, GAMES, VIBER, BLENDER, DAVINCI; in VIBER il riquadro di progetti e task resta fisso a sinistra) e trascina i pulsanti per riordinarli, o spostali tra *Sul tablet* e *Nascosti* (anche con la ✕ e il + su ogni pulsante). La griglia si adatta da sola: con meno pulsanti diventano più grandi. *Mostra tutti* rimette tutti i pulsanti nell'ordine predefinito.
+- **Pulsanti delle pagine**: scegli una pagina di pulsanti (APP, DEV, GAMES, VIBER, BLENDER, DAVINCI; in VIBER sono quelli della fila sotto le liste) e trascina i pulsanti per riordinarli, o spostali tra *Sul tablet* e *Nascosti* (anche con la ✕ e il + su ogni pulsante). La griglia si adatta da sola: con meno pulsanti diventano più grandi. *Mostra tutti* rimette tutti i pulsanti nell'ordine predefinito.
 - **Salva sul tablet**: il tablet si aggiorna da solo. *Predefinite* torna alle pagine e ai pulsanti di `dock.json`.
 - **Tema** (in alto a destra): Classico, Material, Neon Elgato o Neo-brutalista, gli stessi del tablet. La scelta resta su questo PC ed è separata da quella del tablet; `/control?theme=neon` apre il pannello con un tema senza ricordarlo.
 
@@ -290,7 +290,8 @@ La dock riconosce il sistema e mostra i pulsanti adatti. In `dock.json`:
 - `"os": "linux"` (o `"windows"`): il pulsante, o la pagina, c'è solo su quel sistema.
 - `"linux": { ... }` (o `"windows"`): i campi che cambiano su quel sistema, anche `action`.
 - `"id"`: nome fisso del pulsante, con cui il pannello ricorda ordine e pulsanti nascosti.
-- `"autoGrid": true` sulla pagina: colonne e righe scelte in base a quanti pulsanti ci sono. Se la pagina ha anche dei widget, stanno fissi a sinistra a tutta altezza e i pulsanti restano personalizzabili dal pannello (come la pagina VIBER).
+- `"autoGrid": true` sulla pagina: colonne e righe scelte in base a quanti pulsanti ci sono.
+- `"buttonRow": true` sulla pagina: i widget nella griglia, i pulsanti in una fila in fondo, personalizzabili dal pannello (come la pagina VIBER).
 - `"hidden": true`: pulsante disponibile ma nascosto finché non lo mostri dal pannello.
 
 In `apps.json` e `commands.json` la variante `"linux"` può essere una lista di alternative: vale la prima installata.

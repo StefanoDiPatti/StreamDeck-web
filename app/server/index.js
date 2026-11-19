@@ -173,9 +173,9 @@ function pageSummary(p) {
 function pageButtons(p) {
   const btn = function (t) { return { id: t.id, label: t.label || '', sub: t.sub || '', icon: t.icon || null, color: t.color || null, w: t.w || 1, h: t.h || 1 }; };
   const isBtn = function (t) { return !t.widget; };
-  // riquadri fissi (pagina VIBER): solo per l'anteprima, non si spostano
+  // widget sopra la fila di pulsanti (pagina VIBER): solo per l'anteprima
   const fixed = p.allTiles.filter(function (t) { return t.widget; }).map(function (t) { return { label: t.label || t.widget.toUpperCase(), w: t.w || 1 }; });
-  return { id: p.id, title: p.title, icon: p.icon, columns: p.columns, rows: p.rows, fixed: fixed, all: p.allTiles.filter(isBtn).map(btn), shown: p.tiles.filter(isBtn).map(function (t) { return t.id; }) };
+  return { id: p.id, title: p.title, icon: p.icon, columns: p.columns, rows: p.rows, fixed: fixed, row: !!p.buttonRow, all: p.allTiles.filter(isBtn).map(btn), shown: p.tiles.filter(isBtn).map(function (t) { return t.id; }) };
 }
 function controlInfo() {
   const d = config.dock();

@@ -173,27 +173,25 @@ function forOs(item, osKey) {
 
 // Griglia scelta in base al numero di celle occupate: niente buchi inutili e
 // celle di forma comoda sul tablet (orizzontale). Meno pulsanti = pulsanti più grandi.
-// fixedCols = colonne già prese da un riquadro fisso a tutta altezza (pagina VIBER).
-function autoGrid(tiles, fixedCols) {
-  fixedCols = fixedCols || 0;
+function autoGrid(tiles) {
   let cells = 0, minCols = 1, minRows = 1;
   tiles.forEach(function (t) { cells += (t.w || 1) * (t.h || 1); minCols = Math.max(minCols, t.w || 1); minRows = Math.max(minRows, t.h || 1); });
   cells = Math.max(1, cells);
   let best = null;
   for (let r = minRows; r <= 6; r++) {
     const c = Math.max(minCols, Math.ceil(cells / r));
-    if (c + fixedCols > 8) continue;
-    const score = (c * r - cells) + 3 * Math.abs(Math.log(((c + fixedCols) / r) / 1.7));
+    if (c > 8) continue;
+    const score = (c * r - cells) + 3 * Math.abs(Math.log((c / r) / 1.7));
     if (!best || score < best.score - 1e-9) best = { columns: c, rows: r, score: score };
   }
-  return best ? { columns: best.columns, rows: best.rows } : { columns: 8 - fixedCols, rows: 6 };
+  return best ? { columns: best.columns, rows: best.rows } : { columns: 8, rows: 6 };
 }
 
 // Le pagine i cui pulsanti si scelgono e ordinano dal pannello: solo pulsanti, oppure
-// (con "autoGrid") pulsanti più riquadri fissi a tutta altezza sulla sinistra.
+// (con "buttonRow") widget sopra e una fila di pulsanti sotto (pagina VIBER).
 function editablePage(p) {
   const buttons = p.tiles.filter(function (t) { return !t.widget; });
-  return buttons.length > 0 && (buttons.length === p.tiles.length || !!p.autoGrid);
+  return buttons.length > 0 && (buttons.length === p.tiles.length || !!p.buttonRow);
 }
 
 function clampInt(v, min, max, def) {
@@ -236,7 +234,8 @@ function normalizeDock(raw, layout, osKey) {
     // quelli nuovi (in nessuna delle due liste) in fondo.
     // "hidden": true = pulsante disponibile ma nascosto finché non lo mostri dal pannello.
     const custom = tileLayout[p.id];
-    const editable = editablePage({ tiles: all, autoGrid: p.autoGrid });
+    const row = !!p.buttonRow;
+    const editable = editablePage({ tiles: all, buttonRow: row });
     const fixed = all.filter(function (t) { return t.widget; });
     const buttons = all.filter(function (t) { return !t.widget; });
     let shownButtons = buttons.filter(function (t) { return !t.hidden; });
@@ -249,15 +248,14 @@ function normalizeDock(raw, layout, osKey) {
       shownButtons = shown.map(function (id) { return byId[id]; })
         .concat(buttons.filter(function (t) { return shown.indexOf(t.id) < 0 && hide.indexOf(t.id) < 0 && !t.hidden; }));
     }
-    // riquadri fissi prima (a sinistra, a tutta altezza), poi i pulsanti
+    // widget prima, poi i pulsanti. Con "buttonRow" la griglia è solo per i widget: i
+    // pulsanti stanno in una fila in fondo (il tablet toglie quelli che non si possono usare).
     let tiles = editable ? fixed.concat(shownButtons) : all;
     const changed = tiles.length !== all.length || tiles.some(function (t, i) { return t !== all[i]; });
-    if (p.autoGrid || useCustom || changed) {
-      const fixedCols = editable ? fixed.reduce(function (n, t) { return n + clampInt(t.w, 1, 4, 1); }, 0) : 0;
-      const g = autoGrid((editable ? shownButtons : tiles).map(function (t) { return { w: clampInt(t.w, 1, 8, 1), h: clampInt(t.h, 1, 6, 1) }; }), fixedCols);
-      cols = g.columns + fixedCols;
+    if (!row && (p.autoGrid || useCustom || changed)) {
+      const g = autoGrid(tiles.map(function (t) { return { w: clampInt(t.w, 1, 8, 1), h: clampInt(t.h, 1, 6, 1) }; }));
+      cols = g.columns;
       rws = g.rows;
-      if (editable) fixed.forEach(function (t) { t.h = rws; });
     }
     tiles.forEach(function (t) {
       t.w = clampInt(t.w, 1, cols, 1);
@@ -273,6 +271,7 @@ function normalizeDock(raw, layout, osKey) {
       rows: rws,
       tiles: tiles,
       allTiles: all,
+      buttonRow: row,
       editable: editable
     });
   });

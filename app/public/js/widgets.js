@@ -1964,17 +1964,16 @@ var Widgets = (function () {
   }
 
   // ------------------------------------------------------------ Viber
-  // Riquadro fisso della pagina VIBER: progetti aperti in Viber (con lo stato dei loro
-  // agenti; tocco = passa a quel progetto) e task del progetto mostrato. I pulsanti della
-  // pagina (pannelli, disposizioni, viste) sono tile normali, personalizzabili dal
-  // pannello: qui si accendono quello del pannello attivo e si spengono i pannelli che
-  // non sono tra le schede aperte in Viber.
+  // Pagina VIBER: due liste, progetti aperti in Viber (con lo stato dei loro agenti;
+  // tocco = passa a quel progetto) e task del progetto mostrato. Sotto, la fila di
+  // pulsanti della pagina (personalizzabile dal pannello): qui si accende quello del
+  // pannello attivo e si tolgono dalla fila i pannelli che non sono tra le schede aperte
+  // in Viber (non si potrebbero usare); tornano da soli quando li apri.
   var VB_STATES = { question: 'ti aspetta', working: 'al lavoro', completed: 'pronto', idle: '' };
   function viberWidget(root, tile, app) {
     D.addClass(root, 'w-viber');
-    root.innerHTML = '<div class="vb-head"><span class="vb-title">VIBER</span><span class="vb-sub"></span></div>' +
-      '<div class="vb-projs scroll"></div>' +
-      '<div class="vb-thead">TASK<span class="vb-tsub"></span></div><div class="vb-tasks scroll"></div>';
+    root.innerHTML = '<div class="vb-col vb-colp"><div class="vb-h">PROGETTI<span class="vb-sub"></span></div><div class="vb-projs scroll"></div></div>' +
+      '<div class="vb-col vb-colt"><div class="vb-h">TASK<span class="vb-tsub"></span></div><div class="vb-tasks scroll"></div></div>';
     function q(c) { return root.querySelector('.' + c); }
     var sub = q('vb-sub'), projEl = q('vb-projs'), tasksEl = q('vb-tasks'), tsub = q('vb-tsub');
     var st = null, alive = true, busy = false, lastTasks = '', lastProjs = '';
@@ -1986,15 +1985,15 @@ var Widgets = (function () {
         var p = app.tiles[i], a = p.tile.action;
         if (!a || a.type !== 'viber' || !a.panel) continue;
         D.toggleClass(p.el, 'vb-on', !!(st && st.online && st.active === a.panel));
-        D.toggleClass(p.el, 'vb-off', !open || open.indexOf(',' + a.panel + ',') < 0);
+        if (app.setOff) app.setOff(p, !open || open.indexOf(',' + a.panel + ',') < 0);
       }
     }
     function renderState() {
       D.toggleClass(root, 'vb-off', !(st && st.online));
       paintButtons();
-      if (!st) { sub.innerHTML = 'collegamento…'; return; }
-      if (!st.online) { sub.innerHTML = '<b class="err">' + D.esc(st.message || 'Viber non è aperto') + '</b>'; return; }
-      sub.innerHTML = D.esc(st.name || '');
+      if (!st) { sub.innerHTML = ' · collegamento…'; return; }
+      if (!st.online) { sub.innerHTML = ' · <b class="err">' + D.esc(st.message || 'Viber non è aperto') + '</b>'; return; }
+      sub.innerHTML = '';
     }
     function loadState() {
       D.api.get('/api/viber/state', function (err, d) {

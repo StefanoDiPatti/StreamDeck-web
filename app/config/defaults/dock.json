@@ -214,32 +214,35 @@
       "id": "viber",
       "title": "VIBER",
       "icon": "code",
-      "description": "Viber: progetti e task, pannelli, disposizioni e viste (pulsanti personalizzabili dal pannello)",
+      "description": "Viber: liste di progetti e task, sotto una fila di pulsanti (pannelli, disposizioni, viste) personalizzabile dal pannello",
       "tab": false,
-      // riquadro fisso a sinistra (progetti e task), poi i pulsanti: si scelgono e ordinano
-      // dal pannello di controllo come per BLENDER. "hidden": true = disponibile ma nascosto.
-      "autoGrid": true,
+      // liste di progetti e task, sotto una fila di pulsanti che si scelgono e ordinano dal
+      // pannello di controllo come per BLENDER. "hidden": true = disponibile ma nascosto.
+      // I pannelli che non sono tra le schede aperte in Viber escono dalla fila da soli.
+      "columns": 1,
+      "rows": 1,
+      "buttonRow": true,
       "tiles": [
-        { "widget": "viber", "w": 2, "label": "PROGETTI E TASK" },
+        { "widget": "viber", "label": "PROGETTI E TASK" },
         { "id": "terminal", "label": "TERMINALE", "icon": "terminal", "action": { "type": "viber", "panel": "terminal" } },
         { "id": "git", "label": "GIT", "icon": "git", "action": { "type": "viber", "panel": "git" } },
         { "id": "browser", "label": "BROWSER", "icon": "globe", "action": { "type": "viber", "panel": "browser" } },
         { "id": "chat", "label": "CHAT", "icon": "chat", "action": { "type": "viber", "panel": "chat" } },
         { "id": "tasks", "label": "TASK", "icon": "check", "action": { "type": "viber", "panel": "tasks" } },
         { "id": "files", "label": "FILE", "icon": "folder", "action": { "type": "viber", "panel": "files" } },
-        { "id": "team", "label": "TEAM", "icon": "person", "action": { "type": "viber", "panel": "team" } },
-        { "id": "notes", "label": "NOTE", "icon": "cards", "action": { "type": "viber", "panel": "notes" } },
+        { "id": "team", "label": "TEAM", "icon": "person", "action": { "type": "viber", "panel": "team" }, "hidden": true },
+        { "id": "notes", "label": "NOTE", "icon": "cards", "action": { "type": "viber", "panel": "notes" }, "hidden": true },
         { "id": "pr", "label": "PULL REQUEST", "icon": "github", "action": { "type": "viber", "panel": "pr" }, "hidden": true },
         { "id": "deploy", "label": "DEPLOY", "icon": "cloud", "action": { "type": "viber", "panel": "deploy" }, "hidden": true },
         { "id": "debug", "label": "DEBUG", "icon": "target", "action": { "type": "viber", "panel": "debug" }, "hidden": true },
         { "id": "simulator", "label": "SIMULATORE", "icon": "desktop", "action": { "type": "viber", "panel": "simulator" }, "hidden": true },
         { "id": "all_tabs", "label": "TUTTE", "icon": "apps", "sub": "tutte le schede", "color": "#2d3576", "action": { "type": "viber", "layout": "default" } },
-        { "id": "split", "label": "DIVIDI", "icon": "layout", "sub": "browser + terminale", "color": "#2d3576", "action": { "type": "viber", "layout": "debug" } },
-        { "id": "review", "label": "REVIEW", "icon": "code", "sub": "git + file + terminale", "color": "#2d3576", "action": { "type": "viber", "layout": "review" } },
-        { "id": "fullscreen", "label": "INTERO", "icon": "fullscreen", "sub": "pannello a schermo intero", "color": "#2d3576", "action": { "type": "viber", "layout": "fullscreen" } },
+        { "id": "split", "label": "DIVIDI", "icon": "layout", "sub": "browser + terminale", "color": "#2d3576", "action": { "type": "viber", "layout": "debug" }, "hidden": true },
+        { "id": "review", "label": "REVIEW", "icon": "code", "sub": "git + file + terminale", "color": "#2d3576", "action": { "type": "viber", "layout": "review" }, "hidden": true },
+        { "id": "fullscreen", "label": "INTERO", "icon": "fullscreen", "sub": "pannello a schermo intero", "color": "#2d3576", "action": { "type": "viber", "layout": "fullscreen" }, "hidden": true },
         { "id": "view_tabs", "label": "SCHEDE", "icon": "window", "sub": "vista", "color": "#5b45c9", "action": { "type": "viber", "view": "tabs" } },
         { "id": "view_agents", "label": "AGENTI", "icon": "robot", "sub": "vista", "color": "#5b45c9", "action": { "type": "viber", "view": "agents" } },
-        { "id": "view_focus", "label": "FOCUS", "icon": "target", "sub": "vista", "color": "#5b45c9", "action": { "type": "viber", "view": "focus" } },
+        { "id": "view_focus", "label": "FOCUS", "icon": "target", "sub": "vista", "color": "#5b45c9", "action": { "type": "viber", "view": "focus" }, "hidden": true },
         { "id": "project_prev", "label": "PROGETTO", "icon": "prev", "sub": "precedente", "action": { "type": "viber", "project": "prev" }, "hidden": true },
         { "id": "project_next", "label": "PROGETTO", "icon": "next", "sub": "successivo", "action": { "type": "viber", "project": "next" }, "hidden": true }
       ]

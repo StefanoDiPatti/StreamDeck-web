@@ -114,12 +114,31 @@
     var gap = v.w < 900 ? 6 : 8;
     var sw = stage.clientWidth || v.w;
     var sh = Math.max(100, stage.clientHeight || (v.h - (kb ? 0 : TOP_H + TABS_H)));
+    app.lastSize = sw + 'x' + sh;
+    // fila di pulsanti in fondo (solo quelli usabili: un widget può spegnerne qualcuno)
+    var row = [], i;
+    for (i = 0; i < app.tiles.length; i++) if (app.tiles[i].row && !app.tiles[i].off) row.push(app.tiles[i]);
+    if (row.length) {
+      var rh = Math.round(Math.max(64, Math.min(116, sh * 0.2)));
+      var bw = Math.min(210, (sw - gap * (row.length + 1)) / row.length);
+      var x0 = (sw - (bw * row.length + gap * (row.length - 1))) / 2;
+      for (i = 0; i < row.length; i++) {
+        var b = row[i].el;
+        b.style.left = Math.round(x0 + i * (bw + gap)) + 'px';
+        b.style.top = Math.round(sh - gap - rh) + 'px';
+        b.style.width = Math.round(bw) + 'px';
+        b.style.height = rh + 'px';
+        D.toggleClass(b, 'short', rh < 95);
+      }
+      sh -= rh + gap;
+    }
     var cw = (sw - gap * (cols + 1)) / cols;
     var ch = (sh - gap * (rows + 1)) / rows;
-    app.lastSize = sw + 'x' + sh;
     stage.style.fontSize = Math.round(Math.max(12, Math.min(19, Math.min(cw * 0.12, ch * 0.15)))) + 'px';
-    for (var i = 0; i < app.tiles.length; i++) {
+    for (i = 0; i < app.tiles.length; i++) {
       var p = app.tiles[i];
+      p.el.style.display = p.off ? 'none' : '';
+      if (p.row) continue;
       var left = Math.round(gap + p.x * (cw + gap));
       var topPx = Math.round(gap + p.y * (ch + gap));
       var w = Math.round(p.w * cw + (p.w - 1) * gap);
@@ -132,6 +151,15 @@
       if (p.widget) p.widget.resize(w, h);
     }
   }
+
+  // Un widget toglie dalla fila un pulsante che ora non si può usare (pagina VIBER:
+  // pannello non aperto in Viber) e lo rimette quando torna usabile.
+  app.setOff = function (p, off) {
+    off = !!off;
+    if (!!p.off === off) return;
+    p.off = off;
+    layout();
+  };
 
   // ------------------------------------------------------------ pagine
   function findPage(id) {
@@ -172,8 +200,15 @@
     app.page = page;
     D.store.set('page', page.id);
     D.setText(D.$('page-title'), page.title);
-    var placed = pack(page.tiles, page.columns, page.rows);
-    for (var i = 0; i < placed.length; i++) {
+    // "buttonRow": i widget nella griglia, i pulsanti in una fila in fondo
+    var gridTiles = page.tiles, rowTiles = [], i;
+    if (page.buttonRow) {
+      gridTiles = [];
+      for (i = 0; i < page.tiles.length; i++) (page.tiles[i].widget ? gridTiles : rowTiles).push(page.tiles[i]);
+    }
+    var placed = pack(gridTiles, page.columns, page.rows);
+    for (i = 0; i < rowTiles.length; i++) placed.push({ tile: rowTiles[i], row: true });
+    for (i = 0; i < placed.length; i++) {
       var p = placed[i];
       p.el = p.tile.widget ? makeWidget(p) : makeButton(p.tile);
       stage.appendChild(p.el);

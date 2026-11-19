@@ -68,7 +68,8 @@ test('ogni pulsante di default punta ad app, comandi, pagine e tasti esistenti',
 test('le pagine di default stanno nella griglia', function () {
   const dock = config.normalizeDock(readDefault('dock'));
   dock.pages.forEach(function (p) {
-    const cells = p.tiles.reduce(function (n, t) { return n + t.w * t.h; }, 0);
+    // con "buttonRow" i pulsanti stanno nella fila sotto: in griglia solo i widget
+    const cells = p.tiles.filter(function (t) { return !p.buttonRow || t.widget; }).reduce(function (n, t) { return n + t.w * t.h; }, 0);
     assert.ok(cells <= p.columns * p.rows, p.id + ' ha ' + cells + ' celle');
   });
 });
