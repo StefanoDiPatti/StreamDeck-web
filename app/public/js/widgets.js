@@ -1660,7 +1660,7 @@ var Widgets = (function () {
     var helpBtn = smallBtn('GUIDA', 'info', function () { D.removeClass(guideEl, 'hidden'); });
     D.addClass(helpBtn, 'sc-help');
     q('sc-left').appendChild(helpBtn);
-    vdeskGuide(guideEl, 'windows', function () { D.addClass(guideEl, 'hidden'); });
+    vdeskGuide(guideEl, tile.system === 'linux' ? 'linux' : 'windows', function () { D.addClass(guideEl, 'hidden'); });
 
     // Ogni desktop è una scheda semplice: icona dello schermo, numero, nome e finestre.
     function deskCard(d) {
@@ -1675,7 +1675,7 @@ var Widgets = (function () {
     function renderDesks() {
       D.toggleClass(root, 'sc-dbusy', deskBusy);
       if (!desks) { desksEl.innerHTML = '<div class="empty">Carico…</div>'; return; }
-      if (!desks.supported) { desksEl.innerHTML = '<div class="empty">Solo su Windows</div>'; return; }
+      if (!desks.supported) { desksEl.innerHTML = '<div class="empty">' + D.esc(desks.message || 'Non disponibili su questo sistema') + '</div>'; return; }
       var html = '';
       for (var i = 0; i < desks.desktops.length; i++) html += deskCard(desks.desktops[i]);
       // "+" come in Visualizzazione attività: crea un desktop e ci entra
@@ -1907,7 +1907,7 @@ var Widgets = (function () {
           if (err) return app.toast(err.message, 'err');
           info = d;
           var m = mon(d.target);
-          app.toast(m ? 'Le app dal tablet si aprono sul monitor ' + m.n : 'Le app si aprono dove decide Windows', 'ok');
+          app.toast(m ? 'Le app dal tablet si aprono sul monitor ' + m.n : 'Le app si aprono dove decide il sistema', 'ok');
           renderMap(); renderOpen();
         });
       }

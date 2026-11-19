@@ -31,7 +31,7 @@ let monCache = { at: 0, list: null, pending: null };
 
 function supported() { return typeof platform.monitors === 'function'; }
 function unsupported() {
-  return Object.assign(new Error('Gestione schermi disponibile solo su Windows per ora'), { code: 'UNSUPPORTED' });
+  return Object.assign(new Error('Gestione schermi disponibile su Windows e su Linux con KDE Plasma'), { code: 'UNSUPPORTED' });
 }
 
 function load() {

@@ -7,6 +7,7 @@
 //    Su Windows 10 il desktop attivo sta in ...\Explorer\SessionInfo\<n>\VirtualDesktops.
 //  - passare, creare e chiudere si fa con le scorciatoie di Windows
 //    (Win+Ctrl+←/→, Win+Ctrl+D, Win+Ctrl+F4), come faresti dalla tastiera.
+// Su Linux (KDE Plasma 6 con kdotool) tutto passa da KWin: vedi platform/linux-kwin.js.
 const { execFile } = require('child_process');
 const platform = require('../platform');
 const log = require('../log');
@@ -15,7 +16,11 @@ const KEY = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Virtu
 const SESSION_KEY = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\SessionInfo';
 const MAX = 20;
 
-function supported() { return process.platform === 'win32'; }
+function isLinux() { return platform.name === 'linux' && typeof platform.virtualDesktops === 'function'; }
+function supported() { return process.platform === 'win32' || isLinux(); }
+// perché non si può (Linux senza KDE o senza kdotool), '' se si può
+function note() { return isLinux() && typeof platform.screensNote === 'function' ? platform.screensNote() : ''; }
+function same(a, b) { return String(a || '').toUpperCase() === String(b || '').toUpperCase(); }
 
 function err(msg, code) { return Object.assign(new Error(msg), { code: code || 'BAD_REQUEST' }); }
 
@@ -82,6 +87,12 @@ function build(ids, current, names) {
 }
 
 async function read() {
+  if (isLinux()) {
+    const r = await platform.virtualDesktops();
+    const list = r.desktops.map(function (d, i) { return { id: d.id, n: i + 1, name: d.name || 'Desktop ' + (i + 1), current: same(d.id, r.current) }; });
+    if (list.length && !list.some(function (d) { return d.current; })) list[0].current = true;
+    return list;
+  }
   // prima l'helper PowerShell già aperto (pochi ms); reg.exe solo se non c'è
   if (typeof platform.virtualDesktopsReg === 'function') {
     try { return fromHelper(await platform.virtualDesktopsReg()); } catch (e) { log.debug('vdesk', 'helper: ' + e.message); }
@@ -118,9 +129,9 @@ async function preview(desktops) {
     try { wins = await platform.deskWindows(); } catch (e) { log.debug('vdesk', 'finestre: ' + e.message); }
   }
   const by = {};
-  desktops.forEach(function (d) { d.windows = []; by[d.id] = d; });
+  desktops.forEach(function (d) { d.windows = []; by[String(d.id).toUpperCase()] = d; });
   wins.forEach(function (w) {
-    const d = by[w.desktop];
+    const d = by[String(w.desktop || '').toUpperCase()];
     if (!d || w.pid === process.pid) return;
     d.windows.push({ title: w.title, process: w.process, state: w.state, x: w.x, y: w.y, w: w.w, h: w.h });
   });
@@ -129,6 +140,26 @@ async function preview(desktops) {
 
 async function list() {
   if (!supported()) return { supported: false, desktops: [], monitors: [] };
+  const why = note();
+  if (why) return { supported: false, message: why, desktops: [], monitors: [] };
+  return preview(await read());
+}
+
+// Linux: passa, crea e chiudi con KWin (niente scorciatoie da simulare)
+async function linuxAction(act, desktops, idx) {
+  if (act === 'switch') {
+    if (idx < 0) throw err('Desktop non trovato (è stato chiuso?)', 'NOT_FOUND');
+    if (!desktops[idx].current) await platform.switchDesktop(desktops[idx].id);
+  } else if (act === 'create') {
+    if (desktops.length >= MAX) throw err('Hai già ' + MAX + ' desktop');
+    await platform.createDesktop();
+  } else if (act === 'delete') {
+    if (idx < 0) throw err('Desktop non trovato (è stato chiuso?)', 'NOT_FOUND');
+    if (desktops.length < 2) throw err('C\'è un solo desktop: non si può chiudere');
+    await platform.removeDesktop(desktops[idx].id);
+  } else {
+    throw err('Azione non valida');
+  }
   return preview(await read());
 }
 
@@ -146,9 +177,11 @@ async function go(list, index) {
 
 // action: switch (id) | create | delete (id; senza id quello attivo)
 async function action(act, id) {
-  if (!supported()) throw err('I desktop virtuali si gestiscono solo su Windows');
+  if (!supported() || note()) throw err(note() || 'I desktop virtuali si gestiscono su Windows e su Linux con KDE Plasma', 'UNSUPPORTED');
   let desktops = await read();
-  const idx = id ? desktops.map(function (d) { return d.id; }).indexOf(String(id)) : currentIndex(desktops);
+  let idx = currentIndex(desktops);
+  if (id) { idx = -1; desktops.forEach(function (d, i) { if (same(d.id, id)) idx = i; }); }
+  if (isLinux()) return linuxAction(act, desktops, idx);
   if (act === 'switch') {
     if (idx < 0) throw err('Desktop non trovato (è stato chiuso?)', 'NOT_FOUND');
     if (!desktops[idx].current) desktops = await go(desktops, idx);
@@ -179,7 +212,7 @@ async function action(act, id) {
 // Sposta una finestra (del desktop attivo) su un altro desktop virtuale, o su uno nuovo
 // (desktop = 'new'), senza cambiare quello che stai guardando: come trascinarla in Win+Tab.
 async function moveWindow(windowId, desktop) {
-  if (!supported() || typeof platform.moveWindowToDesktop !== 'function') throw err('Spostare finestre tra desktop si può solo su Windows', 'UNSUPPORTED');
+  if (!supported() || note() || typeof platform.moveWindowToDesktop !== 'function') throw err(note() || 'Spostare finestre tra desktop si può su Windows e su Linux con KDE Plasma', 'UNSUPPORTED');
   const wins = typeof platform.deskWindows === 'function' ? await platform.deskWindows() : [];
   const w = wins.filter(function (x) { return x.id === String(windowId); })[0];
   if (!w) throw err('Finestra non trovata (è stata chiusa?)', 'NOT_FOUND');
@@ -187,17 +220,17 @@ async function moveWindow(windowId, desktop) {
   const isNew = desktop === 'new';
   let target = null;
   if (!isNew) {
-    target = desktops.filter(function (d) { return d.id === String(desktop); })[0];
+    target = desktops.filter(function (d) { return same(d.id, desktop); })[0];
     if (!target) throw err('Desktop non trovato (è stato chiuso?)', 'NOT_FOUND');
-    if (w.desktop === target.id) return Object.assign(await preview(desktops), { moved: false, title: w.title, desktopName: target.name });
+    if (same(w.desktop, target.id)) return Object.assign(await preview(desktops), { moved: false, title: w.title, desktopName: target.name });
   } else if (desktops.length >= MAX) {
     throw err('Hai già ' + MAX + ' desktop');
   }
   const before = desktops.length;
-  const to = String(await platform.moveWindowToDesktop(w.id, isNew ? '' : target.id)).toUpperCase();
+  const to = String(await platform.moveWindowToDesktop(w.id, isNew ? '' : target.id));
   // Explorer scrive il desktop nuovo nel registro poco dopo
   desktops = isNew ? await waitFor(function (l) { return l.length > before; }) : await read();
-  const dest = desktops.filter(function (d) { return d.id === to; })[0];
+  const dest = desktops.filter(function (d) { return same(d.id, to); })[0];
   log.info('vdesk', '"' + w.title + '" spostata su ' + (dest ? dest.name : to));
   return Object.assign(await preview(desktops), { moved: true, title: w.title, desktopName: dest ? dest.name : 'un desktop nuovo' });
 }

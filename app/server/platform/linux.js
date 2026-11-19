@@ -12,6 +12,7 @@ const path = require('path');
 const keys = require('./keys');
 const common = require('./common');
 const mixer = require('./linux-mixer');
+const kwin = require('./linux-kwin');
 
 const SEP = '\u001f';
 
@@ -315,6 +316,19 @@ module.exports = {
     } catch (e) { /* niente drm */ }
     return null;
   },
+
+  // ---- Pagina SCHERMI (KDE Plasma 6 con kdotool, vedi linux-kwin.js): stessi formati di Windows
+  monitors: function () { return kwin.monitors(); },
+  windowList: function () { return kwin.windowList(); },
+  deskWindows: function () { return kwin.deskWindows(); },
+  placeWindow: function (id, rect, max, focus) { return kwin.placeWindow(id, rect, max, focus); },
+  windowAction: function (id, action) { return kwin.windowAction(id, action); },
+  moveWindowToDesktop: function (id, desk) { return kwin.moveWindowToDesktop(id, desk); },
+  virtualDesktops: function () { return kwin.virtualDesktops(); },
+  switchDesktop: function (id) { return kwin.switchDesktop(id); },
+  createDesktop: function () { return kwin.createDesktop(); },
+  removeDesktop: function (id) { return kwin.removeDesktop(id); },
+  screensNote: function () { return kwin.available() ? '' : kwin.why(); },
 
   shutdown: function () {}
 };

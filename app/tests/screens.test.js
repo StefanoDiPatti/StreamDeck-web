@@ -57,8 +57,10 @@ test('i giochi sono nei default con la pagina GAMES e la pagina SCHERMI', functi
   const raw = config.parseJson(require('fs').readFileSync(require('path').join(__dirname, '..', 'config', 'defaults', 'dock.json'), 'utf8'));
   const ids = config.normalizeDock(raw, {}, 'windows').pages.map(function (p) { return p.id; });
   assert.ok(ids.indexOf('games') >= 0 && ids.indexOf('screens') >= 0);
-  // SCHERMI usa le API di Windows: su Linux non c'è
-  assert.ok(config.normalizeDock(raw, {}, 'linux').pages.every(function (p) { return p.id !== 'screens'; }));
+  // SCHERMI c'è anche su Linux (KDE Plasma con kdotool), con la guida delle scorciatoie di Linux
+  const lin = config.normalizeDock(raw, {}, 'linux').pages.filter(function (p) { return p.id === 'screens'; })[0];
+  assert.ok(lin, 'SCHERMI anche su Linux');
+  assert.strictEqual(lin.tiles[0].system, 'linux');
 });
 
 test('API schermi e Discord richiedono il token', async function () {
