@@ -13,7 +13,9 @@
     "setup": "node scripts/bootstrap.js --setup",
     "test": "node --test",
     "themes": "node scripts/build-themes.js",
-    "demo": "node scripts/demo.js"
+    "demo": "node scripts/demo.js",
+    "new:page": "node scripts/new-page.js",
+    "new:widget": "node scripts/new-widget.js"
   },
   "license": "MIT",
   "dependencies": {

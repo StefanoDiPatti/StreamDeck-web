@@ -33,6 +33,7 @@ const pairing = require('./services/pairing');
 const mail = require('./services/mail');
 const games = require('./services/games');
 const configCheck = require('./check');
+const plugins = require('./plugins');
 const pkg = require('../package.json');
 
 const PORT = parseInt(process.env.PORT, 10) || 8787;
@@ -92,6 +93,7 @@ function clientBuild() {
       } else max = Math.max(max, st.mtimeMs);
     } catch (e) { /* ignora */ }
   });
+  plugins.scripts().concat(plugins.styles()).forEach(function (s) { max = Math.max(max, s.mtime); });
   buildCache = { at: Date.now(), value: Math.round(max).toString(36) };
   return buildCache.value;
 }
@@ -104,6 +106,16 @@ function versionedIndex() {
     let v = '0';
     try { v = Math.round(fs.statSync(path.join(paths.PUBLIC_DIR, file)).mtimeMs).toString(36); } catch (e) { /* file mancante */ }
     return attr + '="' + file + '?v=' + v + '"';
+  }).replace('<script src="js/app.js', function (m) {
+    // script del tablet dei plugin: dopo widgets.js, prima di app.js (così i loro widget ci sono già)
+    return plugins.scripts().map(function (s) {
+      return '<script src="' + s.url + '?v=' + Math.round(s.mtime).toString(36) + '"></script>\n  ';
+    }).join('') + m;
+  }).replace('</head>', function (m) {
+    // stile dei plugin: dopo dock.css (il tema scelto viene caricato prima, nello script della pagina)
+    return plugins.styles().map(function (s) {
+      return '  <link rel="stylesheet" href="' + s.url + '?v=' + Math.round(s.mtime).toString(36) + '">\n';
+    }).join('') + m;
   });
 }
 app.get(['/', '/index.html'], function (req, res) {
@@ -119,6 +131,14 @@ app.use(express.static(paths.PUBLIC_DIR, {
     res.setHeader('Cache-Control', 'no-cache');
   }
 }));
+
+// script del tablet dei plugin: solo la loro cartella public/
+app.get('/plugins/:name/:file', function (req, res) {
+  const name = req.params.name, file = req.params.file;
+  if (!plugins.NAME_RE.test(name) || plugins.names().indexOf(name) < 0 || !/^[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(js|css)$/.test(file)) return res.status(404).end();
+  res.setHeader('Cache-Control', 'no-cache');
+  res.sendFile(path.join(plugins.baseDir(), name, 'public', file), function (err) { if (err && !res.headersSent) res.status(404).end(); });
+});
 
 // --- estensione del browser (stesso PC, niente token) ---
 // Accettata solo da 127.0.0.1 e con l'header X-Dock-Bridge: un sito web
@@ -154,7 +174,13 @@ function controlOnly(req, res, next) {
 }
 app.get(['/control', '/control/'], localPage, function (req, res) {
   res.setHeader('Cache-Control', 'no-store');
-  res.sendFile(path.join(paths.CONTROL_DIR, 'index.html'));
+  // anche qui gli script dei plugin, per le loro icone (i widget nel pannello non servono)
+  const list = plugins.scripts();
+  const html = require('fs').readFileSync(path.join(paths.CONTROL_DIR, 'index.html'), 'utf8');
+  if (!list.length) return res.type('html').send(html);
+  const tags = '<script>window.Widgets = window.Widgets || { register: function () {}, helpers: {} };</script>\n  ' +
+    list.map(function (s) { return '<script src="/' + s.url + '?v=' + Math.round(s.mtime).toString(36) + '"></script>\n  '; }).join('');
+  res.type('html').send(html.replace('<script src="/control/control.js"', function (m) { return tags + m; }));
 });
 app.use('/control', localPage, express.static(paths.CONTROL_DIR, { index: false, setHeaders: function (res) { res.setHeader('Cache-Control', 'no-cache'); } }));
 
@@ -192,6 +218,7 @@ function controlInfo() {
     pages: d.pages.map(pageSummary),
     buttons: d.pages.filter(function (p) { return p.editable; }).map(pageButtons),
     tabs: d.pages.filter(function (p) { return p.tab; }).map(function (p) { return p.id; }),
+    plugins: plugins.info(),
     home: d.home,
     custom: !!(config.get('layout') || {}).tabs,
     discord: discord.panelInfo(),
@@ -469,6 +496,9 @@ app.post('/api/remote/type', route(async function (req) {
 app.post('/api/voice', express.raw({ type: function () { return true; }, limit: '25mb' }), route(function (req) {
   return voice.transcribe(req.body, req.get('content-type'));
 }));
+
+// rotte dei plugin: /api/plugins/<nome>/...
+plugins.mountRoutes(app, express);
 
 app.use('/api', function (req, res) {
   res.status(404).json({ ok: false, error: { code: 'NOT_FOUND', message: 'Endpoint inesistente' } });

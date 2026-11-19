@@ -33,7 +33,7 @@ Sul PC (Windows o Linux) gira un piccolo server Node.js; il tablet apre una pagi
 
 1. [Guida all'installazione](#1-guida-allinstallazione): requisiti, Windows, Linux, collegare il tablet, aggiornare.
 2. [Guida utente](#2-guida-utente): il tablet, le pagine, il pannello di controllo, i servizi da collegare.
-3. [Guida per sviluppatori](#3-guida-per-sviluppatori-personalizza-la-tua-vibe-deck): pagine, pulsanti, app e comandi a file singoli, azioni, widget e codice.
+3. [Guida per sviluppatori](#3-guida-per-sviluppatori-personalizza-la-tua-vibe-deck): pagine, pulsanti, app e comandi a file singoli, azioni, plugin (widget e azioni nuove) e codice.
 
 Il riferimento completo di ogni funzione è in [`app/README.md`](app/README.md).
 
@@ -199,6 +199,7 @@ Le personalizzazioni si fanno **un file per volta**: una pagina, un'app o un com
 | `config/services.json` | musica, Claude, GitHub, Ollama, TODO, tempi del tablet | no |
 | `config/layout.json` | scelte del pannello (pagine nella barra, ordine dei pulsanti) | no, lo scrive il pannello |
 | `config/defaults/` | i default del progetto: `pages/` (una pagina per file) e gli altri JSON | sì |
+| `plugins/<nome>/` | **plugin**: azioni, rotte, pagine, widget e icone in più (vedi [Plugin](#plugin-widget-e-azioni-nuove)) | a scelta tua |
 | `schema/` | schemi JSON per l'editor (suggerimenti e controllo dei campi) | sì |
 | `data/` | dati personali: giochi, account da mostrare, log, segreti cifrati | no |
 | `.env` | porta, codice di accesso, token e chiavi API | no |
@@ -215,6 +216,7 @@ Le personalizzazioni si fanno **un file per volta**: una pagina, un'app o un com
 ## Aggiungere una pagina
 
 Crea `config/pages/stream.json`: la pagina compare da sola sul tablet, in fondo alla barra.
+Per partire da un file già pronto: `npm run new:page -- stream` (oppure `npm run new:page -- stream "LIVE"` per scegliere il titolo).
 
 ```json
 // Pagina per lo streaming
@@ -312,6 +314,78 @@ Il tablet non può lanciare comandi liberi: solo quelli consentiti. Crea `config
 
 Poi il pulsante: `{ "label": "IP", "icon": "link", "action": { "type": "command", "id": "indirizzi_ip" } }`: l'output compare sul tablet.
 
+## Plugin: widget e azioni nuove
+
+Un plugin aggiunge widget, azioni, icone e pagine **senza toccare i file del progetto**: è una cartella in `app/plugins/`,
+caricata da sola all'avvio. Il modo più veloce per iniziare:
+
+```bash
+cd app
+npm run new:widget -- meteo
+```
+
+Crea un plugin che funziona già (un widget con l'ora del PC e un contatore, un pulsante SALUTA). Riavvia la dock e nel pannello
+aggiungi la pagina METEO alla barra. Poi cambia i file:
+
+```text
+plugins/meteo/
+  index.js            server: azioni e rotte            (dopo una modifica riavvia la dock)
+  public/meteo.js     tablet: il widget e le icone      (ES5, si ricarica da solo)
+  public/meteo.css    stile del widget                  (niente flexbox)
+  pages/meteo.json    pagine del plugin                 (come config/defaults/pages)
+  apps/, commands/    app e comandi consentiti, se servono
+```
+
+**Server (`index.js`)**:
+
+```js
+module.exports = {
+  description: 'Meteo di casa',
+  // pulsante: { "type": "meteo.aggiorna" }  (il tipo è sempre "<plugin>.<azione>")
+  actions: {
+    aggiorna: async function (azione, ctx) {
+      await ctx.execute({ type: 'key', key: 'F5' });   // può usare le azioni della dock
+      return { message: 'Aggiornato' };                 // messaggio mostrato sul tablet
+    }
+  },
+  // rotte col codice d'accesso: GET /api/plugins/meteo/oggi
+  routes: function (router, ctx) {
+    router.get('/oggi', ctx.route(async function () {
+      return { gradi: 21 };                             // arriva al tablet come dato
+    }));
+  }
+};
+```
+
+`ctx` contiene `name`, `log` (scrive nel log della dock), `config`, `platform`, `paths`, `execute(azione)`, `route(fn)` e
+`ensureDataDir()` (cartella dati del plugin in `data/plugins/<nome>/`).
+
+**Tablet (`public/*.js`)**, in ES5 come il resto del client:
+
+```js
+(function () {
+  Icons.register('sole', 'M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z');   // path SVG 24x24
+  Widgets.register('meteo', function (root, tile, app) {
+    var H = Widgets.helpers;                       // el, header, smallBtn, setHtml: gli stessi dei widget del progetto
+    H.header(root, 'METEO');
+    var t = H.el('div', 'pl-meteo', '…');
+    root.appendChild(t);
+    function load() { D.api.get('/api/plugins/meteo/oggi', function (err, d) { D.setText(t, err ? err.message : d.gradi + '°'); }); }
+    load();
+    var timer = D.every(60000, 300000, load);       // ogni minuto se usato, ogni 5 a riposo
+    return { update: function (stato) {}, resize: function (w, h) {}, destroy: function () { D.stop(timer); } };
+  });
+})();
+```
+
+Poi nelle pagine: `{ "widget": "meteo", "w": 2, "h": 1 }` e `"icon": "sole"`.
+
+- I nomi dei widget e delle icone del progetto non si possono sostituire.
+- Pagine, app e comandi del plugin valgono come quelli predefiniti: una tua copia in `config/` vince.
+- Una cartella che inizia con `_` è spenta (es. `plugins/_meteo`).
+- Il **pannello di controllo** elenca i plugin (cosa aggiungono) e i loro errori; il controllo della configurazione conosce
+  anche i loro widget, icone e azioni. Con VS Code le pagine dei plugin hanno gli stessi suggerimenti di quelle in `config/pages/`.
+
 ## Mettere mano al codice
 
 ```bash
@@ -321,6 +395,8 @@ npm test          # test di server, azioni, configurazione, temi e compatibilit�
 npm run server    # solo il server, senza lo script di avvio
 npm run demo      # dock con dati finti su :8790
 npm run themes    # rigenera i temi dopo una modifica a public/css/dock.css
+npm run new:page -- <id>      # pagina nuova in config/pages/
+npm run new:widget -- <nome>  # plugin con un widget in plugins/
 ```
 
 ```text
@@ -329,6 +405,8 @@ app/
   server/config.js       lettura dei JSON con commenti, ricarica a caldo, unione di default, tuoi file e cartelle
   server/check.js        controllo della configurazione (problemi mostrati nel pannello)
   server/actions/        motore delle azioni (HANDLERS) e macro
+  server/plugins.js      caricatore dei plugin (azioni, rotte, pagine, script del tablet)
+  plugins/               i plugin, uno per cartella
   server/platform/       windows.js (+ helper PowerShell), linux.js: tutto ciò che dipende dal sistema
   server/services/       un file per funzione: media, discord, mail, games, screens, mixer, claude...
   public/                client del tablet (ES5, niente framework): app.js, widgets.js, icons.js, css/
@@ -339,7 +417,7 @@ app/
   tests/                 test con node --test
 ```
 
-Come aggiungere le cose più comuni:
+Come aggiungere le cose più comuni **dentro il progetto** (per le tue aggiunte personali usa un [plugin](#plugin-widget-e-azioni-nuove)):
 
 - **Un tipo di azione**: una funzione in `HANDLERS` (`server/actions/index.js`). Se serve il sistema operativo, aggiungi il metodo
   sia in `server/platform/windows.js` sia in `server/platform/linux.js`.

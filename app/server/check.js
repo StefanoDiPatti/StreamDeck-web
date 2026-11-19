@@ -7,8 +7,9 @@ const path = require('path');
 const paths = require('./paths');
 const config = require('./config');
 const common = require('./platform/common');
+const plugins = require('./plugins');
 
-// Widget che il tablet sa disegnare (public/js/widgets.js, mappa TYPES).
+// Widget che il tablet sa disegnare (public/js/widgets.js, mappa TYPES); più quelli dei plugin.
 const WIDGETS = ['system', 'nowplaying', 'queue', 'github', 'todo', 'chat', 'clock', 'claude', 'discord', 'screens', 'mail', 'audio', 'vdesk', 'viber'];
 
 // Nomi delle icone, letti da public/js/icons.js (riletti se il file cambia).
@@ -29,8 +30,11 @@ function iconNames() {
       iconCache = { mtime: mtime, names: names };
     }
   } catch (e) { return null; }
-  return iconCache.names;
+  // più le icone dei plugin (Icons.register('nome', ...) nei loro script del tablet)
+  return Object.assign({}, iconCache.names, plugins.icons());
 }
+
+function widgetNames() { return WIDGETS.concat(Object.keys(plugins.widgets())); }
 
 function actionTypes() {
   const types = Object.keys(require('./actions').HANDLERS);
@@ -78,7 +82,11 @@ function run() {
   };
   d.pages.forEach(function (p) { ctx.pages[p.id] = true; });
   const icons = iconNames();
+  const widgets = widgetNames();
   const out = [];
+  plugins.info().forEach(function (p) {
+    if (p.error) out.push({ where: 'plugin ' + p.name, message: p.error });
+  });
   config.missingPages().forEach(function (id) {
     out.push({ where: 'dock.json', message: 'la pagina "' + id + '" è elencata ma non c\'è il file config/pages/' + id + '.json' });
   });
@@ -89,7 +97,7 @@ function run() {
     (p.allTiles || p.tiles).forEach(function (t) {
       const where = pageWhere + ' › ' + (t.widget ? 'widget ' + t.widget : 'pulsante ' + (t.label || t.id));
       if (t.widget) {
-        if (WIDGETS.indexOf(t.widget) < 0) out.push({ where: where, message: 'widget sconosciuto (validi: ' + WIDGETS.join(', ') + ')' });
+        if (widgets.indexOf(t.widget) < 0) out.push({ where: where, message: 'widget sconosciuto (validi: ' + widgets.join(', ') + ')' });
         return;
       }
       if (/_+$/.test(t.id) && seen[t.id.replace(/_+$/, '')]) out.push({ where: where, message: 'id "' + t.id.replace(/_+$/, '') + '" ripetuto nella pagina: dai a ogni pulsante un id diverso', level: 'info' });
@@ -103,4 +111,4 @@ function run() {
   return out;
 }
 
-module.exports = { run: run, WIDGETS: WIDGETS, iconNames: iconNames };
+module.exports = { run: run, WIDGETS: WIDGETS, iconNames: iconNames, widgetNames: widgetNames };

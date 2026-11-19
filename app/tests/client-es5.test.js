@@ -25,8 +25,26 @@ const FORBIDDEN_JS = [
   [/\{\s*passive\s*:/, 'opzioni passive negli event listener']
 ];
 
-fs.readdirSync(JS_DIR).filter(function (f) { return /\.js$/.test(f); }).forEach(function (file) {
-  const src = fs.readFileSync(path.join(JS_DIR, file), 'utf8');
+// i file del tablet: public/js e gli script dei plugin (plugins/<nome>/public, anche quelli spenti con "_")
+const PLUGINS_DIR = path.join(__dirname, '..', 'plugins');
+function pluginFiles(re) {
+  const out = [];
+  let dirs = [];
+  try { dirs = fs.readdirSync(PLUGINS_DIR); } catch (e) { dirs = []; }
+  dirs.forEach(function (d) {
+    const pub = path.join(PLUGINS_DIR, d, 'public');
+    let files = [];
+    try { files = fs.readdirSync(pub); } catch (e) { files = []; }
+    files.filter(function (f) { return re.test(f); }).forEach(function (f) { out.push(path.join(pub, f)); });
+  });
+  return out;
+}
+const CLIENT_JS = fs.readdirSync(JS_DIR).filter(function (f) { return /\.js$/.test(f); })
+  .map(function (f) { return path.join(JS_DIR, f); }).concat(pluginFiles(/\.js$/));
+
+CLIENT_JS.forEach(function (full) {
+  const file = path.relative(path.join(__dirname, '..'), full);
+  const src = fs.readFileSync(full, 'utf8');
 
   test(file + ': sintassi ES5', { skip: !acorn && 'acorn non installato (npm install)' }, function () {
     acorn.parse(src, { ecmaVersion: 5, sourceType: 'script' });
@@ -40,9 +58,11 @@ fs.readdirSync(JS_DIR).filter(function (f) { return /\.js$/.test(f); }).forEach(
   });
 });
 
-test('CSS senza flexbox, grid, gap, variabili e calc', function () {
-  const css = fs.readFileSync(CSS, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  [/display\s*:\s*(flex|grid|inline-flex)/, /\bgap\s*:/, /var\(--/, /calc\(/].forEach(function (re) {
-    assert.ok(!re.test(css), 'dock.css contiene ' + re);
+test('CSS senza flexbox, grid, gap, variabili e calc (anche quello dei plugin)', function () {
+  [CSS].concat(pluginFiles(/\.css$/)).forEach(function (file) {
+    const css = fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    [/display\s*:\s*(flex|grid|inline-flex)/, /\bgap\s*:/, /var\(--/, /calc\(/].forEach(function (re) {
+      assert.ok(!re.test(css), path.basename(file) + ' contiene ' + re);
+    });
   });
 });

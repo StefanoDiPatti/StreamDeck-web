@@ -229,23 +229,32 @@
           "$ref": "#/definitions/action"
         },
         "widget": {
-          "enum": [
-            "system",
-            "nowplaying",
-            "queue",
-            "github",
-            "todo",
-            "chat",
-            "clock",
-            "claude",
-            "discord",
-            "screens",
-            "mail",
-            "audio",
-            "vdesk",
-            "viber"
-          ],
-          "description": "Al posto di un pulsante, un widget."
+          "description": "Al posto di un pulsante, un widget. Anche i widget dei plugin (Widgets.register).",
+          "anyOf": [
+            {
+              "enum": [
+                "system",
+                "nowplaying",
+                "queue",
+                "github",
+                "todo",
+                "chat",
+                "clock",
+                "claude",
+                "discord",
+                "screens",
+                "mail",
+                "audio",
+                "vdesk",
+                "viber"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_.-]+$",
+              "description": "Widget di un plugin."
+            }
+          ]
         },
         "provider": {
           "enum": [
@@ -270,23 +279,32 @@
       ],
       "properties": {
         "type": {
-          "enum": [
-            "launch",
-            "hotkey",
-            "key",
-            "text",
-            "media",
-            "open_url",
-            "open_path",
-            "command",
-            "page",
-            "discord",
-            "viber",
-            "focus",
-            "macro",
-            "wait"
-          ],
-          "description": "Cosa fa il pulsante."
+          "description": "Cosa fa il pulsante. Per un plugin: \"<plugin>.<azione>\".",
+          "anyOf": [
+            {
+              "enum": [
+                "launch",
+                "hotkey",
+                "key",
+                "text",
+                "media",
+                "open_url",
+                "open_path",
+                "command",
+                "page",
+                "discord",
+                "viber",
+                "focus",
+                "macro",
+                "wait"
+              ]
+            },
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]*\\.[a-z0-9][a-z0-9_-]*$",
+              "description": "Azione di un plugin (app/plugins/<plugin>/index.js)."
+            }
+          ]
         },
         "app": {
           "type": "string",

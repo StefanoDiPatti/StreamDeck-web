@@ -307,6 +307,8 @@ function normalizeDock(raw, layout, osKey) {
 //   config/defaults/<tipo>/<id>.json  (progetto)   config/<tipo>/<id>.json  (tue, vincono)
 // Ogni cartella si rilegge solo se cambia qualche file (nome o data di modifica).
 const DIR_KINDS = ['pages', 'apps', 'commands'];
+// Cartelle dei plugin (plugins/<nome>/pages, apps, commands): valgono come i default.
+function pluginDirs() { return require('./plugins').configDirs(); }
 const dirCache = {};   // cartella -> { stamp, items: { id: dati } }
 
 function readDir(base, kind) {
@@ -321,7 +323,7 @@ function readDir(base, kind) {
   const items = {};
   names.forEach(function (n) {
     const id = n.replace(/\.json$/i, '');
-    const key = kind + '/' + n + (base === paths.DEFAULTS_DIR ? ' (default)' : '');
+    const key = kind + '/' + n + (base === paths.DEFAULTS_DIR ? ' (default)' : base === paths.CONFIG_DIR ? '' : ' (plugin ' + path.basename(base) + ')');
     try {
       items[id] = parseJson(fs.readFileSync(path.join(dir, n), 'utf8'));
       delete errors[key];
@@ -373,7 +375,10 @@ const missingPages = {};   // id elencati in dock.json senza file
 function mergedDock() {
   const d = get('dock');
   const mine = pagesIn(paths.CONFIG_DIR);
-  const defaults = pagesIn(paths.DEFAULTS_DIR);
+  // pagine dei plugin insieme a quelle predefinite (un default con lo stesso id vince)
+  const defaults = {};
+  pluginDirs().forEach(function (dir) { Object.assign(defaults, pagesIn(dir)); });
+  Object.assign(defaults, pagesIn(paths.DEFAULTS_DIR));
   const out = [];
   const have = {};
   Object.keys(missingPages).forEach(function (k) { delete missingPages[k]; });
@@ -441,14 +446,21 @@ function apps() {
   const games = require('./services/games').apps();
   const user = (get('apps').apps) || {};
   const defaults = fileFor('apps') === path.join(paths.DEFAULTS_DIR, 'apps.json') ? {} : defaultSection('apps');
-  return Object.assign({}, defaults, entriesIn(paths.DEFAULTS_DIR, 'apps'), user, entriesIn(paths.CONFIG_DIR, 'apps'), games);
+  return Object.assign({}, defaults, entriesIn(paths.DEFAULTS_DIR, 'apps'), fromPlugins('apps'), user, entriesIn(paths.CONFIG_DIR, 'apps'), games);
 }
 
 // Comandi consentiti: come le app (default < tuoi, anche un file per comando in config/commands/).
 function commands() {
   const user = (get('commands').commands) || {};
   const defaults = fileFor('commands') === path.join(paths.DEFAULTS_DIR, 'commands.json') ? {} : defaultSection('commands');
-  return Object.assign({}, defaults, entriesIn(paths.DEFAULTS_DIR, 'commands'), user, entriesIn(paths.CONFIG_DIR, 'commands'));
+  return Object.assign({}, defaults, entriesIn(paths.DEFAULTS_DIR, 'commands'), fromPlugins('commands'), user, entriesIn(paths.CONFIG_DIR, 'commands'));
+}
+
+// App o comandi di tutti i plugin.
+function fromPlugins(kind) {
+  const out = {};
+  pluginDirs().forEach(function (dir) { Object.assign(out, entriesIn(dir, kind)); });
+  return out;
 }
 
 function findTile(pageId, tileId) {
@@ -469,7 +481,7 @@ function gamesStamp() {
 // Cartelle dei file singoli: un'impronta corta che cambia quando cambia un file.
 function dirsStamp() {
   const parts = [];
-  [paths.DEFAULTS_DIR, paths.CONFIG_DIR].forEach(function (base) {
+  [paths.DEFAULTS_DIR, paths.CONFIG_DIR].concat(pluginDirs()).forEach(function (base) {
     DIR_KINDS.forEach(function (kind) {
       readDir(base, kind);
       parts.push((dirCache[path.join(base, kind)] || {}).stamp || '');

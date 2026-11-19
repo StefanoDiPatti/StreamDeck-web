@@ -2485,5 +2485,21 @@ var Widgets = (function () {
     return fn(root, tile, app);
   }
 
-  return { create: create, types: TYPES };
+  // Plugin: Widgets.register('meteo', function (root, tile, app) { ... return { update, resize, destroy }; })
+  // Il nome non può sostituire un widget del progetto.
+  function register(name, fn) {
+    if (typeof fn !== 'function' || !name) return false;
+    if (TYPES.hasOwnProperty(name) && !TYPES[name].plugin) {
+      if (window.console) console.warn('Widget già esistente: ' + name);
+      return false;
+    }
+    fn.plugin = true;
+    TYPES[name] = fn;
+    return true;
+  }
+
+  // Aiuti per i widget dei plugin: gli stessi usati da quelli del progetto
+  var helpers = { el: el, header: header, setHtml: setHtml, smallBtn: smallBtn, level: level };
+
+  return { create: create, types: TYPES, register: register, helpers: helpers };
 })();
