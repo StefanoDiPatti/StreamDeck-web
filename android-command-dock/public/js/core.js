@@ -17,7 +17,8 @@ var D = (function () {
   function hasClass(e, c) { return (' ' + e.className + ' ').indexOf(' ' + c + ' ') >= 0; }
   function addClass(e, c) { if (e && !hasClass(e, c)) e.className = (e.className ? e.className + ' ' : '') + c; }
   function removeClass(e, c) {
-    if (!e) return;
+    // niente scrittura se la classe non c'è: ogni modifica fa ricalcolare gli stili al tablet
+    if (!e || !hasClass(e, c)) return;
     e.className = (' ' + e.className + ' ').replace(' ' + c + ' ', ' ').replace(/^\s+|\s+$/g, '');
   }
   function toggleClass(e, c, on) { if (on) addClass(e, c); else removeClass(e, c); }

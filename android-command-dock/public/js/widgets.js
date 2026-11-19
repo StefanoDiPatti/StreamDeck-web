@@ -16,6 +16,9 @@ var Widgets = (function () {
     return t;
   }
 
+  // sostituisce l'HTML solo se cambia: ridisegnare uguale costa batteria al tablet
+  function setHtml(e, h) { if (e && e.__html !== h) { e.innerHTML = h; e.__html = h; } }
+
   function smallBtn(label, icon, onTap) {
     var b = el('div', 'sbtn');
     b.innerHTML = Icons.html(icon) + (label ? '<span>' + D.esc(label) + '</span>' : '');
@@ -124,11 +127,14 @@ var Widgets = (function () {
     // la rete è nella barra in alto
     row('cpu', 'CPU'); row('gpu', 'GPU'); row('ram', 'RAM'); row('vram', 'VRAM');
 
+    // tocca il DOM solo se qualcosa cambia: ogni scrittura costa ricalcolo e ridisegno sul tablet
     function set(key, value, pct, lvl) {
       var r = rows[key];
       setText(r.val, value);
-      r.fill.style.width = (pct === null || pct === undefined ? 0 : Math.max(2, Math.min(100, pct))) + '%';
-      r.bar.className = 'bar ' + (lvl || '');
+      var w = (pct === null || pct === undefined ? 0 : Math.max(2, Math.min(100, pct))) + '%';
+      if (r.w !== w) { r.fill.style.width = w; r.w = w; }
+      var cls = 'bar ' + (lvl || '');
+      if (r.cls !== cls) { r.bar.className = cls; r.cls = cls; }
     }
     function deg(t) { return t === null || t === undefined ? '' : ' · ' + t + '°'; }
 
@@ -591,8 +597,9 @@ var Widgets = (function () {
     title.appendChild(syncEl);
     function renderSync() {
       var s = state.sync;
-      syncEl.className = 'todo-sync' + (!s || !s.enabled ? ' hidden' : s.ok === false ? ' err' : s.ok ? ' ok' : '');
-      syncEl.innerHTML = Icons.html('cloud') + '<i>' + (s && s.ok === false ? 'sync' : 'GitHub') + '</i>';
+      var cls = 'todo-sync' + (!s || !s.enabled ? ' hidden' : s.ok === false ? ' err' : s.ok ? ' ok' : '');
+      if (syncEl.className !== cls) syncEl.className = cls;
+      setHtml(syncEl, Icons.html('cloud') + '<i>' + (s && s.ok === false ? 'sync' : 'GitHub') + '</i>');
     }
     D.bindTap(syncEl, {
       onTap: function () {
@@ -715,10 +722,15 @@ var Widgets = (function () {
     }
     D.bindTap(addBtn, { onTap: add });
     input.addEventListener('keydown', function (e) { if (e.keyCode === 13) { e.preventDefault(); add(); } }, false);
+    // ridisegna solo se la lista è cambiata (ogni 10 s arriva quasi sempre uguale)
+    var lastTodo = '';
     function load() {
       if (busy) return;
       D.api.get('/api/todo', function (err, d) {
         if (err || busy) return;
+        var key = JSON.stringify(d);
+        if (key === lastTodo) return;
+        lastTodo = key;
         apply(d);
       });
     }
@@ -1324,8 +1336,8 @@ var Widgets = (function () {
       var v = (st && st.voice) || {};
       D.toggleClass(muteBtn, 'off', !!v.mute);
       D.toggleClass(deafBtn, 'off', !!v.deaf);
-      muteBtn.innerHTML = Icons.html(v.mute ? 'micoff' : 'mic') + '<span>' + (v.mute ? 'MUTO' : 'MIC') + '</span>';
-      deafBtn.innerHTML = Icons.html(v.deaf ? 'headsetoff' : 'headset') + '<span>' + (v.deaf ? 'SILENZIATO' : 'AUDIO') + '</span>';
+      setHtml(muteBtn, Icons.html(v.mute ? 'micoff' : 'mic') + '<span>' + (v.mute ? 'MUTO' : 'MIC') + '</span>');
+      setHtml(deafBtn, Icons.html(v.deaf ? 'headsetoff' : 'headset') + '<span>' + (v.deaf ? 'SILENZIATO' : 'AUDIO') + '</span>');
       D.toggleClass(leaveBtn, 'disabled', !(ready && st.channel));
       // webcam e Go Live: servono una stanza e il permesso (riautorizzazione dal pannello)
       var inRoom = !!(ready && st.channel);
@@ -1333,9 +1345,9 @@ var Widgets = (function () {
       D.toggleClass(liveBtn, 'on', !!v.stream);
       D.toggleClass(camBtn, 'disabled', !inRoom || !st.media);
       D.toggleClass(liveBtn, 'disabled', !inRoom || !st.media);
-      camBtn.innerHTML = Icons.html(v.video ? 'camera' : 'camoff') + '<span>' + (v.video ? 'CAM ON' : 'CAM') + '</span>';
+      setHtml(camBtn, Icons.html(v.video ? 'camera' : 'camoff') + '<span>' + (v.video ? 'CAM ON' : 'CAM') + '</span>');
       // in live: pallino rosso che lampeggia sul pulsante e nell'intestazione della stanza
-      liveBtn.innerHTML = Icons.html('live') + (v.stream ? '<i class="dc-livedot"></i>' : '') + '<span>' + (v.stream ? 'SEI IN LIVE' : 'LIVE') + '</span>';
+      setHtml(liveBtn, Icons.html('live') + (v.stream ? '<i class="dc-livedot"></i>' : '') + '<span>' + (v.stream ? 'SEI IN LIVE' : 'LIVE') + '</span>');
       D.toggleClass(root, 'dc-streaming', !!v.stream);
       D.toggleClass(root, 'dc-off', !ready);
       if (!ready) {
@@ -1346,8 +1358,8 @@ var Widgets = (function () {
           st.status === 'setup' ? 'Sul PC fai doppio clic su Command Dock e segui la sezione Discord del pannello: serve una volta sola.' :
           st.status === 'unauthorized' ? 'Apri il pannello di controllo sul PC e premi "Autorizza su Discord".' :
           'Apri Discord sul PC: la dock si collega da sola.';
-        rtitle.innerHTML = 'COMANDI RAPIDI';
-        rsub.innerHTML = 'con le scorciatoie di Discord';
+        setHtml(rtitle, 'COMANDI RAPIDI');
+        setHtml(rsub, 'con le scorciatoie di Discord');
         members.innerHTML = '';
         guildsEl.innerHTML = '';
         ctitle.innerHTML = '';
@@ -1357,14 +1369,14 @@ var Widgets = (function () {
       }
       var ch = st.channel;
       if (!ch) {
-        rtitle.innerHTML = 'NON SEI IN UNA STANZA';
-        rsub.innerHTML = D.esc(st.user ? st.user.name : '');
+        setHtml(rtitle, 'NON SEI IN UNA STANZA');
+        setHtml(rsub, D.esc(st.user ? st.user.name : ''));
         if (lastRoom !== 'none') members.innerHTML = '<div class="empty">Tocca un canale vocale per entrare.</div>';
         lastRoom = 'none';
         return;
       }
-      rtitle.innerHTML = (v.stream ? '<span class="dc-onair"><i class="dc-livedot"></i>IN LIVE</span>' : '') + Icons.html('volup') + D.esc(ch.name);
-      rsub.innerHTML = D.esc(ch.guild || '') + ' · ' + ch.members.length + (ch.members.length === 1 ? ' persona' : ' persone');
+      setHtml(rtitle, (v.stream ? '<span class="dc-onair"><i class="dc-livedot"></i>IN LIVE</span>' : '') + Icons.html('volup') + D.esc(ch.name));
+      setHtml(rsub, D.esc(ch.guild || '') + ' · ' + ch.members.length + (ch.members.length === 1 ? ' persona' : ' persone'));
       var html = '';
       for (var i = 0; i < ch.members.length; i++) {
         var m = ch.members[i];
@@ -1505,7 +1517,13 @@ var Widgets = (function () {
 
     renderState();
     loadState();
-    var fast = D.every(1000, 5000, loadState);           // chi parla, mute
+    // ogni secondo solo in una stanza (chi parla); fuori basta ogni 4 s
+    var lastStateAt = 0;
+    var fast = D.every(1000, 5000, function () {
+      if (!(st && st.channel) && new Date().getTime() - lastStateAt < 4000) return;
+      lastStateAt = new Date().getTime();
+      loadState();
+    });
     var slow = D.every(15000, 60000, function () { if (st && st.status === 'ready') loadChans(); });
     return {
       update: function () {},
