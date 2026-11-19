@@ -216,15 +216,14 @@ app.post('/api/control/discord', controlOnly, route(async function (req) {
   return controlInfo();
 }));
 app.post('/api/control/discord/authorize', controlOnly, route(async function () { await discord.authorize(); return controlInfo(); }));
-app.post('/api/control/mail', controlOnly, route(async function (req) { await mail.addAccount(req.body || {}); return controlInfo(); }));
-app.post('/api/control/mail/remove', controlOnly, route(function (req) { mail.removeAccount(String((req.body || {}).id || '')); return controlInfo(); }));
-app.post('/api/control/mail/login', controlOnly, route(async function (req) { await mail.relogin(String((req.body || {}).id || '')); return controlInfo(); }));
+// account di Thunderbird: quali mostrare sul tablet
+app.post('/api/control/mail/show', controlOnly, route(function (req) { const b = req.body || {}; mail.setShown(String(b.id || ''), b.shown !== false); return controlInfo(); }));
 app.post('/api/control/discord/logout', controlOnly, route(function () { discord.logout(); return controlInfo(); }));
 
 // --- tutto il resto richiede il token ---
 app.use('/api', auth.requireToken);
 
-// --- Email (tablet): solo lettura, gli account si scelgono dal pannello ---
+// --- Email (tablet): letta da Thunderbird sul PC, in sola lettura ---
 app.get('/api/mail', route(function () { return mail.state(); }));
 app.get('/api/mail/list', route(function (req) { return mail.list(String(req.query.account || ''), req.query.refresh === '1'); }));
 app.get('/api/mail/message', route(function (req) { return mail.message(String(req.query.account || ''), req.query.uid); }));

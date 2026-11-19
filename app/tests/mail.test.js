@@ -1,86 +1,162 @@
-// Email: lettura in sola lettura da un server IMAP finto (hoodiecrow-imap).
-// Non usa data/mail.json vero: dati in una cartella temporanea.
+// Email letta da Thunderbird: profilo finto in una cartella temporanea
+// (profiles.ini, prefs.js, INBOX.msf in formato Mork e INBOX in formato mbox).
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-process.env.DOCK_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'dock-mail-'));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dock-mail-'));
+process.env.DOCK_DATA_DIR = path.join(tmp, 'data');
+process.env.DOCK_THUNDERBIRD_DIR = path.join(tmp, 'Thunderbird');
 process.env.LOG_LEVEL = 'error';
-const hoodiecrow = require('hoodiecrow-imap');
+fs.mkdirSync(process.env.DOCK_DATA_DIR, { recursive: true });
+
+const tb = require('../server/services/thunderbird');
 const mail = require('../server/services/mail');
 
-const PORT = 14000 + Math.floor(Math.random() * 1000);
-let server;
+const ROOT = process.env.DOCK_THUNDERBIRD_DIR;
+const PROFILE = path.join(ROOT, 'Profiles', 'abcd.default-release');
+const IMAP = path.join(PROFILE, 'ImapMail', 'imap.gmail.com');
+const POP = path.join(PROFILE, 'Mail', 'pop.libero.it');
 
-function account(pass) {
-  return { id: 'acc1', provider: 'imap', label: 'Prova', email: 'io@example.com', host: '127.0.0.1', port: PORT, secure: false, auth: 'password', pass: pass };
+function msg(headers, body) {
+  return 'From - Mon Nov 02 10:00:00 2026\r\n' + headers.join('\r\n') + '\r\n\r\n' + body + '\r\n\r\n';
 }
-function useAccounts(list) {
-  fs.writeFileSync(path.join(process.env.DOCK_DATA_DIR, 'mail.json'), JSON.stringify({ accounts: list }));
-  mail._reset();
-}
+const M1 = msg(['X-Mozilla-Status: 0001', 'From: Mario Rossi <mario@example.com>', 'To: io@gmail.com', 'Subject: =?UTF-8?Q?Ciao_=C3=A8_pronto?=',
+  'Date: Mon, 2 Nov 2026 10:00:00 +0000', 'Content-Type: text/plain; charset=utf-8'], 'Prima riga\r\n>From casa\r\nSeconda riga');
+const M2 = msg(['X-Mozilla-Status: 0000', 'From: GitHub <noreply@github.com>', 'To: io@gmail.com', 'Subject: CI fallita',
+  'Date: Tue, 3 Nov 2026 10:00:00 +0000', 'Content-Type: text/html; charset=utf-8'], '<p>La build <b>main</b> &amp; test</p><br>falliti');
+const M3 = msg(['X-Mozilla-Status: 0008', 'From: x@example.com', 'Subject: cancellato', 'Date: Wed, 4 Nov 2026 10:00:00 +0000'], 'via');
+const OFF2 = Buffer.byteLength(M1), OFF3 = OFF2 + Buffer.byteLength(M2);
+
+function hexSec(s) { return Math.floor(Date.parse(s) / 1000).toString(16).toUpperCase(); }
+
+// .msf come lo scrive Thunderbird: dizionari, tabella dei messaggi, gruppi di modifiche
+const MSF = [
+  '// <!-- <mdb:mork:z v="1.4"/> -->',
+  '< <(a=c)> // (f=iso-8859-1)',
+  '  (80=ns:msg:db:row:scope:dbfolderinfo:all)(81=subject)(82=sender)',
+  '  (83=message-id)(86=date)(88=flags)(99=msgOffset)(9A=offlineMsgSize)',
+  '  (9B=ns:msg:db:row:scope:msgs:all)(9C=ns:msg:db:table:kind:msgs)',
+  '  (9D=storeToken)(BF=ns:msg:db:table:kind:dbfolderinfo)>',
+  '<(A1=CI fallita)(A2=GitHub <noreply@github.com>)>',
+  '{1:^80 {(k^BF:c)(s=9u)} [1:^80(^81=info)]}',
+  '{1:^9B {(k^9C:c)(s=9u)}',
+  '  [5(^83=a@x)(^86=' + hexSec('2026-11-02T10:00:00Z') + ')(^88=81)(^81=Ciao $C3$A8 pronto)',
+  '    (^82=Mario Rossi <mario@example.com>)(^99=0)(^9D=0)(^9A=' + Buffer.byteLength(M1).toString(16) + ')]',
+  '  [6(^83=b@x)(^86=' + hexSec('2026-11-03T10:00:00Z') + ')(^88=80)(^81^A1)(^82^A2)(^9D=' + OFF2 + ')]',
+  '  [7(^83=c@x)(^86=' + hexSec('2026-11-04T10:00:00Z') + ')(^88=80)(^81=cancellato \\) ok)(^82=x@example.com)(^9D=' + OFF3 + ')]}',
+  // gruppo confermato: il 7 viene cancellato (flag 0x8), il 5 diventa "importante" (0x4)
+  '@$${1{@{1:^9B [7(^88=88)] [5(^88=85)]}@$$}1}@',
+  // gruppo annullato: va ignorato
+  '@$${2{@{1:^9B [6(^88=81)]}@$$}~abort~2}@',
+  ''
+].join('\n');
+
+function write(file, text) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, text); }
 
 test.before(function () {
-  server = hoodiecrow({
-    plugins: ['id', 'idle', 'unselect', 'enable', 'condstore', 'special-use', 'namespace', 'uidplus'],
-    users: { 'io@example.com': { password: 'segreta' } },
-    storage: { INBOX: { messages: [
-      { raw: 'From: Mario Rossi <mario@example.com>\r\nTo: io@example.com\r\nSubject: =?UTF-8?Q?Ciao_=C3=A8_pronto?=\r\nDate: Mon, 2 Nov 2026 10:00:00 +0000\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nPrima riga\r\nSeconda riga', flags: ['\\Seen'] },
-      { raw: 'From: GitHub <noreply@github.com>\r\nTo: io@example.com\r\nSubject: CI fallita\r\nDate: Tue, 3 Nov 2026 10:00:00 +0000\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<p>La build <b>main</b> &amp; test</p><br>falliti', flags: [] }
-    ] } }
-  });
-  return new Promise(function (resolve) { server.listen(PORT, '127.0.0.1', resolve); });
+  write(path.join(ROOT, 'profiles.ini'), '[Profile0]\r\nName=default-release\r\nIsRelative=1\r\nPath=Profiles/abcd.default-release\r\nDefault=1\r\n\r\n[General]\r\nStartWithLastProfile=1\r\n');
+  write(path.join(PROFILE, 'prefs.js'), [
+    '// Mozilla User Preferences',
+    'user_pref("mail.accountmanager.accounts", "account1,account2,account3");',
+    'user_pref("mail.account.account1.identities", "id1");',
+    'user_pref("mail.account.account1.server", "server1");',
+    'user_pref("mail.account.account2.server", "server2");',
+    'user_pref("mail.account.account3.identities", "id3");',
+    'user_pref("mail.account.account3.server", "server3");',
+    'user_pref("mail.identity.id1.useremail", "io@gmail.com");',
+    'user_pref("mail.identity.id3.useremail", "io@libero.it");',
+    'user_pref("mail.server.server1.directory-rel", "[ProfD]ImapMail/imap.gmail.com");',
+    'user_pref("mail.server.server1.hostname", "imap.gmail.com");',
+    'user_pref("mail.server.server1.name", "io@gmail.com");',
+    'user_pref("mail.server.server1.type", "imap");',
+    'user_pref("mail.server.server2.type", "none");',
+    'user_pref("mail.server.server2.name", "Cartelle locali");',
+    'user_pref("mail.server.server3.directory-rel", "[ProfD]Mail/pop.libero.it");',
+    'user_pref("mail.server.server3.hostname", "pop.libero.it");',
+    'user_pref("mail.server.server3.name", "Libero");',
+    'user_pref("mail.server.server3.type", "pop3");',
+    ''
+  ].join('\n'));
+  write(path.join(IMAP, 'INBOX'), M1 + M2 + M3);
+  write(path.join(IMAP, 'INBOX.msf'), MSF);
+  write(path.join(POP, 'Inbox'), M1 + M2 + M3);   // senza .msf: lettura diretta del mbox
+  mail._reset();
 });
-test.after(function () { server.close(); });
 
-test('elenco: più recenti prima, non lette, oggetti decodificati', async function () {
-  useAccounts([account('segreta')]);
-  const l = await mail.list('acc1', true);
+test('profilo e account: solo IMAP e POP, con indirizzo e cartella', function () {
+  const p = tb.findProfile();
+  assert.strictEqual(p.dir, PROFILE);
+  const acc = tb.accounts(p.dir);
+  assert.deepStrictEqual(acc.map(function (a) { return a.key; }), ['server1', 'server3']);
+  assert.strictEqual(acc[0].email, 'io@gmail.com');
+  assert.strictEqual(acc[0].dir, IMAP);
+  assert.strictEqual(tb.inboxPath(acc[1]), path.join(POP, 'Inbox'));
+});
+
+test('Mork: valori con $XX e \\), riferimenti, gruppi confermati e annullati', function () {
+  const list = tb.messagesFromMork(tb.parseMork(MSF));
+  const by = {};
+  list.forEach(function (m) { by[m.key] = m; });
+  assert.deepStrictEqual(Object.keys(by).sort(), ['5', '6']);       // il 7 è cancellato
+  assert.strictEqual(by['5'].subject, 'Ciao è pronto');
+  assert.strictEqual(by['5'].seen, true);
+  assert.strictEqual(by['5'].flagged, true);
+  assert.strictEqual(by['6'].seen, false);                           // il gruppo annullato non conta
+  assert.strictEqual(by['6'].subject, 'CI fallita');
+  assert.deepStrictEqual(by['6'].from, { name: 'GitHub', address: 'noreply@github.com' });
+  assert.strictEqual(by['6'].date.toISOString(), '2026-11-03T10:00:00.000Z');
+  assert.strictEqual(by['6'].token, String(OFF2));
+});
+
+test('elenco per il tablet: più recenti prima, non lette e totale', async function () {
+  const st = mail.state();
+  assert.deepStrictEqual(st.accounts.map(function (a) { return a.id; }), ['server1', 'server3']);
+  const l = await mail.list('server1');
   assert.strictEqual(l.total, 2);
   assert.strictEqual(l.unread, 1);
-  assert.deepStrictEqual(l.messages.map(function (m) { return m.subject; }), ['CI fallita', 'Ciao è pronto']);
+  assert.strictEqual(l.messages[0].subject, 'CI fallita');
   assert.strictEqual(l.messages[0].seen, false);
   assert.strictEqual(l.messages[1].from.name, 'Mario Rossi');
-  // al tablet non arriva mai la password
-  assert.ok(JSON.stringify(mail.state()).indexOf('segreta') < 0);
-  assert.ok(JSON.stringify(mail.panelInfo()).indexOf('segreta') < 0);
 });
 
-test('aprire un messaggio non lo segna come letto (sola lettura)', async function () {
-  useAccounts([account('segreta')]);
-  const l = await mail.list('acc1', true);
-  const html = await mail.message('acc1', l.messages[0].uid);
-  assert.strictEqual(html.text, 'La build main & test\n\nfalliti');
-  const plain = await mail.message('acc1', l.messages[1].uid);
-  assert.strictEqual(plain.text, 'Prima riga\nSeconda riga');
-  assert.strictEqual((await mail.list('acc1', true)).unread, 1);
+test('messaggio: testo dal mbox alla posizione indicata, HTML convertito', async function () {
+  const m1 = await mail.message('server1', '5');
+  assert.strictEqual(m1.subject, 'Ciao è pronto');
+  assert.strictEqual(m1.text, 'Prima riga\nFrom casa\nSeconda riga');
+  const m2 = await mail.message('server1', '6');
+  assert.match(m2.text, /La build main & test\s+falliti/);
+  await assert.rejects(mail.message('server1', '99'), /non trovato/);
+  await assert.rejects(mail.message('server1', '../x'), /non valido/);
 });
 
-test('password sbagliata: errore chiaro', async function () {
-  useAccounts([account('sbagliata')]);
-  await assert.rejects(mail.list('acc1', true), /Accesso rifiutato/);
-  assert.strictEqual(mail.state().accounts[0].status, 'error');
+test('senza .msf: elenco letto dal mbox, cancellati esclusi', async function () {
+  const l = await mail.list('server3');
+  assert.strictEqual(l.total, 2);
+  assert.strictEqual(l.unread, 1);
+  assert.strictEqual(l.messages[0].subject, 'CI fallita');
+  const m = await mail.message('server3', l.messages[1].uid);
+  assert.strictEqual(m.subject, 'Ciao è pronto');
 });
 
-test('aggiunta dal pannello: prova l\'accesso prima di salvare', async function () {
-  useAccounts([]);
-  await assert.rejects(mail.addAccount({ provider: 'gmail', email: 'non-valida' }), /non valido/);
-  await assert.rejects(mail.addAccount({ provider: 'imap', email: 'io@example.com', host: 'bad host!', password: 'x' }), /Server IMAP non valido/);
-  await assert.rejects(mail.addAccount({ provider: 'outlook', email: 'io@outlook.com', clientId: 'abc' }), /Client ID non valido/);
-  assert.strictEqual(mail.state().accounts.length, 0);
+test('pannello: account nascosti non arrivano al tablet, file vecchi ripuliti', function () {
+  fs.writeFileSync(path.join(process.env.DOCK_DATA_DIR, 'mail.json'), JSON.stringify({ accounts: [{ id: 'x', pass: 'segreta' }] }));
+  mail._reset();
+  const info = mail.panelInfo();
+  assert.strictEqual(info.source, 'thunderbird');
+  assert.strictEqual(info.profile, true);
+  assert.strictEqual(info.accounts.length, 2);
+  assert.strictEqual(info.accounts[0].unread, 1);
+  mail.setShown('server3', false);
+  assert.deepStrictEqual(mail.state().accounts.map(function (a) { return a.id; }), ['server1']);
+  assert.ok(!/segreta/.test(fs.readFileSync(path.join(process.env.DOCK_DATA_DIR, 'mail.json'), 'utf8')));
+  mail.setShown('server3', true);
+  assert.strictEqual(mail.state().accounts.length, 2);
+  assert.throws(function () { mail.setShown('server9', true); }, /non trovato/);
 });
 
-test('htmlToText: testo leggibile dalle email in HTML', function () {
-  assert.strictEqual(mail.htmlToText('<style>p{}</style><p>Ciao &amp; <b>benvenuto</b></p><br>riga'), 'Ciao & benvenuto\n\nriga');
-});
-
-test('account sconosciuto e messaggio non valido', async function () {
-  useAccounts([account('segreta')]);
-  await assert.rejects(mail.list('nessuno'), /sconosciuto/);
-  await assert.rejects(mail.message('acc1', 'abc'), /non valido/);
-  assert.throws(function () { mail.removeAccount('nessuno'); }, /sconosciuto/);
-  mail.removeAccount('acc1');
-  assert.strictEqual(mail.state().accounts.length, 0);
+test('htmlToText: tag tolti, entità e a capo', function () {
+  assert.strictEqual(mail.htmlToText('<style>x{}</style><p>Ciao&nbsp;<b>a</b></p><br>b &amp; c'), 'Ciao a\n\nb & c');
 });
