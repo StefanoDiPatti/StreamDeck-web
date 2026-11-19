@@ -12,7 +12,8 @@
     "server": "node server/index.js",
     "setup": "node scripts/bootstrap.js --setup",
     "test": "node --test",
-    "themes": "node scripts/build-themes.js"
+    "themes": "node scripts/build-themes.js",
+    "demo": "node scripts/demo.js"
   },
   "license": "MIT",
   "dependencies": {
@@ -25,5 +26,10 @@
   "devDependencies": {
     "acorn": "^8.19.0",
     "hoodiecrow-imap": "^3.3.1"
+  },
+  "author": "Stefano Di Patti",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/StefanoDiPatti/StreamDeck-web.git"
   }
 }

@@ -20,6 +20,8 @@ Il PC (Windows o Linux) fa girare un piccolo server Node.js. Il tablet apre una 
 
 ## Avvio rapido
 
+> Vuoi solo vederla? `npm run demo` apre una dock con **dati finti** (musica, PC, TODO, sessioni) su `http://127.0.0.1:8790/?t=DEMO1234`, senza leggere la tua configurazione né il `.env`.
+
 **Windows:** doppio click su `start.bat` (o sul collegamento "Command Dock" sul desktop).
 **Linux:** `./start.sh` (oppure `bash start.sh`).
 
@@ -480,3 +482,7 @@ scripts/linux/        avvio in background, icona sul desktop e nel menu delle ap
 **Aggiungere un tipo di azione:** aggiungi una funzione a `HANDLERS` in `server/actions/index.js`. Se serve il sistema operativo, aggiungi il metodo sia in `server/platform/windows.js` sia in `server/platform/linux.js`.
 
 Il client deve restare ES5 e senza flexbox/grid: `tests/client-es5.test.js` lo controlla.
+
+## Licenza
+
+MIT, vedi [LICENSE](../LICENSE).
