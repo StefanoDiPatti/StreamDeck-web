@@ -11,6 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { simpleParser } = require('mailparser');
+const { Worker } = require('worker_threads');
 const paths = require('../paths');
 const platform = require('../platform');
 const log = require('../log');
@@ -65,36 +66,63 @@ function stampOf(file) {
   try { const s = fs.statSync(file); return s.size + ':' + s.mtimeMs; } catch (e) { return ''; }
 }
 
+// Lettura in un thread a parte (thunderbird-worker.js): la dock non si blocca.
+function parseInWorker(job) {
+  return new Promise(function (resolve, reject) {
+    const w = new Worker(path.join(__dirname, 'thunderbird-worker.js'), { workerData: job });
+    w.once('message', resolve);
+    w.once('error', reject);
+    w.once('exit', function (code) { if (code) reject(new Error('lettura interrotta (' + code + ')')); });
+  });
+}
+
 // Elenco completo della posta in arrivo, rifatto solo se i file di Thunderbird cambiano.
+const pending = {};   // id -> lettura in corso
 function readInbox(a) {
   const inbox = tb.inboxPath(a);
   const stamp = stampOf(inbox + '.msf') + '|' + stampOf(inbox);
   const c = cache[a.key];
-  if (c && c.stamp === stamp) return c;
-  let messages = null;
-  if (fs.existsSync(inbox + '.msf')) {
-    try {
-      messages = tb.messagesFromMork(tb.parseMork(fs.readFileSync(inbox + '.msf', 'latin1')));
-    } catch (e) {
-      log.debug('mail', a.email + ': .msf illeggibile (' + e.message + ')');
-      if (c) return c;   // Thunderbird lo sta scrivendo: si tiene l'elenco di prima
+  if (c && c.stamp === stamp) return Promise.resolve(c);
+  if (pending[a.key] && pending[a.key].stamp === stamp) return pending[a.key].promise;
+  const promise = parseInWorker({ inbox: inbox, maildir: a.maildir }).then(function (r) {
+    if (r.error) {
+      if (c) return c;   // Thunderbird sta scrivendo il file: si tiene l'elenco di prima
+      if (r.error === 'missing') throw fail('Posta in arrivo di ' + a.email + ' non ancora scaricata: apri Thunderbird e aspetta che finisca di sincronizzare', 'UNAVAILABLE');
+      throw fail('File di Thunderbird illeggibile (' + r.error + ')', 'UNAVAILABLE');
     }
-  }
-  if (!messages || (!messages.length && !a.maildir && stampOf(inbox))) {
-    if (!a.maildir && fs.existsSync(inbox) && fs.statSync(inbox).isFile()) messages = tb.messagesFromMbox(inbox);
-  }
-  if (!messages) {
-    throw fail('Posta in arrivo di ' + a.email + ' non ancora scaricata: apri Thunderbird e aspetta che finisca di sincronizzare', 'UNAVAILABLE');
-  }
-  messages.sort(function (x, y) { return y.date - x.date; });
-  const out = {
-    stamp: stamp,
-    messages: messages,
-    unread: messages.filter(function (m) { return !m.seen; }).length,
-    total: messages.length
-  };
-  cache[a.key] = out;
-  return out;
+    const messages = r.messages.map(function (m) { return Object.assign(m, { date: new Date(m.date) }); });
+    messages.sort(function (x, y) { return y.date - x.date; });
+    const out = { stamp: stamp, messages: messages, unread: messages.filter(function (m) { return !m.seen; }).length, total: messages.length, error: '' };
+    cache[a.key] = out;
+    return out;
+  }).catch(function (e) {
+    errors[a.key] = e.message;
+    throw e.code ? e : fail(e.message);
+  }).finally(function () {
+    if (pending[a.key] && pending[a.key].promise === promise) delete pending[a.key];
+  });
+  pending[a.key] = { stamp: stamp, promise: promise };
+  return promise.then(function (d) { delete errors[a.key]; return d; });
+}
+const errors = {};    // id -> ultimo errore di lettura
+
+// Rilegge Thunderbird e la posta in arrivo di tutti gli account: all'avvio della dock
+// e dal pulsante "Controlla di nuovo" del pannello.
+async function check() {
+  const f = discover(true);
+  await Promise.all(f.accounts.map(function (a) { return readInbox(a).catch(function () { return null; }); }));
+  return f;
+}
+
+// Riga per il log all'avvio
+async function startupCheck() {
+  const f = await check();
+  if (!f.profile) { log.info('mail', 'Thunderbird non trovato: la pagina EMAIL resta vuota (vedi pannello > Email)'); return; }
+  if (!f.accounts.length) { log.info('mail', 'Thunderbird trovato, ma senza account di posta'); return; }
+  log.info('mail', 'Thunderbird: ' + f.accounts.map(function (a) {
+    const c = cache[a.key];
+    return a.email + (c ? ' (' + c.total + ' messaggi, ' + c.unread + ' da leggere)' : ' (' + (errors[a.key] || 'non letto') + ')');
+  }).join(', '));
 }
 
 function visible() {
@@ -102,9 +130,20 @@ function visible() {
   return discover().accounts.filter(function (a) { return hidden.indexOf(a.key) < 0; });
 }
 
+// Nome del servizio dal server (imap.gmail.com -> Gmail), se l'account non ha un nome suo.
+const SERVICES = [[/gmail|googlemail/, 'Gmail'], [/outlook|office365|hotmail|live./, 'Outlook'], [/icloud|me.com|mac.com/, 'iCloud'],
+  [/yahoo/, 'Yahoo'], [/libero/, 'Libero'], [/virgilio/, 'Virgilio'], [/aruba/, 'Aruba'], [/tiscali/, 'Tiscali']];
+function accountLabel(a) {
+  if (a.name && a.name !== a.email && a.name !== a.host) return a.name;
+  const host = String(a.host || '').toLowerCase();
+  for (let i = 0; i < SERVICES.length; i++) if (SERVICES[i][0].test(host)) return SERVICES[i][1];
+  return String(a.email || '').split('@')[1] || a.host || 'Email';
+}
+
 function publicAccount(a) {
   const c = cache[a.key];
-  return { id: a.key, label: a.name && a.name !== a.email ? a.name : (a.host || 'Email'), provider: 'thunderbird', email: a.email, unread: c ? c.unread : null, status: c ? 'ready' : 'idle', error: '' };
+  const err = errors[a.key] || '';
+  return { id: a.key, label: accountLabel(a), provider: 'thunderbird', email: a.email, unread: c ? c.unread : null, status: c ? 'ready' : err ? 'error' : pending[a.key] ? 'loading' : 'idle', error: c ? '' : err };
 }
 
 // ------------------------------------------------------------ API per il tablet
@@ -115,7 +154,7 @@ function state() {
 
 async function list(id) {
   const a = account(id);
-  const d = readInbox(a);
+  const d = await readInbox(a);
   return {
     account: publicAccount(a),
     unread: d.unread,
@@ -144,7 +183,7 @@ async function message(id, uid) {
   uid = String(uid || '');
   if (!/^[\w.,:+=-]{1,200}$/.test(uid)) throw fail('Messaggio non valido', 'BAD_REQUEST');
   const a = account(id);
-  const d = readInbox(a);
+  const d = await readInbox(a);
   const m = d.messages.filter(function (x) { return x.key === uid; })[0];
   if (!m) throw fail('Messaggio non trovato (forse spostato o cancellato)', 'NOT_FOUND');
   const src = tb.readSource(tb.inboxPath(a), m, a.maildir, MAX_SOURCE);
@@ -190,17 +229,11 @@ function panelInfo() {
     download: tb.DOWNLOAD_URL,
     installed: !!(tb.executable() || f.profile),
     profile: !!(f.profile && f.profile.dir),
+    exe: !!tb.executable(),
     accounts: f.accounts.map(function (a) {
-      let unread = null, error = '';
-      try { unread = readInbox(a).unread; } catch (e) { error = e.message; }
-      return Object.assign(publicAccount(a), {
-        host: a.host,
-        shown: hidden.indexOf(a.key) < 0,
-        unread: unread,
-        status: error ? 'error' : 'ready',
-        error: error,
-        offline: a.offline
-      });
+      // la lettura parte in sottofondo: il pannello si aggiorna da solo ogni 5 secondi
+      readInbox(a).catch(function () {});
+      return Object.assign(publicAccount(a), { host: a.host, shown: hidden.indexOf(a.key) < 0, offline: a.offline });
     })
   };
 }
@@ -221,6 +254,8 @@ module.exports = {
   openWebmail: openWebmail,
   panelInfo: panelInfo,
   setShown: setShown,
+  check: check,
+  startupCheck: startupCheck,
   htmlToText: htmlToText,
-  _reset: function () { store = null; found = { at: 0, profile: null, accounts: [] }; Object.keys(cache).forEach(function (k) { delete cache[k]; }); }
+  _reset: function () { store = null; Object.keys(errors).forEach(function (k) { delete errors[k]; }); found = { at: 0, profile: null, accounts: [] }; Object.keys(cache).forEach(function (k) { delete cache[k]; }); }
 };

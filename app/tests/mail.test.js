@@ -141,9 +141,10 @@ test('senza .msf: elenco letto dal mbox, cancellati esclusi', async function () 
   assert.strictEqual(m.subject, 'Ciao è pronto');
 });
 
-test('pannello: account nascosti non arrivano al tablet, file vecchi ripuliti', function () {
+test('pannello: account nascosti non arrivano al tablet, file vecchi ripuliti', async function () {
   fs.writeFileSync(path.join(process.env.DOCK_DATA_DIR, 'mail.json'), JSON.stringify({ accounts: [{ id: 'x', pass: 'segreta' }] }));
   mail._reset();
+  await mail.check();   // come il pulsante "Controlla di nuovo"
   const info = mail.panelInfo();
   assert.strictEqual(info.source, 'thunderbird');
   assert.strictEqual(info.profile, true);
@@ -155,6 +156,29 @@ test('pannello: account nascosti non arrivano al tablet, file vecchi ripuliti', 
   mail.setShown('server3', true);
   assert.strictEqual(mail.state().accounts.length, 2);
   assert.throws(function () { mail.setShown('server9', true); }, /non trovato/);
+});
+
+test('Mork come lo scrive Thunderbird: a capo tra id e valore, flag come riferimento, righe fuori tabella', function () {
+  const text = [
+    '// <!-- <mdb:mork:z v="1.4"/> -->',
+    '< <(a=c)> (81=subject)(82=sender)(86=date)(88=flags)(9D=storeToken)(80=ns:msg:db:row:scope:msgs:all)(96=ns:msg:db:table:kind:msgs)>',
+    '<(98E1=Mario <m@x.it>)(98E3=81)(98E5',
+    '    =Avviso di sicurezza)>',
+    '{1:^80 {(k^96:c)(s=9u)}',
+    '  [-2511(^88^98E3)(^82^98E1)(^81^98E5)(^86=6aff381f)(^9D=10)]}',
+    '[2512:^80(^88=0)(^81',
+    '    =Seconda)(^86=6aff3820)(^9D=20)]',
+    '{1:^80 2512 }',
+    ''
+  ].join('\r\n');
+  const list = tb.messagesFromMork(tb.parseMork(text));
+  const by = {};
+  list.forEach(function (m) { by[m.key] = m; });
+  assert.strictEqual(by['2511'].subject, 'Avviso di sicurezza');
+  assert.strictEqual(by['2511'].seen, true);
+  assert.strictEqual(by['2511'].from.name, 'Mario');
+  assert.strictEqual(by['2512'].subject, 'Seconda');
+  assert.strictEqual(by['2512'].seen, false);
 });
 
 test('htmlToText: tag tolti, entità e a capo', function () {

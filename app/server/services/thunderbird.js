@@ -156,40 +156,49 @@ function parseMork(input) {
   let i = 0;
   const n = text.length;
 
+  // (veloce: i file di Gmail arrivano a decine di MB)
   function skip() {
     for (;;) {
-      while (i < n && /\s/.test(text[i])) i++;
-      if (text[i] === '/' && text[i + 1] === '/') { while (i < n && text[i] !== '\n') i++; continue; }
+      while (i < n && text.charCodeAt(i) <= 32) i++;
+      if (text.charCodeAt(i) === 47 && text.charCodeAt(i + 1) === 47) { while (i < n && text.charCodeAt(i) !== 10) i++; continue; }
       return;
     }
   }
-  // valore di una cella fino alla ")" non protetta; $XX = byte, "\" protegge, "\"+a capo = continua
+  function isHex(c) { return (c >= 48 && c <= 57) || (c >= 65 && c <= 70) || (c >= 97 && c <= 102); }
+  // valore di una cella fino alla ")" non protetta; $XX = byte, "\" protegge, "\"+a capo = continua.
+  // Il testo arriva in latin1 (1 carattere = 1 byte): i byte si ricompongono in UTF-8 alla fine.
   function literal() {
     const bytes = [];
-    while (i < n && text[i] !== ')') {
-      let c = text[i];
-      if (c === '\\') {
-        const nx = text[i + 1];
-        if (nx === '\n') { i += 2; continue; }
-        if (nx === '\r') { i += text[i + 2] === '\n' ? 3 : 2; continue; }
-        c = nx; i += 2;
-        pushChar(bytes, c);
-        continue;
+    const push = function (c) {
+      if (c < 256) { bytes.push(c); return; }
+      const b = Buffer.from(String.fromCharCode(c), 'utf8');
+      for (let k = 0; k < b.length; k++) bytes.push(b[k]);
+    };
+    while (i < n) {
+      const c = text.charCodeAt(i);
+      if (c === 41) break;                       // )
+      if (c === 92) {                            // \
+        const nx = text.charCodeAt(i + 1);
+        if (nx === 10) { i += 2; continue; }
+        if (nx === 13) { i += text.charCodeAt(i + 2) === 10 ? 3 : 2; continue; }
+        push(nx); i += 2; continue;
       }
-      if (c === '$' && /^[0-9A-Fa-f]{2}$/.test(text.substr(i + 1, 2))) {
+      if (c === 36 && isHex(text.charCodeAt(i + 1)) && isHex(text.charCodeAt(i + 2))) {   // $XX
         bytes.push(parseInt(text.substr(i + 1, 2), 16)); i += 3; continue;
       }
-      pushChar(bytes, c); i++;
+      push(c); i++;
     }
     return Buffer.from(bytes).toString('utf8');
   }
-  function pushChar(bytes, c) {
-    const b = Buffer.from(c, 'utf8');
-    for (let k = 0; k < b.length; k++) bytes.push(b[k]);
-  }
+  const STOP = new Uint8Array(128);
+  '()[]{}<>=^:'.split('').forEach(function (ch) { STOP[ch.charCodeAt(0)] = 1; });
   function token() {
     const s = i;
-    while (i < n && /[^\s()[\]{}<>=^:]/.test(text[i])) i++;
+    for (;;) {
+      const c = text.charCodeAt(i);
+      if (i >= n || c <= 32 || (c < 128 && STOP[c])) break;
+      i++;
+    }
     return text.slice(s, i);
   }
   // "id" oppure "id:scope" (scope = ^col o nome)
@@ -221,6 +230,7 @@ function parseMork(input) {
           if (text[i] === '(') {
             i++;
             const k = token();
+            skip();
             if (text[i] === '=') { i++; const v = literal(); if (k === 'a') isCols = v === 'c'; }
             i++;   // )
           } else i++;
@@ -230,6 +240,7 @@ function parseMork(input) {
       if (c === '(') {
         i++;
         const id = token().toUpperCase();
+        skip();
         if (text[i] === '=') { i++; const v = literal(); (isCols ? cols : atoms)[id] = v; }
         while (i < n && text[i] !== ')') i++;
         i++;
@@ -259,9 +270,11 @@ function parseMork(input) {
       if (c === '(') {
         i++;
         let col;
+        skip();
         if (text[i] === '^') { i++; col = colName(token()); } else col = token();
+        skip();
         if (text[i] === '=') { i++; r[col] = literal(); }
-        else if (text[i] === '^') { i++; const a = token().toUpperCase(); r[col] = atoms[a] !== undefined ? atoms[a] : ''; }
+        else if (text[i] === '^') { i++; skip(); const a = token().toUpperCase(); r[col] = atoms[a] !== undefined ? atoms[a] : ''; }
         while (i < n && text[i] !== ')') i++;
         i++;
         continue;
