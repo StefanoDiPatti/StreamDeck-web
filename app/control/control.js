@@ -266,7 +266,9 @@
     $('os-pill').textContent = os ? 'PULSANTI PER ' + String(os).toUpperCase() : '';
     if (!list.length) return;
     if (!bpage(btPage)) btPage = list[0].id;
-    $('bt-pages').innerHTML = list.map((b) => '<button class="chip' + (b.id === btPage ? ' on' : '') + '" type="button" role="tab" aria-selected="' + (b.id === btPage) + '" data-bpage="' + esc(b.id) + '">' + icon(b.icon) + esc(b.title) + (touched[b.id] ? ' •' : '') + '</button>').join('');
+    // APP sempre per prima (è quella che si cambia più spesso), poi le altre nell'ordine delle pagine
+    const chips = list.filter((b) => b.id === 'apps').concat(list.filter((b) => b.id !== 'apps'));
+    $('bt-pages').innerHTML = chips.map((b) => '<button class="chip' + (b.id === btPage ? ' on' : '') + '" type="button" role="tab" aria-selected="' + (b.id === btPage) + '" data-bpage="' + esc(b.id) + '">' + icon(b.icon) + esc(b.title) + (touched[b.id] ? ' •' : '') + '</button>').join('');
     const b = bpage(btPage);
     const st = buttons[btPage];
     const byId = {};

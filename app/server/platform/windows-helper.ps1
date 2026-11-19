@@ -336,10 +336,12 @@ public static class DockScreens {
   // Porta la finestra nel rettangolo (area visibile, senza i bordi invisibili di Windows 10/11).
   // max = poi la massimizza (su quel monitor). Ritorna false se Windows nega lo spostamento
   // (finestra di un programma avviato come amministratore).
-  public static bool Place(long hwnd, int x, int y, int w, int hh, bool max) {
+  // activate = false (trascinamento dal tablet): ripristina senza attivarla (SW_SHOWNOACTIVATE);
+  // il primo piano lo rimette a posto il comando 'place' se la massimizzazione l'ha cambiato.
+  public static bool Place(long hwnd, int x, int y, int w, int hh, bool max, bool activate) {
     Aware();
     IntPtr h = Check(hwnd);
-    if (IsIconic(h) || IsZoomed(h)) ShowWindow(h, 9);
+    if (IsIconic(h) || IsZoomed(h)) ShowWindow(h, activate ? 9 : 4);
     bool ok = true;
     for (int pass = 0; pass < 2; pass++) {
       // due passaggi: tra monitor con scala diversa la finestra si ridimensiona da sola al primo
@@ -355,6 +357,7 @@ public static class DockScreens {
   }
 
   public static IntPtr Handle(long hwnd) { return Check(hwnd); }
+  public static IntPtr Foreground() { return GetForegroundWindow(); }
 
   public static bool Act(long hwnd, string what) {
     Aware();
@@ -921,8 +924,11 @@ while ($true) {
       }
       'place' {
         if (-not $script:screens) { throw 'schermi non disponibili' }
-        $data = @{ moved = [DockScreens]::Place([long]$req.hwnd, [int]$req.x, [int]$req.y, [int]$req.w, [int]$req.h, [bool]$req.max) }
+        # Senza focus (trascinamento dal tablet) la finestra in primo piano resta quella di prima
+        $fg = [DockScreens]::Foreground()
+        $data = @{ moved = [DockScreens]::Place([long]$req.hwnd, [int]$req.x, [int]$req.y, [int]$req.w, [int]$req.h, [bool]$req.max, [bool]$req.focus) }
         if ($req.focus) { [void][DockInput]::FocusWindow([DockScreens]::Handle([long]$req.hwnd)) }
+        elseif ($fg -ne [IntPtr]::Zero -and [DockScreens]::Foreground() -ne $fg) { [void][DockInput]::FocusWindow($fg) }
       }
       'vdmove' {
         if (-not $script:screens) { throw 'schermi non disponibili' }

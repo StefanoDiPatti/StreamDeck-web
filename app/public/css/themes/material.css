@@ -34,7 +34,7 @@ svg.ic { fill: #e9e9ee; }
 #toast { background: #32353a; color: #e9e9ee; }
 #toast.ok { background: #1f5135; }
 #toast.err { background: #93000a; }
-#modal, #pair, #boot { background: rgba(12, 14, 18, 0.88); }
+#modal, #pair, #boot, #offline { background: rgba(12, 14, 18, 0.88); }
 .modal-box { background: #1d2024; border: 1px solid #3a3d42; }
 .modal-body { color: #e2e2e6; background: #111318; }
 .modal-close { background: #1f5a96; }
@@ -44,6 +44,8 @@ svg.ic { fill: #e9e9ee; }
 .pair-go { background: #1f5a96; }
 .pair-go.pressed { background: #174a7e; }
 #boot { background: #111318; }
+#offline { background: rgba(12, 14, 18, 0.94); }
+#offline-host { color: #e9e9ee; }
 #boot-msg { color: #8e9099; }
 .w-title { color: #c4c6cf; }
 .sbtn { background: #32353a; }

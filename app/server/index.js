@@ -312,7 +312,8 @@ app.post('/api/screens/target', route(function (req) {
 }));
 app.post('/api/screens/place', route(function (req) {
   const b = req.body || {};
-  return screens.place(String(b.window || ''), String(b.monitor || ''), String(b.layout || ''), b.zone);
+  // focus: false = finestra trascinata dal tablet (resta in primo piano quella di prima)
+  return screens.place(String(b.window || ''), String(b.monitor || ''), String(b.layout || ''), b.zone, b.focus !== false);
 }));
 app.post('/api/screens/window', route(function (req) {
   const b = req.body || {};
