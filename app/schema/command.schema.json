@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vibe-deck/command.schema.json",
+  "title": "Comando di Vibe Deck",
+  "description": "Un comando consentito: config/commands/<id>.json (id = nome del file), o una voce di \"commands\" in commands.json. Il tablet può lanciare solo questi.",
+  "type": "object",
+  "properties": {
+    "label": { "type": "string" },
+    "showOutput": { "type": "boolean", "description": "Mostra l'output sul tablet." },
+    "timeoutMs": { "type": "integer", "minimum": 1000, "description": "Tempo massimo (default 20 secondi)." },
+    "windows": { "$ref": "#/definitions/variant" },
+    "linux": {
+      "description": "Su Linux: una variante o una lista di alternative (vale la prima installata).",
+      "oneOf": [{ "$ref": "#/definitions/variant" }, { "type": "array", "items": { "$ref": "#/definitions/variant" } }]
+    }
+  },
+  "definitions": {
+    "variant": {
+      "type": "object",
+      "required": ["cmd"],
+      "properties": {
+        "cmd": { "type": "string", "description": "Programma da eseguire (niente shell)." },
+        "args": { "type": "array", "items": { "type": "string" }, "description": "Argomenti; {root} = cartella della dock." }
+      }
+    }
+  }
+}

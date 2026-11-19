@@ -50,7 +50,7 @@ test('nome del monitor dall\'EDID abbinato al DeviceID', function () {
 test('nessun gioco nei default (si aggiungono dal pannello); pagine GAMES e SCHERMI', function () {
   const defApps = config.parseJson(require('fs').readFileSync(require('path').join(__dirname, '..', 'config', 'defaults', 'apps.json'), 'utf8')).apps;
   Object.keys(defApps).forEach(function (id) { assert.ok(!defApps[id].game, id + ': i giochi non vanno nel repository'); });
-  const raw = config.parseJson(require('fs').readFileSync(require('path').join(__dirname, '..', 'config', 'defaults', 'dock.json'), 'utf8'));
+  const raw = config.defaultDock();
   assert.strictEqual(raw.pages.filter(function (p) { return p.id === 'games'; })[0].source, 'games');
   const ids = config.normalizeDock(raw, {}, 'windows').pages.map(function (p) { return p.id; });
   assert.ok(ids.indexOf('games') >= 0 && ids.indexOf('screens') >= 0);

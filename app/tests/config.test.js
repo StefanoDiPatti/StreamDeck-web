@@ -32,7 +32,7 @@ test('dock vuoto produce comunque una pagina', function () {
 });
 
 test('ogni pulsante di default punta ad app, comandi, pagine e tasti esistenti', function () {
-  const dock = config.normalizeDock(readDefault('dock'));
+  const dock = config.normalizeDock(config.defaultDock());
   const apps = readDefault('apps').apps;
   const commands = readDefault('commands').commands;
   const pageIds = dock.pages.map(function (p) { return p.id; });
@@ -66,7 +66,7 @@ test('ogni pulsante di default punta ad app, comandi, pagine e tasti esistenti',
 });
 
 test('le pagine di default stanno nella griglia', function () {
-  const dock = config.normalizeDock(readDefault('dock'));
+  const dock = config.normalizeDock(config.defaultDock());
   dock.pages.forEach(function (p) {
     // con "buttonGrid" i pulsanti li dispone il tablet a sinistra: in griglia solo i widget
     const cells = p.tiles.filter(function (t) { return !p.buttonGrid || t.widget; }).reduce(function (n, t) { return n + t.w * t.h; }, 0);

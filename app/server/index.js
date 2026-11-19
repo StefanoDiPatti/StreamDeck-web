@@ -32,6 +32,7 @@ const viber = require('./services/viber');
 const pairing = require('./services/pairing');
 const mail = require('./services/mail');
 const games = require('./services/games');
+const configCheck = require('./check');
 const pkg = require('../package.json');
 
 const PORT = parseInt(process.env.PORT, 10) || 8787;
@@ -178,6 +179,11 @@ function pageButtons(p) {
   const fixed = p.allTiles.filter(function (t) { return t.widget; }).map(function (t) { return { label: t.label || t.widget.toUpperCase(), w: t.w || 1 }; });
   return { id: p.id, title: p.title, icon: p.icon, columns: p.columns, rows: p.rows, fixed: fixed, grid: !!p.buttonGrid, widgetWidth: p.widgetWidth || 0.5, all: p.allTiles.filter(isBtn).map(btn), shown: p.tiles.filter(isBtn).map(function (t) { return t.id; }) };
 }
+// Controllo della configurazione per il pannello (un errore qui non deve rompere il pannello)
+function safeCheck() {
+  try { return configCheck.run(); } catch (e) { return [{ level: 'error', where: 'controllo', message: e.message }]; }
+}
+
 function controlInfo() {
   const d = config.dock();
   let urls = [];
@@ -193,6 +199,8 @@ function controlInfo() {
     pairing: pairing.links(PORT),
     mail: mail.panelInfo(),
     games: games.panelInfo(),
+    checks: safeCheck(),
+    configErrors: config.errors(),
     version: pkg.version,
     platform: platform.name
   };
@@ -526,6 +534,8 @@ function start() {
       const server = app.listen(PORT, HOST, function () {
         banner(); todosync.start();
         // posta: Thunderbird c'è? quali account? (si vede nel log)
+        // configurazione: pulsanti che non possono funzionare
+        safeCheck().filter(function (x) { return x.level === 'error'; }).forEach(function (x) { log.warn('config', x.where + ': ' + x.message); });
         mail.startupCheck().catch(function (e) { log.debug('mail', 'controllo all\'avvio: ' + e.message); });
         resolve(server);
       });

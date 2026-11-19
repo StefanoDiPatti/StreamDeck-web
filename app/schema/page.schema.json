@@ -1,0 +1,365 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vibe-deck/page.schema.json",
+  "title": "Pagina di Vibe Deck",
+  "description": "Una pagina del tablet: config/pages/<id>.json (o config/defaults/pages/). Vedi la guida per sviluppatori nel README.",
+  "type": "object",
+  "required": [
+    "id",
+    "tiles"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]+$",
+      "description": "Nome fisso della pagina (uguale al nome del file). Si usa in { \"type\": \"page\", \"page\": \"<id>\" } e in http://IP:8787/#<id>."
+    },
+    "title": {
+      "type": "string",
+      "description": "Titolo in alto e nella barra."
+    },
+    "icon": {
+      "$ref": "#/definitions/icon"
+    },
+    "description": {
+      "type": "string",
+      "description": "Testo mostrato nel pannello di controllo."
+    },
+    "tab": {
+      "type": "boolean",
+      "default": true,
+      "description": "false = disponibile ma fuori dalla barra (la aggiungi dal pannello)."
+    },
+    "os": {
+      "$ref": "#/definitions/os"
+    },
+    "columns": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8,
+      "description": "Colonne della griglia (default 5)."
+    },
+    "rows": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6,
+      "description": "Righe della griglia (default 3)."
+    },
+    "autoGrid": {
+      "type": "boolean",
+      "description": "true = colonne e righe scelte in base a quanti pulsanti ci sono."
+    },
+    "buttonGrid": {
+      "type": "boolean",
+      "description": "true = pulsanti in griglia a sinistra (personalizzabili dal pannello) e widget a destra, come VIBER."
+    },
+    "widgetWidth": {
+      "type": "number",
+      "minimum": 0.3,
+      "maximum": 0.7,
+      "description": "Con buttonGrid: parte della larghezza per i widget."
+    },
+    "source": {
+      "enum": [
+        "games"
+      ],
+      "description": "\"games\" = i pulsanti sono i giochi scelti dal pannello."
+    },
+    "windows": {
+      "type": "object",
+      "description": "Campi della pagina che cambiano su Windows."
+    },
+    "linux": {
+      "type": "object",
+      "description": "Campi della pagina che cambiano su Linux."
+    },
+    "tiles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/tile"
+      },
+      "description": "Pulsanti e widget, da sinistra a destra."
+    }
+  },
+  "definitions": {
+    "os": {
+      "description": "La voce c'è solo su questo sistema.",
+      "oneOf": [
+        {
+          "enum": [
+            "windows",
+            "linux"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "enum": [
+              "windows",
+              "linux"
+            ]
+          }
+        }
+      ]
+    },
+    "icon": {
+      "type": "string",
+      "description": "Nome di un'icona di public/js/icons.js.",
+      "examples": [
+        "home",
+        "music",
+        "apps",
+        "code",
+        "github",
+        "chat",
+        "sparkle",
+        "check",
+        "cube",
+        "film",
+        "lock",
+        "play",
+        "pause",
+        "stop",
+        "next",
+        "prev",
+        "volup",
+        "voldown",
+        "mute",
+        "shuffle",
+        "repeat",
+        "folder",
+        "terminal",
+        "cpu",
+        "camera",
+        "desktop",
+        "robot",
+        "refresh",
+        "save",
+        "keyboard",
+        "undo",
+        "redo",
+        "fullscreen",
+        "cut",
+        "flag",
+        "back",
+        "add",
+        "close",
+        "send",
+        "trash",
+        "power",
+        "bolt",
+        "mic",
+        "link",
+        "headset",
+        "gamepad",
+        "cards",
+        "tank",
+        "sword",
+        "layout",
+        "live",
+        "camoff",
+        "window",
+        "target",
+        "mail",
+        "attach"
+      ]
+    },
+    "tile": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Nome fisso del pulsante: il pannello lo usa per ricordare ordine e nascosti."
+        },
+        "label": {
+          "type": "string"
+        },
+        "sub": {
+          "type": "string",
+          "description": "Seconda riga, più piccola."
+        },
+        "icon": {
+          "$ref": "#/definitions/icon"
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Colore del pulsante (si adatta al tema)."
+        },
+        "w": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8,
+          "description": "Celle occupate in larghezza."
+        },
+        "h": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6,
+          "description": "Celle occupate in altezza."
+        },
+        "confirm": {
+          "type": "boolean",
+          "description": "Va tenuto premuto circa 1 secondo (azioni delicate)."
+        },
+        "repeat": {
+          "type": "boolean",
+          "description": "Si ripete tenendo premuto (volume)."
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "Disponibile ma nascosto finché non lo mostri dal pannello."
+        },
+        "showRunning": {
+          "type": "string",
+          "description": "Id di un'app: pallino verde quando è aperta."
+        },
+        "os": {
+          "$ref": "#/definitions/os"
+        },
+        "windows": {
+          "type": "object",
+          "description": "Campi che cambiano su Windows (anche action)."
+        },
+        "linux": {
+          "type": "object",
+          "description": "Campi che cambiano su Linux (anche action)."
+        },
+        "action": {
+          "$ref": "#/definitions/action"
+        },
+        "widget": {
+          "enum": [
+            "system",
+            "nowplaying",
+            "queue",
+            "github",
+            "todo",
+            "chat",
+            "clock",
+            "claude",
+            "discord",
+            "screens",
+            "mail",
+            "audio",
+            "vdesk",
+            "viber"
+          ],
+          "description": "Al posto di un pulsante, un widget."
+        },
+        "provider": {
+          "enum": [
+            "claude",
+            "ollama"
+          ],
+          "description": "Per il widget chat."
+        },
+        "system": {
+          "enum": [
+            "windows",
+            "linux"
+          ],
+          "description": "Per i widget screens e vdesk: sistema della guida."
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "launch",
+            "hotkey",
+            "key",
+            "text",
+            "media",
+            "open_url",
+            "open_path",
+            "command",
+            "page",
+            "discord",
+            "viber",
+            "focus",
+            "macro",
+            "wait"
+          ],
+          "description": "Cosa fa il pulsante."
+        },
+        "app": {
+          "type": "string",
+          "description": "launch: id di un'app di apps.json o config/apps/."
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "hotkey: es. [\"CTRL\", \"SHIFT\", \"P\"]."
+        },
+        "key": {
+          "type": "string",
+          "description": "key: un tasto, es. \"F12\"."
+        },
+        "focus": {
+          "type": "string",
+          "description": "Programma da portare in primo piano prima dei tasti (nome del processo)."
+        },
+        "value": {
+          "type": "string",
+          "description": "text: il testo da scrivere."
+        },
+        "command": {
+          "type": "string",
+          "description": "media: play_pause, next, previous, stop, volume_up, volume_down, mute, app_volume_up, app_volume_down, app_mute. discord: mute, deaf, video, stream."
+        },
+        "url": {
+          "type": "string",
+          "description": "open_url."
+        },
+        "path": {
+          "type": "string",
+          "description": "open_path: cartella o file."
+        },
+        "id": {
+          "type": "string",
+          "description": "command: id di commands.json o config/commands/."
+        },
+        "page": {
+          "type": "string",
+          "description": "page: id della pagina da aprire."
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/action"
+          },
+          "description": "macro: azioni in fila."
+        },
+        "ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "wait: millisecondi."
+        },
+        "panel": {
+          "type": "string",
+          "description": "viber: pannello da aprire (terminal, git, browser, chat, tasks, files...)."
+        },
+        "layout": {
+          "type": "string",
+          "description": "viber: disposizione dei pannelli."
+        },
+        "view": {
+          "type": "string",
+          "description": "viber: vista (schede, agenti, focus...)."
+        },
+        "project": {
+          "type": "string",
+          "description": "viber: next o previous, progetto successivo o precedente."
+        }
+      }
+    }
+  }
+}

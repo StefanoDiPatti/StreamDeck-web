@@ -1,0 +1,27 @@
+// Pagina DEV (id "dev"): una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/dev.json e modifica la copia: quella vince su questa.
+{
+  "id": "dev",
+  "title": "DEV",
+  "icon": "code",
+  "description": "VS Code, Claude Code, terminale, OpenClaw e scorciatoie",
+  "autoGrid": true,
+  "tiles": [
+    { "id": "vscode", "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
+    // scorciatoie di VS Code: terminale integrato e palette dei comandi
+    { "id": "vscode_terminal", "label": "TERM VSC", "icon": "terminal", "sub": "Ctrl+`", "color": "#174f86", "action": { "type": "hotkey", "keys": ["CTRL", "BACKQUOTE"], "focus": "Code" } },
+    { "id": "vscode_palette", "label": "PALETTE", "icon": "keyboard", "sub": "Ctrl+Shift+P", "color": "#174f86", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "P"], "focus": "Code" } },
+    { "id": "claude_code", "label": "CLAUDE CODE", "icon": "sparkle", "color": "#b65a3a", "action": { "type": "launch", "app": "claude_code" } },
+    { "id": "terminal", "label": "POWERSHELL", "icon": "terminal", "color": "#1f3b63", "linux": { "label": "TERMINALE" }, "action": { "type": "launch", "app": "powershell" } },
+    { "id": "github", "label": "GITHUB", "icon": "github", "action": { "type": "open_url", "url": "https://github.com" } },
+    { "id": "git_status", "label": "GIT STATUS", "icon": "github", "action": { "type": "command", "id": "git_status_projects" } },
+    { "id": "openclaw_health", "label": "OPENCLAW", "icon": "robot", "sub": "health", "color": "#2c5e4f", "action": { "type": "command", "id": "openclaw_health" } },
+    { "id": "openclaw_restart", "label": "OPENCLAW", "icon": "refresh", "sub": "riavvia", "color": "#2c5e4f", "confirm": true, "action": { "type": "command", "id": "openclaw_restart" } },
+    { "id": "openclaw_dashboard", "label": "DASHBOARD", "icon": "desktop", "sub": "OpenClaw", "color": "#2c5e4f", "action": { "type": "command", "id": "openclaw_dashboard" } },
+    { "id": "ollama_ps", "label": "OLLAMA PS", "icon": "chat", "action": { "type": "command", "id": "ollama_ps" } },
+    { "id": "claude_ai", "label": "CLAUDE.AI", "icon": "sparkle", "action": { "type": "open_url", "url": "https://claude.ai" } },
+    { "id": "save", "label": "SALVA", "icon": "save", "sub": "Ctrl+S", "action": { "type": "hotkey", "keys": ["CTRL", "S"] } },
+    { "id": "undo", "label": "ANNULLA", "icon": "undo", "sub": "Ctrl+Z", "action": { "type": "hotkey", "keys": ["CTRL", "Z"] } },
+    { "id": "redo", "label": "RIPETI", "icon": "redo", "sub": "Ctrl+Y", "action": { "type": "hotkey", "keys": ["CTRL", "Y"] } }
+  ]
+}

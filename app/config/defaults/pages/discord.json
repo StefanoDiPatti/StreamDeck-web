@@ -1,0 +1,10 @@
+// Pagina DISCORD (id "discord"): una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/discord.json e modifica la copia: quella vince su questa.
+{
+  "id": "discord",
+  "title": "DISCORD",
+  "icon": "headset",
+  "description": "Server, canali vocali, chi c'è in stanza, mute e audio",
+  "tab": false,
+  "tiles": [ { "widget": "discord", "w": 5, "h": 3 } ]
+}

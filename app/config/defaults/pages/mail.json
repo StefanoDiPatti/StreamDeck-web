@@ -1,0 +1,10 @@
+// Pagina EMAIL (id "mail"): una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/mail.json e modifica la copia: quella vince su questa.
+{
+  "id": "mail",
+  "title": "EMAIL",
+  "icon": "mail",
+  "description": "Posta in arrivo di Gmail, Outlook, iCloud e altri (account scelti dal pannello)",
+  "tab": false,
+  "tiles": [ { "widget": "mail", "w": 5, "h": 3 } ]
+}

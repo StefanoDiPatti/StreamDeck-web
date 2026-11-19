@@ -1,0 +1,21 @@
+{
+  // I file di configurazione di Vibe Deck ammettono i commenti //
+  "files.associations": {
+    "app/config/**/*.json": "jsonc"
+  },
+  // Suggerimenti e controllo dei campi mentre scrivi pagine, app e comandi
+  "json.schemas": [
+    {
+      "fileMatch": ["app/config/pages/*.json", "app/config/defaults/pages/*.json"],
+      "url": "./app/schema/page.schema.json"
+    },
+    {
+      "fileMatch": ["app/config/apps/*.json"],
+      "url": "./app/schema/app.schema.json"
+    },
+    {
+      "fileMatch": ["app/config/commands/*.json"],
+      "url": "./app/schema/command.schema.json"
+    }
+  ]
+}

@@ -74,7 +74,7 @@ test('griglia automatica: niente buchi inutili, forma da tablet', function () {
 });
 
 test('pagina APP di default: CLAUDE unico, Viber su entrambi, terminale su Linux', function () {
-  const raw = readDefault('dock');
+  const raw = config.defaultDock();
   const lin = page(config.normalizeDock(raw, {}, 'linux'), 'apps');
   const win = page(config.normalizeDock(raw, {}, 'windows'), 'apps');
   [lin, win].forEach(function (p) {
@@ -98,7 +98,7 @@ test('pagina APP di default: CLAUDE unico, Viber su entrambi, terminale su Linux
 });
 
 test('pagina DEV di default: TERM VSC e PALETTE subito dopo VS CODE, pulsanti con id fissi', function () {
-  const raw = readDefault('dock');
+  const raw = config.defaultDock();
   ['linux', 'windows'].forEach(function (os) {
     const p = page(config.normalizeDock(raw, {}, os), 'dev');
     assert.ok(p.editable);
@@ -108,7 +108,7 @@ test('pagina DEV di default: TERM VSC e PALETTE subito dopo VS CODE, pulsanti co
 });
 
 test('APP avvia Blender e DaVinci; tutti i pulsanti di default hanno id fissi e unici', function () {
-  const raw = readDefault('dock');
+  const raw = config.defaultDock();
   const apps = page(config.normalizeDock(raw, {}, 'linux'), 'apps');
   ['blender', 'davinci'].forEach(function (id) {
     const t = apps.tiles.filter(function (x) { return x.id === id; })[0];

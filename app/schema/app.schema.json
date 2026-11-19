@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "vibe-deck/app.schema.json",
+  "title": "App di Vibe Deck",
+  "description": "Un programma avviabile: config/apps/<id>.json (id = nome del file), o una voce di \"apps\" in apps.json.",
+  "type": "object",
+  "properties": {
+    "label": { "type": "string" },
+    "toggle": { "type": "boolean", "description": "Pallino verde se aperta; un altro tocco la chiude (come la X della finestra)." },
+    "whenRunning": { "enum": ["focus"], "description": "\"focus\" = se è già aperta la porta in primo piano invece di riavviarla." },
+    "game": { "type": "boolean", "description": "È un gioco: il Go Live di Discord trasmette questo, se è aperto." },
+    "process": { "description": "Nome del processo, se diverso dal file (anche una lista).", "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+    "title": { "type": "string", "description": "Regex sul titolo della finestra, per distinguere app con lo stesso processo." },
+    "bridge": { "enum": ["apple", "youtube", "ytmusic"], "description": "Web app riconosciuta dall'estensione del browser." },
+    "windows": { "$ref": "#/definitions/variant" },
+    "linux": {
+      "description": "Su Linux: una variante o una lista di alternative (vale la prima installata).",
+      "oneOf": [{ "$ref": "#/definitions/variant" }, { "type": "array", "items": { "$ref": "#/definitions/variant" } }]
+    }
+  },
+  "definitions": {
+    "variant": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Eseguibile, collegamento .lnk, file .desktop, comando nel PATH o shell:AppsFolder\\<AppID>. Ammessi %VAR%, $VAR, ~ e * per la versione. Anche una lista: vale il primo che esiste.",
+          "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
+        },
+        "args": { "type": "array", "items": { "type": "string" } },
+        "cwd": { "type": "string", "description": "Cartella di lavoro." }
+      }
+    }
+  }
+}

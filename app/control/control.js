@@ -443,6 +443,18 @@
     renderPairing();
     renderMail();
     renderGames();
+    renderChecks();
+  }
+
+  // Controllo della configurazione: file non validi e pulsanti che non possono funzionare
+  function renderChecks() {
+    const errs = (info.configErrors || []).map((m) => ({ level: 'error', where: 'file', message: m }));
+    const list = errs.concat(info.checks || []);
+    const bad = list.filter((x) => x.level === 'error').length;
+    $('ck-count').textContent = bad ? bad + (bad === 1 ? ' PROBLEMA' : ' PROBLEMI') : 'TUTTO A POSTO';
+    $('ck-count').className = 'pill' + (bad ? ' bad' : ' ok');
+    $('ck-list').innerHTML = list.length ? '<ul class="ck-list">' + list.map((x) =>
+      '<li class="' + (x.level === 'error' ? 'err' : 'info') + '"><b>' + esc(x.where) + '</b>: ' + esc(x.message) + '</li>').join('') + '</ul>' : '';
   }
 
   // ------------------------------------------------------------ Giochi (pagina GAMES)

@@ -1,0 +1,12 @@
+// Pagina MUSICA (id "media"): una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/media.json e modifica la copia: quella vince su questa.
+{
+  "id": "media",
+  "title": "MUSICA",
+  "icon": "music",
+  "description": "Brano in riproduzione e coda della playlist",
+  "tiles": [
+    { "widget": "nowplaying", "w": 3, "h": 3 },
+    { "widget": "queue", "w": 2, "h": 3 }
+  ]
+}

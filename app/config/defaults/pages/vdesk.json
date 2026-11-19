@@ -1,0 +1,11 @@
+// Pagina DESKTOP VIRTUALI (id "vdesk"): una pagina per file, vedi la guida per sviluppatori nel README.
+// Per cambiarla copiala in config/pages/vdesk.json e modifica la copia: quella vince su questa.
+{
+  "id": "vdesk",
+  "title": "DESKTOP VIRTUALI",
+  "icon": "keyboard",
+  "description": "Guida alle scorciatoie dei desktop virtuali (su Windows è nella pagina SCHERMI, pulsante GUIDA)",
+  "os": "linux",
+  "tab": false,
+  "tiles": [ { "widget": "vdesk", "system": "windows", "linux": { "system": "linux" }, "w": 5, "h": 3 } ]
+}

@@ -302,28 +302,110 @@ function normalizeDock(raw, layout, osKey) {
   };
 }
 
-// Default letto direttamente (per le pagine aggiunte con gli aggiornamenti).
-let defaultsCache = null;
-function defaultDock() {
-  const file = path.join(paths.DEFAULTS_DIR, 'dock.json');
-  try {
-    const mtime = fs.statSync(file).mtimeMs;
-    if (!defaultsCache || defaultsCache.mtime !== mtime) defaultsCache = { mtime: mtime, data: parseJson(fs.readFileSync(file, 'utf8')) };
-    return defaultsCache.data;
-  } catch (e) { return {}; }
+// ------------------------------------------------------------ un file per voce
+// Cartelle con un file JSON per pagina, app o comando:
+//   config/defaults/<tipo>/<id>.json  (progetto)   config/<tipo>/<id>.json  (tue, vincono)
+// Ogni cartella si rilegge solo se cambia qualche file (nome o data di modifica).
+const DIR_KINDS = ['pages', 'apps', 'commands'];
+const dirCache = {};   // cartella -> { stamp, items: { id: dati } }
+
+function readDir(base, kind) {
+  const dir = path.join(base, kind);
+  let names = [];
+  try { names = fs.readdirSync(dir).filter(function (n) { return /\.json$/i.test(n); }).sort(); } catch (e) { names = []; }
+  const stamp = names.map(function (n) {
+    try { return n + ':' + fs.statSync(path.join(dir, n)).mtimeMs; } catch (e) { return n; }
+  }).join('|');
+  const old = dirCache[dir];
+  if (old && old.stamp === stamp) return old.items;
+  const items = {};
+  names.forEach(function (n) {
+    const id = n.replace(/\.json$/i, '');
+    const key = kind + '/' + n + (base === paths.DEFAULTS_DIR ? ' (default)' : '');
+    try {
+      items[id] = parseJson(fs.readFileSync(path.join(dir, n), 'utf8'));
+      delete errors[key];
+    } catch (e) {
+      const msg = key + ' non valido: ' + e.message;
+      if (errors[key] !== msg) log.error('config', msg + ' (uso l\'ultima versione valida)');
+      errors[key] = msg;
+      if (old && old.items[id]) items[id] = old.items[id];
+    }
+  });
+  if (old) log.info('config', path.relative(paths.ROOT, dir) + ' ricaricata');
+  dirCache[dir] = { stamp: stamp, items: items };
+  return items;
 }
 
-// dock.json dell'utente + le pagine dei default che non ha (nuovi moduli, es. Discord):
-// arrivano come "disponibili", fuori dalla barra finché non le attivi dal pannello.
+// Pagine dei file, per id (l'id scritto nel file, altrimenti il nome del file).
+function pagesIn(base) {
+  const files = readDir(base, 'pages');
+  const out = {};
+  Object.keys(files).forEach(function (name) {
+    const p = files[name];
+    if (!p || typeof p !== 'object' || Array.isArray(p)) return;
+    const id = typeof p.id === 'string' && p.id ? p.id : name;
+    out[id] = Object.assign({}, p, { id: id });
+  });
+  return out;
+}
+
+// App o comandi dei file: un file = una voce (id = nome del file),
+// oppure { "apps": { ... } } / { "commands": { ... } } con più voci.
+function entriesIn(base, kind) {
+  const files = readDir(base, kind);
+  const out = {};
+  Object.keys(files).forEach(function (name) {
+    const d = files[name];
+    if (!d || typeof d !== 'object') return;
+    if (d[kind] && typeof d[kind] === 'object') Object.assign(out, d[kind]);
+    else out[name] = d;
+  });
+  return out;
+}
+
+// dock.json + le pagine dei file:
+//  - in "pages" ogni voce è un id (pagina da file: prima config/pages, poi i default) o una pagina scritta lì;
+//  - le tue pagine in config/pages non elencate vanno in fondo;
+//  - le pagine predefinite che il tuo dock.json non elenca (arrivate con un aggiornamento)
+//    vanno in fondo come "disponibili", fuori dalla barra finché non le attivi dal pannello.
+const missingPages = {};   // id elencati in dock.json senza file
 function mergedDock() {
-  const user = get('dock');
-  if (fileFor('dock') === path.join(paths.DEFAULTS_DIR, 'dock.json')) return user;
+  const d = get('dock');
+  const mine = pagesIn(paths.CONFIG_DIR);
+  const defaults = pagesIn(paths.DEFAULTS_DIR);
+  const out = [];
   const have = {};
-  (Array.isArray(user.pages) ? user.pages : []).forEach(function (p) { if (p && p.id) have[p.id] = true; });
-  const extra = (defaultDock().pages || []).filter(function (p) { return p && p.id && !have[p.id]; })
-    .map(function (p) { return Object.assign({}, p, { tab: false }); });
-  if (!extra.length) return user;
-  return Object.assign({}, user, { pages: (user.pages || []).concat(extra) });
+  Object.keys(missingPages).forEach(function (k) { delete missingPages[k]; });
+  (Array.isArray(d.pages) ? d.pages : []).forEach(function (p) {
+    let page = null;
+    if (typeof p === 'string') {
+      page = mine[p] || defaults[p] || null;
+      if (!page) missingPages[p] = true;
+    } else if (p && typeof p === 'object') {
+      page = (typeof p.id === 'string' && mine[p.id]) || p;
+    }
+    if (!page || typeof page.id !== 'string' || have[page.id]) return;
+    have[page.id] = true;
+    out.push(page);
+  });
+  Object.keys(mine).forEach(function (id) {
+    if (!have[id]) { have[id] = true; out.push(mine[id]); }
+  });
+  Object.keys(defaults).forEach(function (id) {
+    if (!have[id]) { have[id] = true; out.push(Object.assign({}, defaults[id], { tab: false })); }
+  });
+  return Object.assign({}, d, { pages: out });
+}
+
+// Il dock.json predefinito con le sue pagine prese dai file di config/defaults/pages
+// (senza le tue modifiche): per i test e per confrontare con i default.
+function defaultDock() {
+  let d = {};
+  try { d = parseJson(fs.readFileSync(path.join(paths.DEFAULTS_DIR, 'dock.json'), 'utf8')); } catch (e) { return { pages: [] }; }
+  const defaults = pagesIn(paths.DEFAULTS_DIR);
+  const pages = (Array.isArray(d.pages) ? d.pages : []).map(function (p) { return typeof p === 'string' ? defaults[p] : p; }).filter(Boolean);
+  return Object.assign({}, d, { pages: pages });
 }
 
 // Pagine con "source": "games": i pulsanti sono i giochi scelti dal pannello (data/games.json).
@@ -349,14 +431,24 @@ function tabletDock() {
   });
 }
 
-// apps.json dell'utente + le app dei default che non ha + i giochi scelti dal pannello.
+// Una sezione ("apps" o "commands") del file predefinito, letto direttamente.
+function defaultSection(name) {
+  try { return parseJson(fs.readFileSync(path.join(paths.DEFAULTS_DIR, name + '.json'), 'utf8'))[name] || {}; } catch (e) { return {}; }
+}
+
+// App: default (apps.json e cartella apps/) < le tue (apps.json e config/apps/) < giochi del pannello.
 function apps() {
   const games = require('./services/games').apps();
   const user = (get('apps').apps) || {};
-  if (fileFor('apps') === path.join(paths.DEFAULTS_DIR, 'apps.json')) return Object.assign({}, user, games);
-  let defaults = {};
-  try { defaults = parseJson(fs.readFileSync(path.join(paths.DEFAULTS_DIR, 'apps.json'), 'utf8')).apps || {}; } catch (e) { /* nessun default */ }
-  return Object.assign({}, defaults, user, games);
+  const defaults = fileFor('apps') === path.join(paths.DEFAULTS_DIR, 'apps.json') ? {} : defaultSection('apps');
+  return Object.assign({}, defaults, entriesIn(paths.DEFAULTS_DIR, 'apps'), user, entriesIn(paths.CONFIG_DIR, 'apps'), games);
+}
+
+// Comandi consentiti: come le app (default < tuoi, anche un file per comando in config/commands/).
+function commands() {
+  const user = (get('commands').commands) || {};
+  const defaults = fileFor('commands') === path.join(paths.DEFAULTS_DIR, 'commands.json') ? {} : defaultSection('commands');
+  return Object.assign({}, defaults, entriesIn(paths.DEFAULTS_DIR, 'commands'), user, entriesIn(paths.CONFIG_DIR, 'commands'));
 }
 
 function findTile(pageId, tileId) {
@@ -374,12 +466,24 @@ function gamesStamp() {
   try { return Math.round(fs.statSync(path.join(paths.DATA_DIR, 'games.json')).mtimeMs); } catch (e) { return 0; }
 }
 
+// Cartelle dei file singoli: un'impronta corta che cambia quando cambia un file.
+function dirsStamp() {
+  const parts = [];
+  [paths.DEFAULTS_DIR, paths.CONFIG_DIR].forEach(function (base) {
+    DIR_KINDS.forEach(function (kind) {
+      readDir(base, kind);
+      parts.push((dirCache[path.join(base, kind)] || {}).stamp || '');
+    });
+  });
+  return require('crypto').createHash('sha1').update(parts.join('#')).digest('hex').slice(0, 8);
+}
+
 // Cambia quando uno dei file di config cambia: il client lo usa per ricaricarsi.
 function version() {
   return FILES.map(function (name) {
     get(name);
     return cache[name] ? Math.round(cache[name].mtime) : 0;
-  }).concat([gamesStamp()]).join('-');
+  }).concat([gamesStamp(), dirsStamp()]).join('-');
 }
 
 // Salva le scelte del pannello di controllo. Ritorna il dock aggiornato.
@@ -450,6 +554,9 @@ module.exports = {
   dock: dock,
   tabletDock: tabletDock,
   apps: apps,
+  commands: commands,
+  defaultDock: defaultDock,
+  missingPages: function () { return Object.keys(missingPages); },
   normalizeDock: normalizeDock,
   autoGrid: autoGrid,
   currentOs: currentOs,
