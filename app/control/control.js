@@ -457,6 +457,19 @@
     $('ck-count').className = 'pill' + (bad ? ' bad' : ' ok');
     $('ck-list').innerHTML = list.length ? '<ul class="ck-list">' + list.map((x) =>
       '<li class="' + (x.level === 'error' ? 'err' : 'info') + '"><b>' + esc(x.where) + '</b>: ' + esc(x.message) + '</li>').join('') + '</ul>' : '';
+    // plugin installati (cartelle in plugins/): cosa aggiunge ognuno
+    const pl = info.plugins || [];
+    const what = (p) => [
+      p.pages && p.pages + (p.pages === 1 ? ' pagina' : ' pagine'),
+      p.widgets.length && 'widget ' + p.widgets.join(', '),
+      p.actions.length && 'azioni ' + p.actions.join(', '),
+      p.apps && p.apps + (p.apps === 1 ? ' app' : ' app'),
+      p.commands && p.commands + (p.commands === 1 ? ' comando' : ' comandi'),
+      p.icons.length && 'icone ' + p.icons.join(', ')
+    ].filter(Boolean).join(' · ');
+    $('pl-list').innerHTML = pl.length ? '<h3 class="pl-head">Plugin</h3><ul class="ck-list">' + pl.map((p) =>
+      '<li class="' + (p.error ? 'err' : 'info') + '"><b>' + esc(p.name) + '</b>' + (p.description ? ' (' + esc(p.description) + ')' : '') + ': ' +
+        esc(p.error || what(p) || 'niente da mostrare') + '</li>').join('') + '</ul>' : '';
   }
 
   // ------------------------------------------------------------ Giochi (pagina GAMES)

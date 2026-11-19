@@ -56,7 +56,7 @@ test('lo schema delle pagine conosce tutti i campi usati dalle pagine predefinit
   const pageKeys = Object.keys(S.properties);
   const tileKeys = Object.keys(S.definitions.tile.properties);
   const actKeys = Object.keys(S.definitions.action.properties);
-  const types = S.definitions.action.properties.type.enum;
+  const types = S.definitions.action.properties.type.anyOf[0].enum;
   const bad = [];
   function act(a, where) {
     if (!a) return;
@@ -74,7 +74,8 @@ test('lo schema delle pagine conosce tutti i campi usati dalle pagine predefinit
     });
   });
   // e i tipi di azione dello schema sono quelli che il server sa eseguire
-  const handlers = Object.keys(require('../server/actions').HANDLERS).concat(['page']).filter(function (t) { return t !== 'shell'; }).sort();
+  // (solo quelli del progetto: i plugin installati aggiungono i loro "<plugin>.<azione>")
+  const handlers = require('../server/actions').BUILTIN.concat(['page']).filter(function (t) { return t !== 'shell'; }).sort();
   assert.deepStrictEqual(types.slice().sort(), handlers);
   assert.deepStrictEqual(bad, []);
 });

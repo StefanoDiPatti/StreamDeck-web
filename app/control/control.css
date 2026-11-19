@@ -250,3 +250,4 @@ input[type=text], input[type=password] { width: 100%; height: 40px; padding: 0 1
 .ck-list li { margin-bottom: 6px; color: var(--text-2); }
 .ck-list li.err { color: var(--bad-text); }
 .ck-list b { color: var(--strong); font-weight: 650; }
+.pl-head { margin: 14px 0 4px; font-size: 14px; color: var(--strong); }

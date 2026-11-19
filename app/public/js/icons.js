@@ -95,5 +95,13 @@ var Icons = (function () {
       '<path fill-rule="evenodd" d="' + P[key] + '"/></svg>';
   }
 
-  return { html: html, has: function (n) { return svgOk && !!P[String(n || '').replace(/\.(png|svg)$/i, '')]; } };
+  // Plugin: Icons.register('sole', 'M12 7c-2.76 ...') = path SVG in un riquadro 24x24.
+  // Non sostituisce le icone del progetto.
+  function register(name, d) {
+    if (!name || typeof d !== 'string' || P.hasOwnProperty(name)) return false;
+    P[name] = d;
+    return true;
+  }
+
+  return { html: html, register: register, has: function (n) { return svgOk && !!P[String(n || '').replace(/\.(png|svg)$/i, '')]; } };
 })();

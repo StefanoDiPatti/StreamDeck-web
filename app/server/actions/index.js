@@ -244,6 +244,10 @@ const HANDLERS = {
 // Alias per compatibilità con la vecchia configurazione
 HANDLERS.shell = HANDLERS.command;
 
+// Tipi del progetto (i plugin aggiungono i loro come "<plugin>.<azione>")
+const BUILTIN = Object.keys(HANDLERS);
+require('../plugins').registerActions(HANDLERS);
+
 async function execute(action) {
   if (!action || typeof action !== 'object') throw fail('Azione mancante', 'BAD_CONFIG');
   const handler = HANDLERS[action.type];
@@ -263,4 +267,4 @@ async function press(pageId, tileId) {
   return result;
 }
 
-module.exports = { execute: execute, press: press, HANDLERS: HANDLERS, forPlatform: forPlatform };
+module.exports = { execute: execute, press: press, HANDLERS: HANDLERS, BUILTIN: BUILTIN, forPlatform: forPlatform };

@@ -509,17 +509,21 @@ server/
   auth.js             solo rete locale + codice di accesso
   secrets.js          cifratura dei dati sensibili (chiave nel portachiavi del sistema)
   actions/            motore delle azioni e macro
+  plugins.js          caricatore dei plugin (cartella plugins/)
   platform/           windows.js (+ windows-helper.ps1), linux.js, keys.js
   services/           system, media, bridge, claude, claudecode, voice, github, ollama, todo, mail, pairing (QR)
 public/               client per il tablet (ES5, niente framework)
 extension/            estensione del browser per Apple Music web e YouTube
 config/defaults/      configurazione predefinita
+plugins/<nome>/       plugin: azioni, rotte, pagine e widget in più (npm run new:widget -- <nome>)
 scripts/bootstrap.js  avvio automatico (uguale su Windows e Linux)
 scripts/windows/      icona nell'area di notifica e avvio nascosto
 scripts/linux/        avvio in background, icona sul desktop e nel menu delle app
 ```
 
-**Aggiungere un tipo di azione:** aggiungi una funzione a `HANDLERS` in `server/actions/index.js`. Se serve il sistema operativo, aggiungi il metodo sia in `server/platform/windows.js` sia in `server/platform/linux.js`.
+**Aggiungere una funzione senza toccare il progetto:** un plugin (`npm run new:widget -- <nome>`), vedi *Plugin* nel README principale.
+
+**Aggiungere un tipo di azione al progetto:** aggiungi una funzione a `HANDLERS` in `server/actions/index.js`. Se serve il sistema operativo, aggiungi il metodo sia in `server/platform/windows.js` sia in `server/platform/linux.js`.
 
 Il client deve restare ES5 e senza flexbox/grid: `tests/client-es5.test.js` lo controlla.
 
