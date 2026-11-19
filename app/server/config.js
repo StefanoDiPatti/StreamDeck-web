@@ -216,6 +216,8 @@ function normalizeDock(raw, layout, osKey) {
     if (!p || typeof p.id !== 'string' || seenPages[p.id]) return;
     p = forOs(p, osKey);
     if (!p) return;
+    // HOME scelta dal pannello (layout.json -> homePage): sostituisce i widget della pagina main
+    p = require('./home').apply(p, layout);
     seenPages[p.id] = true;
     let cols = clampInt(p.columns, 1, 8, columns);
     let rws = clampInt(p.rows, 1, 6, rows);
@@ -532,14 +534,29 @@ function saveLayout(tabs, home, tiles) {
   }
   const data = { tabs: tabs, home: home };
   if (Object.keys(outTiles).length) data.tiles = outTiles;
+  if (previous.homePage) data.homePage = previous.homePage;   // la HOME si salva a parte (saveHome)
+  writeLayout(data);
+  return dock();
+}
+
+function writeLayout(data) {
   const file = path.join(paths.CONFIG_DIR, 'layout.json');
   if (!fs.existsSync(paths.CONFIG_DIR)) fs.mkdirSync(paths.CONFIG_DIR, { recursive: true });
   const text = '// Scritto dal pannello di controllo (doppio clic sull\'icona Vibe Deck).\n' +
     '// tabs = pagine nella barra del tablet, in ordine. home = pagina iniziale.\n' +
     '// tiles = per pagina, i pulsanti mostrati (show, in ordine) e quelli nascosti (hide).\n' +
+    '// homePage = i widget della HOME scelti dal pannello (griglia e misure).\n' +
     JSON.stringify(data, null, 2) + '\n';
   fs.writeFileSync(file + '.tmp', text);
   fs.renameSync(file + '.tmp', file);
+}
+
+// HOME dal pannello: { columns, rows, tiles: [{ widget, w, h }] }; null = torna alla pagina main dei file.
+function saveHome(h) {
+  const data = Object.assign({}, get('layout') || {});
+  if (h === null) delete data.homePage;
+  else data.homePage = require('./home').clean(h);
+  writeLayout(data);
   return dock();
 }
 
@@ -574,6 +591,7 @@ module.exports = {
   currentOs: currentOs,
   findTile: findTile,
   saveLayout: saveLayout,
+  saveHome: saveHome,
   resetLayout: resetLayout,
   version: version,
   errors: getErrors

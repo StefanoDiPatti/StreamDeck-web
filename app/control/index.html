@@ -62,6 +62,38 @@
       </div>
     </section>
 
+    <section class="card" id="home-card">
+      <div class="card-head">
+        <div>
+          <h2>HOME</h2>
+          <p class="hint">Scegli cosa vedere nella pagina <b>HOME</b> del tablet: widget presi dalle altre pagine (musica, note, PC, consumi di Claude, GitHub, email…). Cambia la misura di ognuno e l'ordine: si dispongono come nell'anteprima, da sinistra a destra e dall'alto in basso.</p>
+        </div>
+        <span id="hm-state" class="pill"></span>
+      </div>
+
+      <div class="hm-opts">
+        <label>Colonne <select id="hm-cols"></select></label>
+        <label>Righe <select id="hm-rows"></select></label>
+      </div>
+
+      <div class="preview">
+        <div class="preview-label">HOME sul tablet</div>
+        <div id="hm-preview" class="hm-preview"></div>
+        <div id="hm-warn" class="preview-warn"></div>
+      </div>
+
+      <div id="hm-list"></div>
+
+      <h3 class="hm-add-h">Aggiungi un widget</h3>
+      <div id="hm-catalog" class="hm-catalog"></div>
+
+      <div class="row-actions">
+        <button id="hm-save" class="btn primary" type="button">Salva HOME</button>
+        <button id="hm-undo" class="btn ghost" type="button">Annulla modifiche</button>
+        <button id="hm-reset" class="btn ghost" type="button" title="Torna alla HOME dei file (config/defaults/pages/main.json o la tua copia in config/pages/)">Torna alla HOME predefinita</button>
+      </div>
+    </section>
+
     <section class="card" id="buttons-card" hidden>
       <div class="card-head">
         <div>

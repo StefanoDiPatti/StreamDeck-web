@@ -34,6 +34,7 @@ const mail = require('./services/mail');
 const games = require('./services/games');
 const configCheck = require('./check');
 const plugins = require('./plugins');
+const home = require('./home');
 const pkg = require('../package.json');
 
 const PORT = parseInt(process.env.PORT, 10) || 8787;
@@ -205,6 +206,22 @@ function pageButtons(p) {
   const fixed = p.allTiles.filter(function (t) { return t.widget; }).map(function (t) { return { label: t.label || t.widget.toUpperCase(), w: t.w || 1 }; });
   return { id: p.id, title: p.title, icon: p.icon, columns: p.columns, rows: p.rows, fixed: fixed, grid: !!p.buttonGrid, widgetWidth: p.widgetWidth || 0.5, all: p.allTiles.filter(isBtn).map(btn), shown: p.tiles.filter(isBtn).map(function (t) { return t.id; }) };
 }
+// HOME per l'editor del pannello: catalogo dei widget e HOME attuale (quella salvata o la pagina main dei file).
+function homeEditor(d) {
+  const main = d.pages.filter(function (p) { return p.id === home.HOME_ID; })[0];
+  const saved = home.fromLayout(config.get('layout'));
+  const tiles = main ? main.tiles.filter(function (t) { return t.widget; }).map(function (t) { return { widget: t.widget, w: t.w, h: t.h }; }) : [];
+  return {
+    catalog: home.catalog(),
+    limits: home.LIMITS,
+    custom: !!saved,
+    columns: main ? main.columns : 6,
+    rows: main ? main.rows : 4,
+    tiles: tiles,
+    // pulsanti nella pagina main dei file: l'editor della HOME li toglierebbe
+    buttons: main && !saved ? main.tiles.filter(function (t) { return !t.widget; }).length : 0
+  };
+}
 // Controllo della configurazione per il pannello (un errore qui non deve rompere il pannello)
 function safeCheck() {
   try { return configCheck.run(); } catch (e) { return [{ level: 'error', where: 'controllo', message: e.message }]; }
@@ -219,6 +236,7 @@ function controlInfo() {
     buttons: d.pages.filter(function (p) { return p.editable; }).map(pageButtons),
     tabs: d.pages.filter(function (p) { return p.tab; }).map(function (p) { return p.id; }),
     plugins: plugins.info(),
+    homeEditor: homeEditor(d),
     home: d.home,
     custom: !!(config.get('layout') || {}).tabs,
     discord: discord.panelInfo(),
@@ -247,6 +265,13 @@ app.post('/api/control/layout', controlOnly, route(function (req) {
   return controlInfo();
 }));
 app.post('/api/control/layout/reset', controlOnly, route(function () { config.resetLayout(); return controlInfo(); }));
+// HOME: widget, misure e griglia scelti dal pannello (reset = torna alla pagina main dei file)
+app.post('/api/control/home', controlOnly, route(function (req) {
+  config.saveHome(req.body || {});
+  log.info('control', 'HOME: ' + (req.body.tiles || []).map(function (t) { return t.widget + ' ' + t.w + 'x' + t.h; }).join(', '));
+  return controlInfo();
+}));
+app.post('/api/control/home/reset', controlOnly, route(function () { config.saveHome(null); return controlInfo(); }));
 app.post('/api/control/discord', controlOnly, route(async function (req) {
   const b = req.body || {};
   await discord.setup(b.clientId, b.clientSecret);

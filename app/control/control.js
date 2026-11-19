@@ -446,7 +446,161 @@
     renderMail();
     renderGames();
     renderChecks();
+    renderHome();
   }
+
+  // ------------------------------------------------------------ HOME
+  // Bozza della HOME: { columns, rows, tiles: [{ widget, w, h }] }. Si salva solo con "Salva HOME".
+  let hm = null;
+  let hmSaved = '';
+  let hmKey = '';
+  const hmSnap = () => JSON.stringify(hm);
+  const hmCat = (w) => (info.homeEditor.catalog || []).find((c) => c.widget === w) || { widget: w, label: w, icon: 'apps', description: '', w: 2, h: 2, minW: 1, minH: 1 };
+
+  // stessa regola del tablet (public/js/app.js -> pack) e del server (server/home.js)
+  function hmPack(tiles, cols, rows) {
+    const grid = [];
+    for (let r = 0; r < rows; r++) grid.push(new Array(cols).fill(false));
+    const placed = [], left = [];
+    const fits = (x, y, w, h) => {
+      if (x + w > cols || y + h > rows) return false;
+      for (let i = y; i < y + h; i++) for (let j = x; j < x + w; j++) if (grid[i][j]) return false;
+      return true;
+    };
+    tiles.forEach((t, k) => {
+      const w = Math.min(t.w, cols), h = Math.min(t.h, rows);
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        if (fits(c, r, w, h)) {
+          for (let i = r; i < r + h; i++) for (let j = c; j < c + w; j++) grid[i][j] = true;
+          placed.push({ k: k, x: c, y: r, w: w, h: h });
+          return;
+        }
+      }
+      left.push(k);
+    });
+    return { placed: placed, left: left };
+  }
+
+  function renderHome() {
+    const ed = info.homeEditor;
+    if (!ed) { $('home-card').hidden = true; return; }
+    if (!hm || hmSnap() === hmSaved) {
+      hm = { columns: ed.columns, rows: ed.rows, tiles: ed.tiles.map((t) => ({ widget: t.widget, w: t.w, h: t.h })) };
+      hmSaved = hmSnap();
+    }
+    // ridisegna solo se cambia qualcosa (il pannello si aggiorna ogni 5 s: un menu aperto si chiuderebbe)
+    const key = JSON.stringify(ed) + '|' + hmSnap() + '|' + hmSaved;
+    if (key === hmKey) return;
+    hmKey = key;
+    const L = ed.limits;
+    const changed = hmSnap() !== hmSaved;
+    $('hm-state').textContent = changed ? 'NON SALVATA' : ed.custom ? 'PERSONALIZZATA' : 'PREDEFINITA';
+    $('hm-state').className = 'pill' + (changed ? ' warn' : ed.custom ? ' ok' : '');
+    const opts = (min, max, v) => { let h = ''; for (let i = min; i <= max; i++) h += '<option value="' + i + '"' + (i === v ? ' selected' : '') + '>' + i + '</option>'; return h; };
+    $('hm-cols').innerHTML = opts(L.minCols, L.maxCols, hm.columns);
+    $('hm-rows').innerHTML = opts(L.minRows, L.maxRows, hm.rows);
+
+    // anteprima: la griglia del tablet con i widget al loro posto
+    const tooBig = (c) => c.minW > hm.columns || c.minH > hm.rows;
+    const big = hm.tiles.filter((t) => tooBig(hmCat(t.widget))).map((t) => hmCat(t.widget).label);
+    const p = hmPack(hm.tiles, hm.columns, hm.rows);
+    const prev = $('hm-preview');
+    prev.style.gridTemplateColumns = 'repeat(' + hm.columns + ', minmax(0, 1fr))';
+    prev.style.gridTemplateRows = 'repeat(' + hm.rows + ', 1fr)';
+    let cells = '';
+    p.placed.forEach((x) => {
+      const c = hmCat(hm.tiles[x.k].widget);
+      cells += '<div class="hm-tile" style="grid-column:' + (x.x + 1) + ' / span ' + x.w + ';grid-row:' + (x.y + 1) + ' / span ' + x.h + '">' +
+        '<span class="bi">' + icon(c.icon) + '</span><span class="bl">' + esc(c.label) + '</span><span class="bs">' + x.w + ' × ' + x.h + '</span></div>';
+    });
+    const used = p.placed.reduce((n, x) => n + x.w * x.h, 0);
+    const free = hm.columns * hm.rows - used;
+    prev.innerHTML = cells;
+    const warn = [];
+    if (big.length) warn.push('Griglia troppo piccola per: ' + big.join(', ') + '.');
+    if (p.left.length) warn.push('Non c\'è spazio per: ' + p.left.map((k) => hmCat(hm.tiles[k].widget).label).join(', ') + '. Rimpicciolisci qualche widget o aggiungi righe o colonne.');
+    else if (free > 0) warn.push(free + (free === 1 ? ' cella libera' : ' celle libere') + ' (sul tablet restano vuote).');
+    if (ed.buttons) warn.push('La pagina HOME dei file ha ' + ed.buttons + ' pulsanti: salvando da qui la HOME avrà solo i widget scelti.');
+    $('hm-warn').textContent = warn.join(' ');
+    $('hm-warn').classList.toggle('bad', p.left.length > 0 || big.length > 0);
+
+    // elenco: misura, ordine, togli
+    const size = (k, dim, min, max, v) => '<select data-hm="' + dim + '" data-k="' + k + '" aria-label="' + (dim === 'w' ? 'Larghezza' : 'Altezza') + '">' + opts(Math.min(min, max), max, v) + '</select>';
+    $('hm-list').innerHTML = hm.tiles.map((t, k) => {
+      const c = hmCat(t.widget);
+      const small = tooBig(c);
+      const out = small || p.left.indexOf(k) >= 0;
+      const why = small ? 'Ha bisogno di almeno ' + c.minW + ' colonne e ' + c.minH + ' righe' : 'Non entra nella griglia';
+      return '<div class="gm-row hm-row' + (out ? ' out' : '') + '">' +
+        '<span class="gm-ico">' + icon(c.icon) + '</span>' +
+        '<span class="txt"><span class="name">' + esc(c.label) + '</span><span class="desc">' + esc(out ? why : c.description) + '</span></span>' +
+        '<span class="hm-size">' + size(k, 'w', c.minW, hm.columns, t.w) + '×' + size(k, 'h', c.minH, hm.rows, t.h) + '</span>' +
+        '<button class="ibtn" type="button" data-hmact="up" data-k="' + k + '" title="Prima"' + (k ? '' : ' disabled') + '>↑</button>' +
+        '<button class="ibtn" type="button" data-hmact="down" data-k="' + k + '" title="Dopo"' + (k < hm.tiles.length - 1 ? '' : ' disabled') + '>↓</button>' +
+        '<button class="ibtn rm" type="button" data-hmact="rm" data-k="' + k + '" title="Togli dalla HOME" aria-label="Togli ' + esc(c.label) + '">' + icon('close') + '</button>' +
+        '</div>';
+    }).join('');
+
+    // catalogo: i widget non ancora nella HOME
+    const inHome = hm.tiles.map((t) => t.widget);
+    const avail = ed.catalog.filter((c) => inHome.indexOf(c.widget) < 0);
+    $('hm-catalog').innerHTML = avail.length ? avail.map((c) =>
+      '<button class="hm-cat" type="button" data-hmadd="' + esc(c.widget) + '" title="' + esc(tooBig(c) ? 'Serve una griglia di almeno ' + c.minW + ' × ' + c.minH : c.description) + '"' + (tooBig(c) ? ' disabled' : '') + '>' + icon(c.icon) +
+        '<span><b>' + esc(c.label) + '</b><small>' + esc(c.description) + '</small></span></button>').join('') :
+      '<p class="hint small">Ci sono già tutti i widget disponibili.</p>';
+    $('hm-save').disabled = !changed || p.left.length > 0 || big.length > 0 || !hm.tiles.length;
+    $('hm-undo').disabled = !changed;
+    $('hm-reset').hidden = !ed.custom;
+  }
+
+  document.addEventListener('click', (e) => {
+    const add = e.target.closest('[data-hmadd]');
+    if (add) {
+      const c = hmCat(add.getAttribute('data-hmadd'));
+      if (hm.tiles.length >= info.homeEditor.limits.maxTiles) return toast('Al massimo ' + info.homeEditor.limits.maxTiles + ' widget', 'err');
+      hm.tiles.push({ widget: c.widget, w: Math.min(c.w, hm.columns), h: Math.min(c.h, hm.rows) });
+      renderHome();
+      return;
+    }
+    const b = e.target.closest('[data-hmact]');
+    if (!b) return;
+    const k = +b.getAttribute('data-k'), act = b.getAttribute('data-hmact');
+    if (act === 'rm') hm.tiles.splice(k, 1);
+    else {
+      const j = act === 'up' ? k - 1 : k + 1;
+      if (j < 0 || j >= hm.tiles.length) return;
+      const t = hm.tiles[k]; hm.tiles[k] = hm.tiles[j]; hm.tiles[j] = t;
+    }
+    renderHome();
+  });
+  document.addEventListener('change', (e) => {
+    const s = e.target.closest('[data-hm]');
+    if (s) { hm.tiles[+s.getAttribute('data-k')][s.getAttribute('data-hm')] = +s.value; renderHome(); return; }
+    if (e.target.id === 'hm-cols' || e.target.id === 'hm-rows') {
+      hm[e.target.id === 'hm-cols' ? 'columns' : 'rows'] = +e.target.value;
+      hm.tiles.forEach((t) => { t.w = Math.min(t.w, hm.columns); t.h = Math.min(t.h, hm.rows); });
+      renderHome();
+    }
+  });
+  $('hm-save').addEventListener('click', async () => {
+    $('hm-save').disabled = true;
+    try {
+      info = await api('POST', '/api/control/home', hm);
+      hm = null;
+      toast('HOME salvata: il tablet si aggiorna da solo', 'ok');
+      adopt(false);
+    } catch (err) { toast(err.message, 'err'); renderHome(); }
+  });
+  $('hm-undo').addEventListener('click', () => { hm = null; renderHome(); });
+  $('hm-reset').addEventListener('click', async () => {
+    if (!confirm('Tornare alla HOME predefinita?')) return;
+    try {
+      info = await api('POST', '/api/control/home/reset');
+      hm = null;
+      toast('HOME predefinita', 'ok');
+      adopt(false);
+    } catch (err) { toast(err.message, 'err'); }
+  });
 
   // Controllo della configurazione: file non validi e pulsanti che non possono funzionare
   function renderChecks() {
