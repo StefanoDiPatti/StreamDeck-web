@@ -20,6 +20,8 @@ Il PC (Windows o Linux) fa girare un piccolo server Node.js. Il tablet apre una 
 
 ## Avvio rapido
 
+> Vuoi solo vederla? `npm run demo` apre una dock con **dati finti** (musica, PC, TODO, sessioni) su `http://127.0.0.1:8790/?t=DEMO1234`, senza leggere la tua configurazione né il `.env`.
+
 **Windows:** doppio click su `start.bat` (o sul collegamento "Command Dock" sul desktop).
 **Linux:** `./start.sh` (oppure `bash start.sh`).
 
@@ -204,7 +206,7 @@ La pagina CLAUDE ha due elenchi.
 
 **Consumi**: in fondo alla colonna sinistra della pagina CLAUDE ci sono le barre dell'abbonamento: **sessione di 5 ore**, **settimana** e, se Anthropic li dà, i limiti settimanali per modello, ognuno con l'ora in cui si azzera (arancione dal 70%, rosso dal 90%). Tocca il riquadro per aggiornarlo. La dock usa l'accesso di Claude Code già fatto sul PC (`~/.claude/.credentials.json`, come Viber): il token resta sul PC, al tablet arrivano solo le percentuali.
 
-**CLAUDE CODE**: le sessioni dell'app desktop di Claude, raggruppate per le sezioni della barra laterale del PC (le tue cartelle, come UNIMI o Personal Projects). Le sessioni fuori dalle sezioni sono raggruppate per progetto, come nell'app. Il pallino arancione indica che Claude sta lavorando.
+**CLAUDE CODE**: le sessioni dell'app desktop di Claude, raggruppate per le sezioni della barra laterale del PC (le tue cartelle, come Lavoro o Progetti personali). Le sessioni fuori dalle sezioni sono raggruppate per progetto, come nell'app. Il pallino arancione indica che Claude sta lavorando.
 
 - **Scrivere**: quello che scrivi (o detti) parte dall'**app sul PC**, nella sessione vera. La dock apre la sessione nell'app, mette il testo nel campo e preme Invia tramite l'accessibilità di Windows: lo vedi comparire subito sul PC, senza riavviare l'app, e valgono i permessi scelti per quella sessione (es. *Auto*).
 - Se Claude sta lavorando, il messaggio resta **in coda** e parte quando ha finito.
@@ -227,7 +229,9 @@ Con più memo, tocca un titolo nel TODO per scegliere dove aggiungere. In `servi
 
 ### TODO uguali su Windows e Linux (GitHub)
 
-I TODO vengono copiati in `todo.json` sul branch **`dock-todo`** della repo della dock (la tua repo privata), con le stesse credenziali git che usi per il push: niente token da configurare e nessun commit nella cronologia del codice.
+I TODO possono essere copiati in `todo.json` sul branch **`dock-todo`** di un remote git, con le stesse credenziali git che usi per il push: niente token da configurare e nessun commit nella cronologia del codice.
+
+**È spenta di default.** Le attività finiscono sul remote, quindi accendila (`"enabled": true` in `config/services.json` → `todo.sync`) solo se il remote è **privato**: se la tua copia della dock è un fork pubblico, aggiungi un remote privato (es. `git remote add todo <url-della-repo-privata>`) e scrivi `"remote": "todo"`.
 
 - La copia si aggiorna pochi secondi dopo ogni modifica dal tablet e ogni 2 minuti. Così prende anche le modifiche fatte direttamente nelle Memo, e quelle arrivate dall'altro PC.
 - Su Windows la fonte restano le Memo: le aggiunte, le spunte e le cancellazioni fatte su Linux vengono scritte nelle Memo (il testo di una riga si cambia solo nell'app Memo). Su Linux la lista locale riceve tutto, divisa per memo come su Windows.
@@ -478,3 +482,7 @@ scripts/linux/        avvio in background, icona sul desktop e nel menu delle ap
 **Aggiungere un tipo di azione:** aggiungi una funzione a `HANDLERS` in `server/actions/index.js`. Se serve il sistema operativo, aggiungi il metodo sia in `server/platform/windows.js` sia in `server/platform/linux.js`.
 
 Il client deve restare ES5 e senza flexbox/grid: `tests/client-es5.test.js` lo controlla.
+
+## Licenza
+
+MIT, vedi [LICENSE](../LICENSE).

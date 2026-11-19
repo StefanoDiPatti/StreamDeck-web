@@ -1,6 +1,6 @@
 // Sessioni di Claude Code dell'app desktop di Claude, come le vedi sul PC.
 //
-// - Elenco e sezioni (UNIMI, Personal Projects, ...) letti dai file dell'app:
+// - Elenco e sezioni (es. Lavoro, Progetti personali) letti dai file dell'app:
 //   claude-code-sessions/<account>/<org>/local_<id>.json (titolo, cartella,
 //   permessi, id del transcript) e claude_desktop_config.json (gruppi e ordine).
 //   Le sessioni fuori dai gruppi si raggruppano per progetto, come nell'app.

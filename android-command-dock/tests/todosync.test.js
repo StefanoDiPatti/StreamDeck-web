@@ -10,8 +10,19 @@ const { execFileSync } = require('child_process');
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'dock-sync-'));
 process.env.DOCK_DATA_DIR = path.join(TMP, 'data');
 process.env.LOG_LEVEL = 'error';
+const config = require('../server/config');
 const todo = require('../server/services/todo');
 const sync = require('../server/services/todosync');
+
+// la sync è spenta di default: qui va accesa (remote e branch restano quelli predefiniti)
+const realGet = config.get;
+config.get = function (name) {
+  const v = realGet.apply(this, arguments);
+  if (name !== 'services') return v;
+  const out = Object.assign({}, v);
+  out.todo = Object.assign({}, out.todo, { sync: Object.assign({}, (out.todo || {}).sync, { enabled: true, remote: 'origin', branch: 'dock-todo' }) });
+  return out;
+};
 
 function it(id, text, done, note) { return { id: id, text: text, done: !!done, note: note || 'n1', group: 'TODO:' }; }
 function snap(items) { return { groups: [{ id: 'n1', title: 'TODO:' }], items: items }; }
@@ -92,4 +103,9 @@ test('primo giro su un PC nuovo: adotta la lista condivisa e salva la vecchia', 
   assert.strictEqual(st.ok, true, st.message);
   assert.deepStrictEqual(todo.list().map(function (i) { return i.text; }).sort(), ['Da Windows', 'Dal Linux', 'Spesa']);
   assert.ok(fs.existsSync(path.join(process.env.DOCK_DATA_DIR, 'todo.prima-della-sync.json')));
+});
+
+test('di default la sync è spenta (le TODO non finiscono su una repo pubblica)', function () {
+  const d = config.parseJson(fs.readFileSync(path.join(__dirname, '..', 'config', 'defaults', 'services.json'), 'utf8'));
+  assert.strictEqual(d.todo.sync.enabled, false);
 });
