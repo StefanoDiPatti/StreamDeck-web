@@ -10,6 +10,8 @@
 // se cambiano entrambe, vince questo PC. Un'attività cancellata da una parte
 // e non toccata dall'altra sparisce anche lì.
 //
+// Spenta di default: le TODO finiscono nel remote, quindi accendila solo se la repo è privata
+// (o indica un remote privato a parte).
 // services.json -> todo.sync: { "enabled": true, "remote": "origin", "branch": "dock-todo", "intervalSec": 120 }
 const { execFile } = require('child_process');
 const fs = require('fs');
@@ -33,7 +35,7 @@ let status = { enabled: false, ok: null, at: 0, message: '' };
 function settings() {
   const s = ((config.get('services') || {}).todo || {}).sync || {};
   return {
-    enabled: s.enabled !== false,
+    enabled: s.enabled === true,   // spenta se non è accesa esplicitamente
     remote: /^[\w.-]+$/.test(s.remote || '') ? s.remote : 'origin',
     branch: /^[\w./-]+$/.test(s.branch || '') ? s.branch : 'dock-todo',
     intervalSec: Math.max(30, parseInt(s.intervalSec, 10) || 120)
