@@ -363,7 +363,7 @@ Le finestre dei programmi avviati come amministratore non si possono spostare (l
 
 ### Giochi
 
-I giochi sono in `config/apps.json` con `"game": true` e `"whenRunning": "focus"`: il pulsante mostra il pallino verde se il gioco è aperto e, in quel caso, lo porta in primo piano invece di riavviarlo. `"path"` può essere una lista di percorsi (vale il primo che esiste), `"process"` una lista di processi (LoL ha client e partita).
+I giochi si aggiungono dal pannello (sezione **Giochi**, vedi sopra) e stanno in `data/games.json`. Ognuno diventa un'app con `"game": true` e `"whenRunning": "focus"`: il pulsante mostra il pallino verde se il gioco è aperto e, in quel caso, lo porta in primo piano invece di riavviarlo. Anche in `config/apps.json` puoi segnare un'app come gioco con `"game": true`: `"path"` può essere una lista di percorsi (vale il primo che esiste), `"process"` una lista di processi (es. client e partita).
 
 ### App aperte: pallino verde e chiusura
 
