@@ -132,3 +132,21 @@ test('npm run new:page crea una pagina valida', function () {
   const errs = check.run().filter(function (x) { return x.level === 'error' && /STREAM|LIVE/.test(x.where); });
   assert.deepStrictEqual(errs, []);
 });
+
+test('widget del plugin nel catalogo della HOME: home.json (anche più versioni dello stesso widget)', function () {
+  const home = require('../server/home');
+  let c = home.catalog().filter(function (x) { return x.plugin === 'meteo'; });
+  assert.deepStrictEqual(c.map(function (x) { return x.id + ' ' + x.label + ' ' + x.w + 'x' + x.h + ' min ' + x.minW + 'x' + x.minH + ' ' + x.page; }),
+    ['meteo METEO 2x2 min 2x1 PLUGIN METEO'], 'dal home.json del generatore');
+  // una seconda voce con opzioni, e una che usa un widget di un altro plugin (ignorata)
+  fs.writeFileSync(path.join(P, 'home.json'), '// prova\n{ "meteo": { "label": "Meteo", "icon": "meteo", "w": 3, "h": 2 },' +
+    ' "meteo-roma": { "widget": "meteo", "label": "Meteo Roma", "props": { "citta": "Roma" } },' +
+    ' "furbo": { "widget": "clock" } }');
+  c = home.catalog().filter(function (x) { return x.plugin === 'meteo'; });
+  assert.deepStrictEqual(c.map(function (x) { return x.id + ':' + x.label; }), ['meteo:Meteo', 'meteo-roma:Meteo Roma']);
+  config.saveHome({ columns: 6, rows: 4, tiles: [{ id: 'meteo-roma', x: 0, y: 0, w: 2, h: 2 }, { id: 'todo', x: 2, y: 0, w: 2, h: 2 }] });
+  const t = config.dock().pages.filter(function (p) { return p.id === 'main'; })[0].tiles[0];
+  assert.strictEqual(t.widget, 'meteo');
+  assert.strictEqual(t.citta, 'Roma', 'le props arrivano al widget');
+  config.saveHome(null);
+});

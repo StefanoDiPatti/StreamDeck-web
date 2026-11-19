@@ -5,6 +5,7 @@
 //   plugins/meteo/public/meteo.js tablet (ES5): il widget "meteo" e un'icona
 //   plugins/meteo/public/meteo.css stile del widget
 //   plugins/meteo/pages/meteo.json una pagina con il widget e un pulsante (la attivi dal pannello)
+//   plugins/meteo/home.json        il widget nel catalogo della HOME (nome, icona, misure)
 //
 // Dopo: riavvia la dock (il codice del server dei plugin si carica all'avvio).
 const fs = require('fs');
@@ -104,6 +105,21 @@ const STYLE = `/* Plugin "__NOME__": stile del widget. Niente flexbox (browser d
 .w-__NOME__ .pl-__NOME__-info { margin-top: 6px; text-align: center; color: #8b9bab; font-size: 15px; }
 `;
 
+const HOME = `// Plugin "__NOME__": come compare il widget nel catalogo della HOME (pannello di controllo > HOME).
+// Si rilegge da solo: salva e ricarica il pannello.
+{
+  "__NOME__": {
+    "label": "__TITOLO__",
+    "icon": "__NOME__",
+    "description": "Ora del PC e un contatore",
+    // misura proposta quando lo aggiungi, e la più piccola che si legge ancora (in celle)
+    "w": 2, "h": 2,
+    "minW": 2, "minH": 1
+    // "props": { ... } = campi in più per la tile (li legge il widget in tile.<campo>)
+  }
+}
+`;
+
 const PAGE = `// Pagina del plugin "__NOME__". Compare nel pannello di controllo: aggiungila alla barra da lì.
 // Per cambiarla senza toccare il plugin copiala in config/pages/__NOME__.json.
 {
@@ -136,12 +152,14 @@ function main(argv) {
     ['index.js', SERVER],
     [path.join('public', name + '.js'), CLIENT],
     [path.join('public', name + '.css'), STYLE],
-    [path.join('pages', name + '.json'), PAGE]
+    [path.join('pages', name + '.json'), PAGE],
+    ['home.json', HOME]
   ];
   files.forEach(function (f) { fs.writeFileSync(path.join(dir, f[0]), fill(f[1], name)); });
   console.log('Creato il plugin ' + path.relative(process.cwd(), dir) + ':');
   files.forEach(function (f) { console.log('  ' + f[0]); });
-  console.log('\nRiavvia la dock, poi nel pannello di controllo aggiungi la pagina ' + name.toUpperCase() + ' alla barra.');
+  console.log('\nRiavvia la dock, poi nel pannello di controllo aggiungi la pagina ' + name.toUpperCase() + ' alla barra,');
+  console.log('oppure metti il widget nella HOME (pannello > HOME > catalogo, gruppo PLUGIN ' + name.toUpperCase() + ').');
   return 0;
 }
 

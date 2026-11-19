@@ -14,6 +14,7 @@ plugins/meteo/
   apps/*.json        app       commands/*.json   comandi consentiti
   public/*.js        tablet (ES5): Widgets.register(...), Icons.register(...)
   public/*.css       stile dei widget (niente flexbox)
+  home.json          il widget nel catalogo della HOME (nome, icona, misure)
 ```
 
 - Una cartella che inizia con `_` o `.` viene ignorata: rinomina `meteo` in `_meteo` per spegnere un plugin.

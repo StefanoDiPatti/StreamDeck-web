@@ -46,7 +46,15 @@ test('i widget conosciuti dal controllo sono quelli che il tablet sa disegnare',
   const m = /var TYPES = \{([^}]*)\}/.exec(js);
   const types = m[1].split(',').map(function (s) { return s.split(':')[0].trim(); }).filter(Boolean).sort();
   assert.deepStrictEqual(check.WIDGETS.slice().sort(), types);
+  assert.ok(types.indexOf('claudeusage') >= 0 && types.length >= 15, 'letti da widgets.js');
   assert.ok(check.iconNames().gamepad, 'icone lette da icons.js');
+});
+
+test('lo schema delle pagine conosce tutti i widget del tablet (suggerimenti in VS Code)', function () {
+  const S = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'schema', 'page.schema.json'), 'utf8'));
+  const known = S.definitions.tile.properties.widget.anyOf[0].enum;
+  const missing = check.WIDGETS.filter(function (w) { return known.indexOf(w) < 0; });
+  assert.deepStrictEqual(missing, [], 'aggiungi a schema/page.schema.json (tile > widget) i widget: ' + missing.join(', '));
 });
 
 test('lo schema delle pagine conosce tutti i campi usati dalle pagine predefinite', function () {

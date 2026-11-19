@@ -397,6 +397,24 @@ Poi nelle pagine: `{ "widget": "meteo", "w": 2, "h": 1 }` e `"icon": "sole"`.
 - Il **pannello di controllo** elenca i plugin (cosa aggiungono) e i loro errori; il controllo della configurazione conosce
   anche i loro widget, icone e azioni. Con VS Code le pagine dei plugin hanno gli stessi suggerimenti di quelle in `config/pages/`.
 
+## Un widget per la HOME
+
+Ogni widget di un plugin compare da solo nel catalogo della HOME (pannello > HOME, gruppo *PLUGIN &lt;NOME&gt;*). Come compare
+lo decidi in `plugins/<nome>/home.json` (`npm run new:widget` lo crea già; si rilegge da solo, niente riavvio):
+
+```json
+{
+  "meteo": { "label": "Meteo", "icon": "sole", "description": "Temperatura di casa", "w": 2, "h": 2, "minW": 2, "minH": 1 },
+  // più versioni dello stesso widget, con campi diversi (il widget li legge in tile.citta)
+  "meteo-roma": { "widget": "meteo", "label": "Meteo Roma", "props": { "citta": "Roma" } }
+}
+```
+
+- `w`/`h`: misura proposta quando lo aggiungi; `minW`/`minH`: la più piccola in cui si legge ancora (l'editor non va sotto).
+- Il widget deve adattarsi alla misura: `resize(w, h)` riceve i pixel del riquadro. Prova la HOME con griglie 6×4 e 8×4.
+- Per i dati usa le tue rotte (`D.api.get('/api/plugins/<nome>/...')`) con `D.every(attivo, riposo, fn)`: a riposo il tablet
+  aggiorna più di rado e risparmia batteria.
+
 ## Mettere mano al codice
 
 ```bash
@@ -435,13 +453,15 @@ Come aggiungere le cose più comuni **dentro il progetto** (per le tue aggiunte 
   sia in `server/platform/windows.js` sia in `server/platform/linux.js`.
 - **Un'icona**: una riga in `public/js/icons.js` (`nome: 'path SVG'`, viewBox 24×24).
 - **Un widget**: una funzione `function mioWidget(root, tile, app)` in `public/js/widgets.js` che restituisce
-  `{ update: function (stato) {}, resize: function (w, h) {}, destroy: function () {} }`, registrata nella mappa `TYPES`.
-  I dati arrivano da `/api/state` (in `update`) o da una rotta nuova in `server/index.js`.
+  `{ update: function (stato) {}, resize: function (w, h) {}, destroy: function () {} }`, registrata nella mappa `TYPES`
+  (il controllo della configurazione la legge da lì). Poi il suo nome nello schema (`schema/page.schema.json`, tile > widget:
+  se manca, un test te lo dice) e, per la HOME, una riga in `CATALOG` di `server/home.js`
+  (`{ id, widget, label, icon, page, description, w, h, minW, minH }`). I dati arrivano da `/api/state` (in `update`)
+  o da una rotta nuova in `server/index.js`.
 - **Una pagina predefinita**: un file nuovo in `config/defaults/pages/` e il suo id nella lista `"pages"` di `config/defaults/dock.json`.
   Prima di cambiare un JSON in `config/defaults/` (non le pagine) aggiungi l'impronta della versione vecchia in
   `config/defaults/history.json` (così chi non l'ha modificato riceve l'aggiornamento).
-- **Un widget o un tipo di azione nuovo**: aggiungilo anche a `schema/page.schema.json` e, per i widget, a `WIDGETS` in `server/check.js`
-  (i test controllano che siano allineati).
+- **Un tipo di azione nuovo**: aggiungilo anche a `schema/page.schema.json` (i test controllano che siano allineati).
 
 Regole da rispettare:
 
