@@ -41,6 +41,8 @@ var I18n = (function () {
     var str = String(s), core = str.replace(/^\s+|\s+$/g, '');
     if (!core || core.length > 400) return str;
     var out = one(core);
+    // "· 11 h fa", "· collegamento…": il puntino davanti resta, si traduce il resto
+    if (out === null && core.indexOf('· ') === 0) { var rest = t(core.slice(2)); if (rest !== core.slice(2)) out = '· ' + rest; }
     if (out === null && core.indexOf(' · ') > 0) {
       var parts = core.split(' · '), changed = false;
       for (var i = 0; i < parts.length; i++) { var p = one(parts[i]); if (p !== null) { parts[i] = p; changed = true; } }

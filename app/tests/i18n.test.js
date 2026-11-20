@@ -55,3 +55,33 @@ test('dizionario: niente traduzioni vuote; titoli delle pagine predefinite trado
   });
   assert.deepStrictEqual(missing, []);
 });
+
+test('ogni testo italiano del tablet ha la traduzione inglese (codice, index.html, pagine predefinite)', function () {
+  const out = require('./i18n-audit')(path.join(__dirname, '..'));
+  // pezzi di frasi composte nel codice: tradotti a frase intera dalle regole di lang-en.js;
+  // giorni dell'orologio: li sceglie il widget; title della bandierina: bilingue apposta
+  const PEZZI = ['Aggiungi a', 'Ancorata nella zona', 'CONNESSIONE PERSA · nuovo tentativo tra', 'English · tocca per l\'italiano',
+    'IN CODA ·', 'Le app dal tablet si aprono sul monitor', 'Non disponibile per', 'Nuovo tentativo automatico tra', 'PR aperte',
+    'Passa a un altro branch (uguale a git checkout', 'Sincronizzazione:', 'Spostata su', 'giovedì', 'lunedì', 'martedì', 'mercoledì',
+    'venerdì', '· CANALI VOCALI', 'È già su'];
+  const missing = Object.keys(out).filter(function (k) { return PEZZI.indexOf(k) < 0 && !/^</.test(k); });
+  assert.deepStrictEqual(missing, [], 'aggiungi a public/js/lang-en.js le traduzioni di: ' + missing.join(' | '));
+});
+
+test('messaggi composti del PC: regole', function () {
+  const I = load('en');
+  assert.strictEqual(I.t('Logcat svuotato: fatto'), 'Logcat cleared: done');
+  assert.strictEqual(I.t('Apple Music avviata'), 'Apple Music started');
+  assert.strictEqual(I.t('3 giorni fa'), '3 days ago');
+  assert.strictEqual(I.t('ieri'), 'yesterday');
+  assert.strictEqual(I.t('tocca una zona del monitor 1'), 'tap a zone of monitor 1');
+  assert.strictEqual(I.t('APRI LE APP SU'), 'OPEN APPS ON');
+  assert.strictEqual(I.t('USCITA'), 'OUTPUT');
+  assert.strictEqual(I.t('IN CODA · APPLE MUSIC'), 'UP NEXT · APPLE MUSIC');
+});
+
+test('puntino davanti: "· 11 h fa" -> "· 11 h ago"', function () {
+  const I = load('en');
+  assert.strictEqual(I.t('· 11 h fa'), '· 11 h ago');
+  assert.strictEqual(I.t('· ieri'), '· yesterday');
+});

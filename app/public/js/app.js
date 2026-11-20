@@ -627,10 +627,19 @@
   }
   D.bindTap(themeBtn, { onTap: function () { if (themeMenu) closeThemes(); else openThemes(); } });
 
-  // Lingua (accanto al tema): IT / EN, un tocco passa all'altra e ricarica la pagina
+  // Lingua (accanto al tema): bandierina della lingua attuale, un tocco passa all'altra e ricarica la pagina
+  var FLAGS = {
+    it: '<svg class="flag" viewBox="0 0 3 2" width="30" height="20"><rect width="1" height="2" fill="#009246"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#ce2b37"/></svg>',
+    en: '<svg class="flag" viewBox="0 0 60 40" width="30" height="20"><rect width="60" height="40" fill="#012169"/>' +
+      '<path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="8"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#c8102e" stroke-width="3"/>' +
+      '<path d="M30,0 V40 M0,20 H60" stroke="#fff" stroke-width="12"/><path d="M30,0 V40 M0,20 H60" stroke="#c8102e" stroke-width="7"/></svg>'
+  };
   var langBtn = D.$('lang-btn');
-  D.setText(langBtn, I18n.lang() === 'en' ? 'EN' : 'IT');
+  var langNow = I18n.lang() === 'en' ? 'en' : 'it';
+  // senza SVG (browser molto vecchi) resta la sigla
+  langBtn.innerHTML = Icons.has('home') ? FLAGS[langNow] : (langNow === 'en' ? 'EN' : 'IT');
   langBtn.className = 'notr';
+  langBtn.setAttribute('title', langNow === 'en' ? 'English · tocca per l\'italiano' : 'Italiano · tap for English');
   D.bindTap(langBtn, { onTap: function () { I18n.set(I18n.lang() === 'en' ? 'it' : 'en'); } });
   I18n.watch();
 
