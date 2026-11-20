@@ -1,7 +1,14 @@
 # Vibe Deck
 
-Trasforma un **vecchio tablet Android** (anche Android 4.x, con il suo browser) in una **Stream Deck wireless** per il PC.
-Sul PC (Windows o Linux) gira un piccolo server Node.js; il tablet apre una pagina web: niente app da installare.
+**La Stream Deck da developer, per developer.**
+
+Trasforma un **vecchio tablet Android o il telefono che hai in tasca** in una **Stream Deck wireless** per il PC.
+Sul PC (Windows o Linux) gira un piccolo server Node.js; tablet o telefono aprono una pagina web: niente app da installare.
+
+<p align="center">
+  <a href="https://github.com/StefanoDiPatti/vibe-deck/releases/latest"><img src="docs/screenshots/promo.gif" width="720" alt="Video promo di Vibe Deck: il vecchio tablet diventa una Stream Deck"></a><br>
+  <sub>I video in alta qualità (orizzontale e verticale, in mp4) sono tra i file della <a href="https://github.com/StefanoDiPatti/vibe-deck/releases/latest">release</a>.</sub>
+</p>
 
 ![Pagina HOME sul tablet: musica, note e diagnostica del PC](docs/screenshots/tablet-main.png)
 
