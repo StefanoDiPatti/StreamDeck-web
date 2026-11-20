@@ -297,18 +297,19 @@ var Widgets = (function () {
         if (s.time) offset = s.time - new Date().getTime();
         if (!m.supported) {
           cur = null;
-          setText(title, 'Now Playing non disponibile');
-          setText(artist, 'Su questo sistema non è supportato');
+          // titolo e artista sono "notr" (nomi dei brani): i messaggi della dock si traducono qui
+          setText(title, I18n.t('Now Playing non disponibile'));
+          setText(artist, I18n.t('Su questo sistema non è supportato'));
         } else if (!m.active) {
           cur = null;
-          setText(title, 'Niente in riproduzione');
-          setText(artist, m.bridge ? 'Avvia Apple Music, YouTube o Spotify sul PC' : 'Avvia la musica sul PC (per Apple Music web serve l\'estensione)');
+          setText(title, I18n.t('Niente in riproduzione'));
+          setText(artist, I18n.t(m.bridge ? 'Avvia Apple Music, YouTube o Spotify sul PC' : 'Avvia la musica sul PC (per Apple Music web serve l\'estensione)'));
         } else {
           var keep = cur && new Date().getTime() < optimisticUntil ? cur.status : null;
           cur = m;
           receivedAt = new Date().getTime();
           if (keep) cur.status = keep;
-          setText(title, m.title || 'Titolo sconosciuto');
+          setText(title, m.title || I18n.t('Titolo sconosciuto'));
           setText(artist, [m.artist, m.album].filter(function (x) { return !!x; }).join(' — '));
         }
         paintStatus();
@@ -575,7 +576,7 @@ var Widgets = (function () {
               '<span data-what="actions">' + ci(r) + '</span>' + deploy(r) +
             '</div>' +
             '<div class="gh-name">' + D.esc(r.name) + (r.private ? ' <span class="gh-priv">privato</span>' : '') + '</div>' +
-            '<div class="gh-msg">' + (r.commit ? D.esc(r.commit.message) + ' <span class="gh-when">· ' + D.esc(D.ago(r.commit.date)) + '</span>' : '') + '</div>';
+            '<div class="gh-msg">' + (r.commit ? '<span class="notr">' + D.esc(r.commit.message) + '</span> <span class="gh-when">· ' + D.esc(D.ago(r.commit.date)) + '</span>' : '') + '</div>';
           bindRow(row, r.full);
         }
         list.appendChild(row);
@@ -693,7 +694,7 @@ var Widgets = (function () {
     function groupRow(id, label, isTarget) {
       var g = el('div', 'todo-group' + (isTarget ? ' target' : ''));
       // con più memo il titolo evidenziato è quella in cui finiscono le nuove righe
-      g.innerHTML = '<span>' + D.esc(label || 'Memo') + '</span>' + (isTarget && state.notes.length > 1 ? '<i>+ qui</i>' : '');
+      g.innerHTML = '<span' + (label ? ' class="notr"' : '') + '>' + D.esc(label || 'Memo') + '</span>' + (isTarget && state.notes.length > 1 ? '<i>+ qui</i>' : '');
       if (state.notes.length > 1) {
         D.bindTap(g, {
           scrollable: true,
@@ -809,7 +810,8 @@ var Widgets = (function () {
     }
 
     function bubble(m) {
-      var b = el('div', 'msg notr ' + m.role + (m.error ? ' error' : ''));
+      // i messaggi non si traducono, gli errori della dock sì
+      var b = el('div', 'msg ' + (m.error ? '' : 'notr ') + m.role + (m.error ? ' error' : ''));
       b.innerHTML = m.role === 'user' ? D.esc(m.text).replace(/\n/g, '<br>') : D.richText(m.text);
       return b;
     }
@@ -1051,7 +1053,7 @@ var Widgets = (function () {
               var it = sec.sessions[i];
               var on = CL.sel && CL.sel.kind === 'code' && CL.sel.id === it.id;
               html += '<div class="cl-row' + (on ? ' on' : '') + (it.busy ? ' busy' : '') + '" data-code="' + D.esc(it.id) + '">' +
-                '<div class="cl-row-t">' + (it.busy ? '<i class="cl-dot"></i>' : '') + D.esc(it.title) + '</div>' +
+                '<div class="cl-row-t">' + (it.busy ? '<i class="cl-dot"></i>' : '') + '<span class="notr">' + D.esc(it.title) + '</span></div>' +
                 '<div class="cl-row-m">' + D.esc((sec.project ? '' : it.project + ' · ') + (it.queued ? 'messaggio in coda' : it.busy ? 'al lavoro…' : ago(it.updatedAt))) + '</div></div>';
             }
           }
@@ -2222,7 +2224,7 @@ var Widgets = (function () {
         var p = d.projects[i], what = VB_STATES[p.state] || '';
         h += '<div class="vb-pr st-' + p.state + (p.active ? ' on' : '') + '" data-path="' + D.esc(p.path) + '"><i class="vb-dot"></i>' +
           '<div class="vb-pname notr">' + D.esc(p.name) + '</div>' +
-          '<div class="vb-pmeta">' + (what ? '<b>' + what + '</b>' : '') + D.esc(p.title || (p.agents ? '' : 'nessun agente')) + '</div></div>';
+          '<div class="vb-pmeta">' + (what ? '<b>' + what + '</b>' : '') + (p.title ? '<span class="notr">' + D.esc(p.title) + '</span>' : D.esc(p.agents ? '' : 'nessun agente')) + '</div></div>';
       }
       projEl.innerHTML = h || '<div class="empty">Nessun progetto aperto in Viber</div>';
     }
@@ -2248,7 +2250,7 @@ var Widgets = (function () {
             '<div class="vb-tmeta"><span class="vb-chip">' + (doing ? 'IN CORSO' : 'APERTA') + '</span>' + (t.branch ? D.esc(t.branch) : '') + '</div>';
           for (var k = 0; k < t.steps.length; k++) {
             var s = t.steps[k];
-            h += '<div class="vb-step ' + s.status + '">' + Icons.html(s.status === 'done' ? 'check' : s.status === 'in_progress' ? 'play' : 'flag') + D.esc(s.text) + '</div>';
+            h += '<div class="vb-step ' + s.status + '">' + Icons.html(s.status === 'done' ? 'check' : s.status === 'in_progress' ? 'play' : 'flag') + '<span class="notr">' + D.esc(s.text) + '</span></div>';
           }
           h += '</div>';
         }
@@ -2308,8 +2310,8 @@ var Widgets = (function () {
     var reader = el('div', 'ml-reader');
     reader.innerHTML =
       '<div class="ml-rhead"></div>' +
-      '<div class="ml-rtitle"></div><div class="ml-rmeta"></div>' +
-      '<div class="ml-body scroll"></div>';
+      '<div class="ml-rtitle notr"></div><div class="ml-rmeta notr"></div>' +
+      '<div class="ml-body scroll notr"></div>';
     root.appendChild(reader);
     function q(c) { return reader.querySelector('.' + c); }
     var rhead = q('ml-rhead'), rtitle = q('ml-rtitle'), rmeta = q('ml-rmeta'), rbody = q('ml-body');
@@ -2364,8 +2366,8 @@ var Widgets = (function () {
         var row = el('div', 'ml-row' + (m.seen ? '' : ' unread'));
         row.innerHTML =
           '<div class="ml-when">' + D.esc(fmtDate(m.date)) + '</div>' +
-          '<div class="ml-from">' + (m.seen ? '' : '<span class="ml-dot"></span>') + D.esc(who(m.from)) + '</div>' +
-          '<div class="ml-subj">' + D.esc(m.subject || '(senza oggetto)') + '</div>';
+          '<div class="ml-from notr">' + (m.seen ? '' : '<span class="ml-dot"></span>') + D.esc(who(m.from)) + '</div>' +
+          '<div class="ml-subj' + (m.subject ? ' notr' : '') + '">' + D.esc(m.subject || '(senza oggetto)') + '</div>';
         bindRow(row, m.uid);
         list.appendChild(row);
       }
@@ -2477,7 +2479,7 @@ var Widgets = (function () {
         var d = data.devices[i];
         if (d.flow !== flow) continue;
         html += '<div class="au-dev' + (d.default ? ' on' : '') + '">' +
-          '<div class="au-name" data-def="' + D.esc(d.id) + '">' + (d.default ? Icons.html('check') : '<i class="au-radio"></i>') + D.esc(d.name) + '</div>' +
+          '<div class="au-name" data-def="' + D.esc(d.id) + '">' + (d.default ? Icons.html('check') : '<i class="au-radio"></i>') + '<span class="notr">' + D.esc(d.name) + '</span></div>' +
           (d.default ? ctl('device', d, flow === 'in') : '') + '</div>';
       }
       return html || '<div class="empty">Nessun dispositivo</div>';

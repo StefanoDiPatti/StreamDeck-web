@@ -43,6 +43,9 @@ svg.ic { fill: #ffffff; display: inline-block; vertical-align: middle; }
 /* lingua: IT / EN (un tocco cambia) */
 #lang-btn { display: inline-block; min-width: 34px; height: 44px; text-align: center; margin-right: 4px; vertical-align: top; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #9fb3c8; }
 #lang-btn.pressed { color: #3d8bfd; }
+#lang-btn svg.flag { width: 30px; height: 20px; margin-top: 12px; border-radius: 3px; vertical-align: top; -webkit-box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
+#lang-btn.pressed svg.flag { opacity: 0.6; }
+body.phone #lang-btn svg.flag { margin-top: 9px; }
 .theme-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 70; }
 .theme-menu { position: absolute; right: 10px; top: 50px; width: 270px; padding: 10px; background: #141c25; border: 1px solid #2a3746; border-radius: 14px;
   -webkit-box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55); }

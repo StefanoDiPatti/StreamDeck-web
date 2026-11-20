@@ -11,7 +11,8 @@ const common = require('../server/platform/common');
 const DEFAULTS = path.join(__dirname, '..', 'config', 'defaults');
 function readDefault(name) { return config.parseJson(fs.readFileSync(path.join(DEFAULTS, name + '.json'), 'utf8')); }
 function page(d, id) { return d.pages.filter(function (p) { return p.id === id; })[0]; }
-function labels(p) { return p.tiles.map(function (t) { return t.label; }); }
+// tutti i pulsanti della pagina, anche quelli nascosti di default (configurazione standard: si mostrano dal pannello)
+function labels(p) { return (p.allTiles || p.tiles).map(function (t) { return t.label; }); }
 
 const RAW = {
   pages: [
@@ -82,7 +83,7 @@ test('pagina APP di default: CLAUDE unico, Viber su entrambi, terminale su Linux
     assert.strictEqual(l.filter(function (x) { return /CLAUDE/.test(x); }).length, 1, 'un solo pulsante Claude');
     assert.ok(l.indexOf('CLAUDE CODE') < 0);
     // id fissi: il pannello ricorda ordine e nascosti anche se dock.json cambia
-    p.tiles.forEach(function (t) { assert.ok(!/^apps-\d+$/.test(t.id), t.label + ' senza id'); });
+    p.allTiles.forEach(function (t) { assert.ok(!/^apps-\d+$/.test(t.id), t.label + ' senza id'); });
   });
   const ll = labels(lin);
   assert.strictEqual(ll[ll.indexOf('VS CODE') + 1], 'VIBER', 'Viber accanto a VS Code');
@@ -111,7 +112,7 @@ test('APP avvia Blender e DaVinci; tutti i pulsanti di default hanno id fissi e 
   const raw = config.defaultDock();
   const apps = page(config.normalizeDock(raw, {}, 'linux'), 'apps');
   ['blender', 'davinci'].forEach(function (id) {
-    const t = apps.tiles.filter(function (x) { return x.id === id; })[0];
+    const t = apps.allTiles.filter(function (x) { return x.id === id; })[0];   // nascosti di default, ma ci sono
     assert.deepStrictEqual(t.action, { type: 'launch', app: id });
   });
   raw.pages.forEach(function (p) {
@@ -214,4 +215,16 @@ test('GitHub: i workflow di deploy si riconoscono dal nome o dal file', function
   assert.ok(g.isDeploy({ name: 'build', path: '.github/workflows/cd.yml' }));
   assert.ok(!g.isDeploy({ name: 'CI', path: '.github/workflows/ci.yml' }));
   assert.ok(!g.isDeploy({ name: 'Lint code' }));
+});
+
+test('configurazione standard (prima installazione): barra semplice, il resto tra le disponibili', function () {
+  const raw = config.defaultDock();
+  const tabs = function (os) { return config.normalizeDock(raw, {}, os).pages.filter(function (p) { return p.tab; }).map(function (p) { return p.id; }); };
+  assert.deepStrictEqual(tabs('windows'), ['main', 'media', 'apps', 'screens', 'audio']);
+  assert.deepStrictEqual(tabs('linux'), ['main', 'media', 'apps', 'audio'], 'SCHERMI su Linux richiede KDE: la aggiungi tu');
+  const apps = page(config.normalizeDock(raw, {}, 'windows'), 'apps');
+  assert.deepStrictEqual(labels({ tiles: apps.tiles }), ['APPLE MUSIC', 'DISCORD', 'FILE', 'SCREENSHOT', 'DESKTOP', 'BLOCCA', 'SCHERMO OFF', 'VOL -', 'MUTE', 'VOL +']);
+  // le scelte del pannello vincono: chi ha già scelto i suoi pulsanti li ritrova tutti
+  const mine = page(config.normalizeDock(raw, { tiles: { apps: { show: ['blender', 'docker', 'lock'] } } }, 'windows'), 'apps');
+  assert.deepStrictEqual(mine.tiles.slice(0, 3).map(function (t) { return t.id; }), ['blender', 'docker', 'lock']);
 });

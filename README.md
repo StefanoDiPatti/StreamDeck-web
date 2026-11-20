@@ -110,6 +110,24 @@ scripts/linux/vibe-deck.sh install autostart  # avvio automatico all'accesso (fa
 
 Il **pannello di controllo** si apre solo dal PC: doppio clic sull'icona Vibe Deck, oppure `http://127.0.0.1:8787/control`.
 
+## Cosa trovi al primo avvio (configurazione standard)
+
+Una Vibe Deck semplice, pensata per chiunque (non serve essere sviluppatori né giocatori):
+
+| Nella barra | Cosa fa |
+|---|---|
+| **HOME** | musica in riproduzione, note e TODO, stato del PC (diagnostica) |
+| **MUSICA** | copertina, comandi, coda e volume dell'app |
+| **APP** | Apple Music, Discord, cartelle, screenshot, mostra desktop, blocca PC, spegni schermo, volume |
+| **SCHERMI** | monitor, disposizione delle finestre e desktop virtuali (su Linux serve KDE Plasma: la aggiungi tu) |
+| **AUDIO** | uscita, microfono e volume di ogni app |
+
+Tutto il resto è già pronto tra le **pagine disponibili** del pannello di controllo: CLAUDE, GITHUB, DEV, OLLAMA, VIBER,
+DISCORD, GIOCHI, EMAIL, BROWSER DEV, ANDROID, BLENDER, DAVINCI, UNREAL. Trascinale nella barra quando ti servono.
+Nella pagina APP i programmi per sviluppatori (VS Code, Docker, Blender…) sono tra i **nascosti**: *Pulsanti delle pagine* >
+APP > *Mostra tutti*, oppure trascina solo quelli che vuoi. La HOME la cambi dal pannello (*HOME*), la lingua e il tema dal tablet
+(bandierina e tavolozza in alto). Per tornare a questa configurazione: *Predefinite* nella barra in fondo al pannello.
+
 ## Aggiornare
 
 ```bash
@@ -160,7 +178,7 @@ Se qualcosa non va: [Problemi comuni](app/README.md#problemi-comuni).
 | ANDROID | adb e logcat: dispositivi, errori e crash, screenshot, schermo del telefono (scrcpy), React Native | ✅ serve adb | ✅ serve adb |
 | DESKTOP VIRTUALI | Guida alle scorciatoie | ❌ (è dentro SCHERMI) | ✅ |
 
-Le pagine da DISCORD in giù all'inizio non sono nella barra: le aggiungi dal pannello di controllo.
+Al primo avvio nella barra ci sono HOME, MUSICA, APP, SCHERMI e AUDIO (vedi *Cosa trovi al primo avvio*): le altre le aggiungi dal pannello di controllo.
 
 ## Il pannello di controllo
 

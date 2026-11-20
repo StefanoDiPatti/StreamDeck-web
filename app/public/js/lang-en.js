@@ -247,6 +247,38 @@
     'Logcat svuotato': 'Logcat cleared', 'Server adb fermato': 'adb server stopped', 'Server adb avviato': 'adb server started'
   });
 
+  // ---------------------------------------------------------------- trovati dal controllo a tappeto (2026-11-20)
+  I18n.add({
+    // SCHERMI e desktop virtuali
+    'Apri le app su': 'Open apps on', 'Auto': 'Auto', 'ora tocca una finestra a destra': 'now tap a window on the right',
+    'Nessuna finestra aperta': 'No open windows', 'Finestre e monitor (utili insieme)': 'Windows and monitors (useful together)',
+    'Spostare le finestre tra i desktop': 'Moving windows between desktops',
+    'Super + PagSu / PagGiù': 'Super + PgUp / PgDn', 'Super + Shift + PagSu / PagGiù': 'Super + Shift + PgUp / PgDn',
+    'Intero': 'Full', 'Metà': 'Half', 'Metà + 2': 'Half + 2', 'Terzi': 'Thirds', 'Quarti': 'Quarters',
+    // AUDIO
+    'Uscita': 'Output', 'Ingresso': 'Input', 'Suoni di sistema': 'System sounds', 'Nessun dispositivo': 'No devices',
+    'Nessuna app sta usando l\'audio': 'No app is playing audio',
+    // GITHUB
+    'Il tuo flusso: una modifica dall\'inizio alla fine': 'Your workflow: one change from start to finish',
+    // CLAUDE
+    'Sul PC': 'On the PC', 'Carico le sessioni…': 'Loading sessions…', 'App desktop di Claude non trovata su questo PC.': 'Claude desktop app not found on this PC.',
+    'Scrivi o detta un messaggio.': 'Write or dictate a message.', 'Non inviato:': 'Not sent:',
+    'Scrivi il primo messaggio: la sessione si apre nell\'app sul PC, nella stessa cartella delle altre di questa sezione.': 'Write the first message: the session opens in the app on the PC, in the same folder as the others in this section.',
+    'Qui ci sono le chat fatte dal tablet. Quelle di claude.ai e dell\'app restano sul tuo account e non sono leggibili dal PC.': 'Here are the chats made from the tablet. Those from claude.ai and the app stay in your account and cannot be read from the PC.',
+    // DISCORD
+    'Nessun server': 'No servers', 'Nessun canale vocale': 'No voice channels', 'Tocca un canale vocale per entrare.': 'Tap a voice channel to join.',
+    'Volume per te': 'Volume for you', 'Vale solo per te, gli altri non lo vedono.': 'Only for you, the others do not see it.', 'muto per te': 'muted for you',
+    '· collegamento…': '· connecting…',
+    // EMAIL
+    'La posta in arrivo è vuota.': 'The inbox is empty.', 'Nessun account email.': 'No email accounts.',
+    'La posta arriva da Thunderbird sul PC:': 'Mail comes from Thunderbird on the PC:', 'pannello di controllo, sezione Email.': 'control panel, Email section.',
+    'Messaggio lungo: il resto è sul PC (APRI SUL PC).': 'Long message: the rest is on the PC (OPEN ON PC).', 'Thunderbird aperto sul PC': 'Thunderbird opened on the PC',
+    // tablet
+    'tocca per riattivare': 'tap to wake up', '(nessun output)': '(no output)', 'il PC': 'the PC', 'ora': 'now', 'ieri': 'yesterday',
+    'Widget già esistente:': 'Widget already exists:', 'Mute inviato a Discord (scorciatoia)': 'Mute sent to Discord (shortcut)',
+    'Silenzia inviato a Discord (scorciatoia)': 'Deafen sent to Discord (shortcut)'
+  });
+
   // ---------------------------------------------------------------- testi con numeri o nomi
   var DAYS = { dom: 'Sun', lun: 'Mon', mar: 'Tue', mer: 'Wed', gio: 'Thu', ven: 'Fri', sab: 'Sat' };
   I18n.rules([
@@ -265,6 +297,15 @@
     [/^Errore (\d+)$/, 'Error $1'], [/^Tipo di azione sconosciuto: (.+)$/, 'Unknown action type: $1'],
     [/^Macro interrotta al passo (\d+): (.+)$/, 'Macro stopped at step $1: $2'],
     [/^App "(.+)" non trovata(.*)$/, 'App "$1" not found$2'], [/^Comando "(.+)" non consentito(.*)$/, 'Command "$1" not allowed$2'],
-    [/^Sincronizzazione: (.+)$/, 'Sync: $1'], [/^Desktop virtuali · (.+)$/i, 'VIRTUAL DESKTOPS · $1']
+    [/^Sincronizzazione: (.+)$/, 'Sync: $1'], [/^Desktop virtuali · (.+)$/i, 'VIRTUAL DESKTOPS · $1'],
+    // date relative (D.ago) e messaggi delle azioni sul PC
+    [/^(\d+) min fa$/, '$1 min ago'], [/^(\d+) h fa$/, '$1 h ago'], [/^(\d+) giorni fa$/, '$1 days ago'],
+    [/^tocca una zona del monitor (\d+)$/, 'tap a zone of monitor $1'],
+    [/^(.+): fatto$/, function (m, a) { return I18n.t(a) + ': done'; }],
+    [/^(.+): chiusura in corso$/, '$1: closing'], [/^(.+) in primo piano$/, '$1 brought to front'], [/^(.+) avviata$/, '$1 started'],
+    [/^(.+) fallito \(codice (\d+)\)(.*)$/, function (m, a, c, rest) { return I18n.t(a) + ' failed (code ' + c + ')' + rest; }],
+    [/^Comando "(.+)" non definito in commands\.json$/, 'Command "$1" is not defined in commands.json'],
+    [/^Comando "(.+)" non disponibile su questo sistema$/, 'Command "$1" is not available on this system'],
+    [/^Impossibile eseguire (.+)$/, 'Cannot run $1'], [/^Volume (\d+)%$/, 'Volume $1%']
   ]);
 })();
