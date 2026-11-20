@@ -5,8 +5,9 @@
 //   DEMO_PORT=9000 node scripts/demo.js
 //
 // Usa solo i default di config/defaults (niente config/ personale) e una cartella dati
-// temporanea, e non legge il .env (niente token né account). Musica, stato del PC, TODO e sessioni di Claude Code sono inventati.
-// Le pagine non simulate (Discord, schermi, audio...) mostrano quello che risponde il PC.
+// temporanea, e non legge il .env (niente token né account). Tutto è inventato: musica, stato del PC, TODO,
+// Claude Code, email, audio, schermi, GitHub, Discord, Viber, Ollama e le informazioni del pannello,
+// così screenshot e prove non mostrano mai i dati del PC su cui gira. npm run screenshots rifà le immagini del README.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -100,6 +101,7 @@ function session(id, title, project, ago, busy) {
 const demo = express.Router();
 demo.use('/api', function (req, res, next) {
   if (req.path === '/health' || req.path === '/pair' || req.path.indexOf('/control/') === 0) return next();
+  if (req.path === '/media/art') return next();   // copertina finta: anche senza codice (le immagini non mandano l'header)
   auth.requireToken(req, res, next);
 });
 demo.get('/api/state', function (req, res, next) {
@@ -135,6 +137,148 @@ demo.get('/api/claude/usage', function (req, res) {
   ok(res, { ok: true, fiveHour: { percent: 34, resetsAt: new Date(Date.now() + 2.5 * H).toISOString() }, sevenDay: { percent: 58, resetsAt: new Date(Date.now() + 60 * H).toISOString() }, models: [], at: Date.now() });
 });
 demo.get('/api/claude/chats', function (req, res) { ok(res, []); });
+
+// ---- tutto il resto finto: la demo non deve mai mostrare dati del PC su cui gira
+// (email, dispositivi audio, finestre, repository, Discord, Viber): serve per gli screenshot del README.
+const MAIL_ACCOUNTS = [
+  { id: 'demo1', label: 'Gmail', provider: 'gmail', email: 'mario.rossi@example.com', unread: 3, status: 'ok', error: '' },
+  { id: 'demo2', label: 'Lavoro', provider: 'outlook', email: 'mario@studio.example', unread: 0, status: 'ok', error: '' }
+];
+const MAILS = [
+  ['Laura Bianchi', 'laura@example.com', 'Foto del weekend', 0.4, false],
+  ['GitHub', 'noreply@github.example', 'La tua pull request è stata unita', 2, false],
+  ['Negozio Online', 'ordini@shop.example', 'Il tuo ordine è in consegna', 5, false],
+  ['Marco Verdi', 'marco@example.com', 'Riunione di giovedì', 26, true],
+  ['Newsletter Musica', 'news@music.example', 'Le uscite della settimana', 50, true]
+].map(function (m, i) { return { uid: 100 + i, date: new Date(Date.now() - m[3] * H).toISOString(), from: { name: m[0], address: m[1] }, subject: m[2], seen: m[4] }; });
+demo.get('/api/mail', function (req, res) { ok(res, { accounts: MAIL_ACCOUNTS }); });
+demo.get('/api/mail/list', function (req, res) {
+  const a = MAIL_ACCOUNTS.filter(function (x) { return x.id === req.query.account; })[0] || MAIL_ACCOUNTS[0];
+  const list = a.id === 'demo1' ? MAILS : [];
+  ok(res, { account: a, unread: list.filter(function (m) { return !m.seen; }).length, total: list.length, messages: list });
+});
+demo.get('/api/mail/message', function (req, res) {
+  const m = MAILS.filter(function (x) { return String(x.uid) === String(req.query.uid); })[0] || MAILS[0];
+  ok(res, { subject: m.subject, from: m.from, date: m.date, text: 'Ciao!\n\nQuesto è un messaggio di esempio della demo di Vibe Deck.\n\nA presto', attachments: [], truncated: false });
+});
+demo.post('/api/mail/open', function (req, res) { ok(res, { message: 'Thunderbird aperto sul PC' }); });
+
+const AUDIO = {
+  devices: [
+    { flow: 'out', id: 'o1', name: 'Altoparlanti', default: true, volume: 62, mute: false },
+    { flow: 'out', id: 'o2', name: 'Cuffie USB', default: false, volume: 80, mute: false },
+    { flow: 'out', id: 'o3', name: 'Monitor HDMI', default: false, volume: 100, mute: false },
+    { flow: 'in', id: 'i1', name: 'Microfono USB', default: true, volume: 90, mute: false },
+    { flow: 'in', id: 'i2', name: 'Microfono della webcam', default: false, volume: 70, mute: false }
+  ],
+  apps: [
+    { id: 'p1', pid: 101, process: 'music', name: 'Music', volume: 80, mute: false, active: true, device: 'Altoparlanti' },
+    { id: 'p2', pid: 102, process: 'browser', name: 'Browser', volume: 100, mute: false, active: false, device: 'Altoparlanti' },
+    { id: 'p3', pid: 103, process: 'chat', name: 'Chat vocale', volume: 70, mute: false, active: true, device: 'Cuffie USB' },
+    { id: 'p4', pid: 0, process: 'system', name: 'Suoni di sistema', volume: 50, mute: false, active: false, device: 'Altoparlanti' }
+  ]
+};
+demo.get('/api/audio', function (req, res) { ok(res, AUDIO); });
+
+demo.get('/api/github', function (req, res) {
+  const repo = function (name, prs, issues, ci, deploy, msg, ago) {
+    const run = function (c) { return c ? { status: 'completed', conclusion: c, name: 'CI', url: 'https://github.com/' } : null; };
+    return { name: name, full: 'demo/' + name, url: 'https://github.com/', private: false, stars: 12, prs: prs, issues: issues, pushedAt: new Date(Date.now() - ago * H).toISOString(),
+      ci: run(ci), deploy: deploy ? { status: 'completed', conclusion: deploy, name: 'Deploy', url: 'https://github.com/', at: new Date().toISOString() } : null,
+      commit: { message: msg, author: 'Mario', date: new Date(Date.now() - ago * H).toISOString(), url: 'https://github.com/' } };
+  };
+  const repos = [repo('shop-web', 2, 3, 'success', 'success', 'Carrello: pagamento con un tocco', 1), repo('shop-api', 1, 0, 'failure', null, 'Ordini: filtro per data', 5),
+    repo('blog', 0, 1, 'success', 'success', 'Nuovo tema scuro', 30), repo('scripts', 0, 0, null, null, 'Backup foto: compressione', 70)];
+  ok(res, { configured: true, authenticated: true, repos: repos, totals: { prs: 3, issues: 4, failing: 1, deployFailing: 0 }, error: null, updatedAt: Date.now() });
+});
+
+const MONITORS = [
+  { id: 'm1', primary: true, x: 0, y: 0, w: 2560, h: 1440, work: { x: 0, y: 0, w: 2560, h: 1400 }, name: 'Monitor 27"', n: 1, portrait: false },
+  { id: 'm2', primary: false, x: 2560, y: 0, w: 1920, h: 1080, work: { x: 2560, y: 0, w: 1920, h: 1040 }, name: 'Monitor 24"', n: 2, portrait: false }
+];
+const WINDOWS = [
+  { id: 'w1', pid: 201, process: 'browser', state: 'max', monitor: 'm1', x: 0, y: 0, w: 2560, h: 1400, active: true, title: 'Documentazione - Browser' },
+  { id: 'w2', pid: 202, process: 'code', state: 'normal', monitor: 'm2', x: 2560, y: 0, w: 1920, h: 1040, active: false, title: 'shop-web - Editor' },
+  { id: 'w3', pid: 203, process: 'music', state: 'min', monitor: 'm2', x: 2600, y: 100, w: 900, h: 700, active: false, title: 'Music' }
+];
+demo.get('/api/screens/windows', function (req, res) { ok(res, WINDOWS); });
+demo.get('/api/screens', function (req, res, next) {
+  // le disposizioni sono quelle vere della dock, monitor finti
+  const json = res.json.bind(res);
+  res.json = function (body) { if (body && body.data) Object.assign(body.data, { monitors: MONITORS, target: null }); return json(body); };
+  next();
+});
+demo.get('/api/screens/desktops', function (req, res) {
+  ok(res, { supported: true, max: 3, monitors: MONITORS.map(function (m) { return { id: m.id, n: m.n, x: m.x, y: m.y, w: m.w, h: m.h }; }),
+    desktops: [{ id: 'd1', n: 1, name: 'Lavoro', current: true, windows: WINDOWS.slice(0, 2) }, { id: 'd2', n: 2, name: 'Svago', current: false, windows: [WINDOWS[2]] }] });
+});
+
+demo.get('/api/discord/state', function (req, res) {
+  ok(res, { status: 'ready', message: '', configured: true, user: { id: 'u1', name: 'Mario' }, voice: { mute: false, deaf: false, video: false, stream: false }, media: true,
+    channel: { id: 'c1', name: 'Salotto', guild_id: 'g1', guild: 'Amici', members: [
+      { id: 'u1', name: 'Mario', me: true, speaking: true, mute: false, deaf: false },
+      { id: 'u2', name: 'Laura', speaking: false, mute: false, deaf: false },
+      { id: 'u3', name: 'Marco', speaking: false, mute: true, deaf: false }] } });
+});
+demo.get('/api/discord/guilds', function (req, res) { ok(res, [{ id: 'g1', name: 'Amici', icon: null }, { id: 'g2', name: 'Studio', icon: null }]); });
+demo.get('/api/discord/channels', function (req, res) {
+  ok(res, [{ id: 'c1', name: 'Salotto', type: 'voice', members: 3 }, { id: 'c2', name: 'Giochi', type: 'voice', members: 0 }]);
+});
+
+demo.get('/api/viber/state', function (req, res) {
+  ok(res, { online: true, panels: ['terminal', 'git', 'browser', 'chat', 'tasks', 'files'], project: '/home/demo/shop-web', name: 'shop-web', active: 'chat', open: ['terminal', 'git', 'browser', 'chat', 'tasks', 'files'] });
+});
+demo.get('/api/viber/projects', function (req, res) {
+  ok(res, { projects: [
+    { path: '/home/demo/shop-web', name: 'shop-web', active: true, state: 'working', agents: 1, title: 'Pagamento con un tocco' },
+    { path: '/home/demo/shop-api', name: 'shop-api', active: false, state: 'question', agents: 1, title: 'Filtro ordini per data' },
+    { path: '/home/demo/blog', name: 'blog', active: false, state: 'completed', agents: 1, title: 'Tema scuro' }] });
+});
+demo.get('/api/viber/tasks', function (req, res) {
+  ok(res, { project: 'shop-web', tasks: [{ id: 't1', text: 'Pagamento con un tocco', status: 'in_progress', branch: 'feature/pagamento', steps: [
+    { text: 'Pulsante nel carrello', status: 'done' }, { text: 'Conferma con impronta', status: 'in_progress' }, { text: 'Test e PR', status: 'open' }] }] });
+});
+demo.get('/api/ollama/models', function (req, res) { ok(res, { running: true, models: [{ name: 'llama3.2:3b', size: 2 }, { name: 'qwen2.5-coder:7b', size: 4.7 }], error: '' }); });
+
+// Screenshot (scripts/screenshots.js): /?shot=1&page=apps&theme=neon&lang=en apre il tablet già collegato,
+// su quella pagina, con quel tema e quella lingua; /control?shot=1&theme=neon il pannello con quel tema.
+function shotScript(q, panel) {
+  const set = function (k, v) { return 'localStorage.setItem(' + JSON.stringify(k) + ',' + JSON.stringify(v) + ');'; };
+  let js = 'try{localStorage.clear();';
+  if (panel) js += q.theme ? set('dock-panel-theme', String(q.theme)) : '';
+  else {
+    js += set('dock:token', JSON.stringify(process.env.DOCK_TOKEN));
+    if (q.page) js += set('dock:page', JSON.stringify(String(q.page)));
+    if (q.theme) js += set('dock:theme', JSON.stringify(String(q.theme)));
+    if (q.lang) js += set('dock:lang', JSON.stringify(String(q.lang)));
+  }
+  return '<script>' + js + '}catch(e){}</script>';
+}
+demo.get(['/', '/index.html'], function (req, res, next) {
+  if (!req.query.shot) return next();
+  const send = res.send.bind(res);
+  res.send = function (html) { return send(String(html).replace('<head>', function (m) { return m + shotScript(req.query, false); })); };
+  next();
+});
+demo.get(['/control', '/control/'], function (req, res, next) {
+  if (!req.query.shot) return next();
+  const html = fs.readFileSync(path.join(__dirname, '..', 'control', 'index.html'), 'utf8');
+  res.type('html').send(html.replace('<head>', function (m) { return m + shotScript(req.query, true); }));
+});
+
+// pannello di controllo: niente account email veri né l'id dell'app Discord
+demo.get('/api/control/info', function (req, res, next) {
+  const json = res.json.bind(res);
+  res.json = function (body) {
+    if (body && body.data) {
+      body.data.mail = { source: 'thunderbird', download: 'https://www.thunderbird.net/', installed: true, profile: true, exe: true,
+        accounts: MAIL_ACCOUNTS.map(function (a) { return Object.assign({ host: 'imap.example.com', shown: true, offline: false }, a); }) };
+      body.data.discord = Object.assign({}, body.data.discord, { status: 'ready', configured: true, clientId: '123456789012345678', hasSecret: true, authError: '', user: { id: 'u1', name: 'Mario' }, message: '' });
+    }
+    return json(body);
+  };
+  next();
+});
 
 const server = express();
 server.use(demo);

@@ -3,7 +3,7 @@
 Trasforma un **vecchio tablet Android** (anche Android 4.x, con il suo browser) in una **Stream Deck wireless** per il PC.
 Sul PC (Windows o Linux) gira un piccolo server Node.js; il tablet apre una pagina web: niente app da installare.
 
-![Pagina HOME sul tablet: musica, stato del PC e TODO](docs/screenshots/tablet-main.png)
+![Pagina HOME sul tablet: musica, note e diagnostica del PC](docs/screenshots/tablet-main.png)
 
 ## Cosa fa
 
@@ -22,6 +22,10 @@ Sul PC (Windows o Linux) gira un piccolo server Node.js; il tablet apre una pagi
 | Pulsanti (pagina APP) | Sessioni di Claude Code |
 |---|---|
 | ![Pagina APP](docs/screenshots/tablet-apps.png) | ![Pagina CLAUDE](docs/screenshots/tablet-claude.png) |
+| **Audio, tema Neon Elgato** | **GitHub con deploy, tema Neo-brutalista, in inglese** |
+| ![Pagina AUDIO, tema Neon Elgato](docs/screenshots/tablet-audio-neon.png) | ![Pagina GITHUB in inglese, tema Neo-brutalista](docs/screenshots/tablet-github-brutal-en.png) |
+
+*Screenshot dalla demo con dati finti (`npm run demo`, poi `npm run screenshots`).*
 
 ### Pannello di controllo sul PC
 
@@ -447,6 +451,7 @@ npm run demo      # dock con dati finti su :8790
 npm run themes    # rigenera i temi dopo una modifica a public/css/dock.css
 npm run new:page -- <id>      # pagina nuova in config/pages/
 npm run new:widget -- <nome>  # plugin con un widget in plugins/
+npm run screenshots           # rifà le immagini del README dalla demo (con npm run demo acceso)
 ```
 
 ```text
@@ -505,6 +510,12 @@ Regole da rispettare:
 La dock risponde solo con il codice di accesso, il pannello solo da `127.0.0.1`, e i segreti in `data/` sono cifrati
 con il portachiavi del sistema. Alcune funzioni (scrivere testo sul PC, far lavorare Claude Code) danno al tablet molto potere:
 non condividere il codice. Dettagli: [Sicurezza](app/README.md#sicurezza).
+
+## Contribuire
+
+Segnalazioni, idee e pull request sono benvenute: come fare in [CONTRIBUTING.md](CONTRIBUTING.md). Ogni modifica viene
+verificata e unita dal proprietario del repository. Se usi un assistente AI (Claude, Copilot, Cursor, Codex…) per
+scrivere widget, plugin o pagine, fagli leggere [AGENTS.md](AGENTS.md): architettura, regole e passi in un solo file.
 
 ## Licenza
 

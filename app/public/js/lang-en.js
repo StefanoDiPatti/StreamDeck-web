@@ -274,7 +274,7 @@
     'La posta arriva da Thunderbird sul PC:': 'Mail comes from Thunderbird on the PC:', 'pannello di controllo, sezione Email.': 'control panel, Email section.',
     'Messaggio lungo: il resto è sul PC (APRI SUL PC).': 'Long message: the rest is on the PC (OPEN ON PC).', 'Thunderbird aperto sul PC': 'Thunderbird opened on the PC',
     // tablet
-    'tocca per riattivare': 'tap to wake up', '(nessun output)': '(no output)', 'il PC': 'the PC', 'ora': 'now', 'ieri': 'yesterday',
+    'pronto': 'done', 'tocca per riattivare': 'tap to wake up', '(nessun output)': '(no output)', 'il PC': 'the PC', 'ora': 'now', 'ieri': 'yesterday',
     'Widget già esistente:': 'Widget already exists:', 'Mute inviato a Discord (scorciatoia)': 'Mute sent to Discord (shortcut)',
     'Silenzia inviato a Discord (scorciatoia)': 'Deafen sent to Discord (shortcut)'
   });
