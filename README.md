@@ -1,13 +1,13 @@
 # Vibe Deck
 
-**La Stream Deck da nerd developer, per nerd developer.**
+**La Stream Deck da developer, per developer.**
 
-Trasforma un **vecchio tablet Android** (anche Android 4.x, con il suo browser) **o il telefono che hai in tasca** in una **Stream Deck wireless** per il PC.
+Trasforma un **vecchio tablet Android o il telefono che hai in tasca** in una **Stream Deck wireless** per il PC.
 Sul PC (Windows o Linux) gira un piccolo server Node.js; tablet o telefono aprono una pagina web: niente app da installare.
 
 <p align="center">
-  <a href="docs/video/vibe-deck-verticale.mp4"><img src="docs/video/anteprima.gif" width="300" alt="Video promo: Vibe Deck su tablet e telefono, Claude Code, GitHub, adb e pagine in JSON"></a><br>
-  <sub>Clicca per il video in alta qualità (<a href="docs/video/vibe-deck-verticale.mp4">mp4 verticale 1080x1920</a>, 28 s), pronto per Reels, Shorts e TikTok.</sub>
+  <a href="https://github.com/StefanoDiPatti/vibe-deck/releases/latest"><img src="docs/screenshots/promo.gif" width="720" alt="Video promo di Vibe Deck: il vecchio tablet diventa una Stream Deck"></a><br>
+  <sub>I video in alta qualità (orizzontale e verticale, in mp4) sono tra i file della <a href="https://github.com/StefanoDiPatti/vibe-deck/releases/latest">release</a>.</sub>
 </p>
 
 ![Pagina HOME sul tablet: musica, note e diagnostica del PC](docs/screenshots/tablet-main.png)
@@ -32,8 +32,7 @@ Sul PC (Windows o Linux) gira un piccolo server Node.js; tablet o telefono apron
 | **Audio, tema Neon Elgato** | **GitHub con deploy, tema Neo-brutalista, in inglese** |
 | ![Pagina AUDIO, tema Neon Elgato](docs/screenshots/tablet-audio-neon.png) | ![Pagina GITHUB in inglese, tema Neo-brutalista](docs/screenshots/tablet-github-brutal-en.png) |
 
-*Screenshot dalla demo con dati finti (`npm run demo`, poi `npm run screenshots`). Il video è un'animazione web
-([`docs/video/index.html`](docs/video/index.html), si apre nel browser) registrata con `npm install` e `npm run video` in `docs/video`.*
+*Screenshot dalla demo con dati finti (`npm run demo`, poi `npm run screenshots`).*
 
 ### Pannello di controllo sul PC
 
