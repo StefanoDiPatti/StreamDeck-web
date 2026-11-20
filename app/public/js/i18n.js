@@ -43,10 +43,11 @@ var I18n = (function () {
     var out = one(core);
     // "· 11 h fa", "· collegamento…": il puntino davanti resta, si traduce il resto
     if (out === null && core.indexOf('· ') === 0) { var rest = t(core.slice(2)); if (rest !== core.slice(2)) out = '· ' + rest; }
-    if (out === null && core.indexOf(' · ') > 0) {
-      var parts = core.split(' · '), changed = false;
-      for (var i = 0; i < parts.length; i++) { var p = one(parts[i]); if (p !== null) { parts[i] = p; changed = true; } }
-      if (changed) out = parts.join(' · ');
+    // pezzi separati da " · " (anche con più spazi attorno): tradotti uno per uno, separatori intatti
+    if (out === null && /\S\s+·\s+\S/.test(core)) {
+      var parts = core.split(/(\s+·\s+)/), changed = false;
+      for (var i = 0; i < parts.length; i += 2) { var p = one(parts[i]); if (p !== null) { parts[i] = p; changed = true; } }
+      if (changed) out = parts.join('');
     }
     if (out === null) return str;
     return str.replace(core, out);

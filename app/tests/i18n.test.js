@@ -85,3 +85,9 @@ test('puntino davanti: "· 11 h fa" -> "· 11 h ago"', function () {
   assert.strictEqual(I.t('· 11 h fa'), '· 11 h ago');
   assert.strictEqual(I.t('· ieri'), '· yesterday');
 });
+
+test('separatori " · " con più spazi (riepilogo di GitHub)', function () {
+  const I = load('en');
+  assert.strictEqual(I.t('PR aperte 3   ·   Issue 4   ·   CI falliti 1'), 'Open PRs 3   ·   Issue 4   ·   Failed CI 1');
+  assert.strictEqual(I.t('pronto'), 'done');
+});
