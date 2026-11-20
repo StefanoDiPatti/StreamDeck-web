@@ -71,16 +71,23 @@ async function listRepos(s, token) {
   return [];
 }
 
+// Un workflow di deploy: nome o file con deploy, release, publish, pages (anche "pages build and deployment" di GitHub Pages).
+const DEPLOY_RE = /deploy|release|publish|pages|\bcd\b/i;
+function isDeploy(run) { return DEPLOY_RE.test(String(run.name || '')) || DEPLOY_RE.test(String(run.path || '')); }
+
 async function repoSummary(full, token) {
   const base = '/repos/' + full;
   const [info, pulls, runs, commits] = await Promise.all([
     gh(base, token),
     gh(base + '/pulls?state=open&per_page=100', token).catch(function () { return []; }),
-    gh(base + '/actions/runs?per_page=1', token).catch(function () { return null; }),
+    // ultime esecuzioni di GitHub Actions: la prima è la CI, la prima di un workflow di deploy è il deploy
+    gh(base + '/actions/runs?per_page=20', token).catch(function () { return null; }),
     gh(base + '/commits?per_page=1', token).catch(function () { return []; })
   ]);
   const prs = Array.isArray(pulls) ? pulls.length : 0;
-  const run = runs && runs.workflow_runs && runs.workflow_runs[0];
+  const list = (runs && runs.workflow_runs) || [];
+  const run = list[0];
+  const dep = list.filter(isDeploy)[0];
   const commit = Array.isArray(commits) && commits[0];
   return {
     name: info.name,
@@ -97,6 +104,13 @@ async function repoSummary(full, token) {
       name: run.name,
       url: run.html_url
     } : null,
+    deploy: dep ? {
+      status: dep.status,
+      conclusion: dep.conclusion,
+      name: dep.name,
+      url: dep.html_url,
+      at: dep.updated_at || dep.created_at
+    } : null,
     commit: commit ? {
       message: String(commit.commit.message || '').split('\n')[0],
       author: (commit.commit.author && commit.commit.author.name) || '',
@@ -109,7 +123,7 @@ async function repoSummary(full, token) {
 async function build() {
   const s = settings();
   const token = await getToken();
-  const out = { configured: true, authenticated: !!token, repos: [], totals: { prs: 0, issues: 0, failing: 0 }, error: null, updatedAt: Date.now() };
+  const out = { configured: true, authenticated: !!token, repos: [], totals: { prs: 0, issues: 0, failing: 0, deployFailing: 0 }, error: null, updatedAt: Date.now() };
   let names;
   try {
     names = await listRepos(s, token);
@@ -133,6 +147,7 @@ async function build() {
     out.totals.prs += r.prs;
     out.totals.issues += r.issues;
     if (r.ci && r.ci.conclusion === 'failure') out.totals.failing++;
+    if (r.deploy && r.deploy.conclusion === 'failure') out.totals.deployFailing++;
   });
   const failed = results.filter(function (r) { return r.error; });
   if (failed.length === results.length) out.error = 'GitHub non raggiungibile: ' + failed[0].error;
@@ -166,7 +181,8 @@ function urlFor(full, what) {
   if (what === 'pulls') return repo.url + '/pulls';
   if (what === 'issues') return repo.url + '/issues';
   if (what === 'actions') return (repo.ci && repo.ci.url) || repo.url + '/actions';
+  if (what === 'deploy') return (repo.deploy && repo.deploy.url) || repo.url + '/actions';
   return repo.url;
 }
 
-module.exports = { summary: summary, urlFor: urlFor };
+module.exports = { summary: summary, urlFor: urlFor, isDeploy: isDeploy };

@@ -544,13 +544,22 @@ var Widgets = (function () {
       if (r.ci.conclusion === 'failure') return '<span class="badge bad">CI ✗</span>';
       return '<span class="badge none">CI ' + D.esc(r.ci.conclusion || '?') + '</span>';
     }
+    // ultimo deploy (workflow di GitHub Actions con deploy/release/publish/pages nel nome): solo se il repository ne ha uno
+    function deploy(r) {
+      var d = r.deploy;
+      if (!d) return '';
+      var cls = d.status !== 'completed' ? 'run' : d.conclusion === 'success' ? 'good' : d.conclusion === 'failure' ? 'bad' : 'none';
+      var mark = d.status !== 'completed' ? '…' : d.conclusion === 'success' ? '✓' : d.conclusion === 'failure' ? '✗' : '–';
+      return '<span class="badge ' + cls + '" data-what="deploy" title="' + D.esc(d.name) + '">DEPLOY ' + mark + '</span>';
+    }
 
     function render() {
       list.innerHTML = '';
       if (!data) return;
       if (!guideOn) setText(title, 'GITHUB' + (data.authenticated ? '' : ' (senza token)'));
       setText(totals, data.error ? data.error :
-        'PR aperte ' + data.totals.prs + '   ·   Issue ' + data.totals.issues + (data.totals.failing ? '   ·   CI falliti ' + data.totals.failing : ''));
+        'PR aperte ' + data.totals.prs + '   ·   Issue ' + data.totals.issues + (data.totals.failing ? '   ·   CI falliti ' + data.totals.failing : '') +
+        (data.totals.deployFailing ? '   ·   Deploy falliti ' + data.totals.deployFailing : ''));
       D.toggleClass(totals, 'err', !!data.error);
       for (var i = 0; i < data.repos.length; i++) {
         var r = data.repos[i];
@@ -563,7 +572,7 @@ var Widgets = (function () {
             '<div class="gh-badges">' +
               '<span class="badge pr" data-what="pulls">PR ' + r.prs + '</span>' +
               '<span class="badge is" data-what="issues">ISSUE ' + r.issues + '</span>' +
-              '<span data-what="actions">' + ci(r) + '</span>' +
+              '<span data-what="actions">' + ci(r) + '</span>' + deploy(r) +
             '</div>' +
             '<div class="gh-name">' + D.esc(r.name) + (r.private ? ' <span class="gh-priv">privato</span>' : '') + '</div>' +
             '<div class="gh-msg">' + (r.commit ? D.esc(r.commit.message) + ' <span class="gh-when">· ' + D.esc(D.ago(r.commit.date)) + '</span>' : '') + '</div>';

@@ -89,7 +89,7 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | MUSICA | lettore completo (seek, shuffle, ripeti, volume dell'app) e coda dei brani |
 | APP | programmi (pallino verde = già aperto, un altro tocco lo chiude), Claude, PowerShell/Terminale, screenshot, blocco PC, schermo spento, **volume di sistema**, Blender e DaVinci |
 | DEV | VS Code, Claude Code, PowerShell, OpenClaw, scorciatoie di VS Code |
-| GITHUB | PR, issue, CI e ultimo commit dei tuoi repository |
+| GITHUB | PR, issue, CI, ultimo deploy (workflow di GitHub Actions con deploy, release, publish o pages nel nome: badge DEPLOY ✓/✗/…) e ultimo commit dei tuoi repository |
 | OLLAMA | chat con i modelli locali |
 | CLAUDE | chat, sessioni di Claude Code, dettatura, scrittura sul PC |
 | DISCORD | server, canali vocali con chi c'è dentro, chi parla, mute/audio, webcam, Go Live, volume e muto di una persona solo per te |
@@ -104,6 +104,8 @@ I pulsanti volume e annulla si ripetono se tieni premuto.
 | AUDIO | uscite e microfoni (predefinito, volume, mute), volume e mute di ogni app che usa l'audio |
 | DESKTOP VIRTUALI *(solo Linux)* | guida alle scorciatoie dei desktop virtuali (KDE Plasma, GNOME, anche Windows); su Windows la stessa guida è nella pagina SCHERMI |
 | VIBER *(aggiungila dal pannello)* | passa ai pannelli aperti di Viber (terminale, git, browser, chat, task, file), cambia vista (schede, agenti, focus), mostra le task del progetto aperto |
+| BROWSER DEV *(disponibile)* | scorciatoie del browser: RICARICA PULITA, DEVTOOLS, CONSOLE, ISPEZIONA, DISPOSITIVO, CANCELLA DATI (tenuto premuto), LOCALHOST:5173 e :3000; i tasti vanno alla finestra in primo piano |
+| ANDROID *(disponibile)* | adb (Android SDK platform-tools): DISPOSITIVI, ERRORI e CRASH di logcat, SCREENSHOT nelle Immagini, SCHERMO con scrcpy, HOME/INDIETRO/RECENTI, DEV MENU e RICARICA di React Native, METRO 8081, RIAVVIA ADB. Comandi in `config/defaults/commands/android.json` |
 | BLENDER, DAVINCI, UNREAL *(disponibili: aggiungile alla barra dal pannello)* | scorciatoie dei tre programmi (UNREAL: play, simula, compila C++ con Live Coding, strumenti W/E/R, viste) |
 
 ## Viber

@@ -144,9 +144,9 @@ Se qualcosa non va: [Problemi comuni](app/README.md#problemi-comuni).
 |---|---|---|---|
 | HOME | Musica, stato del PC e TODO; **la scegli tu dal pannello** (consumi di Claude, GitHub, email, orologio…) | ✅ | ✅ (TODO in una lista della dock invece delle Memo) |
 | MUSICA | Copertina, coda, posizione nel brano, volume dell'app | ✅ | ✅ con `playerctl` |
-| APP | Pulsanti delle app e del sistema | ✅ | ✅ (Terminale, Monitor di sistema, Spectacle al posto di quelli di Windows) |
+| APP | Pulsanti delle app e del sistema (anche Docker Desktop) | ✅ | ✅ (Terminale, Monitor di sistema, Spectacle al posto di quelli di Windows) |
 | DEV | Strumenti da sviluppatore | ✅ | ✅ |
-| GITHUB | Repository, PR, issue e CI; guida ai comandi git | ✅ | ✅ |
+| GITHUB | Repository, PR, issue, CI e **stato dei deploy** (GitHub Actions); guida ai comandi git | ✅ | ✅ |
 | OLLAMA | Chat con un modello locale | ✅ | ✅ |
 | CLAUDE | Sessioni di Claude Code, consumi, chat | ✅ (app desktop di Claude) | ✅ (con `claude -p`) |
 | DISCORD | Server, canali vocali, mute, webcam, Go Live | ✅ | ✅ |
@@ -156,6 +156,8 @@ Se qualcosa non va: [Problemi comuni](app/README.md#problemi-comuni).
 | AUDIO | Uscita, microfono, volume di ogni app | ✅ | ✅ con `pactl` |
 | VIBER | Pannelli, progetti e task di Viber | ✅ | ✅ |
 | BLENDER, DAVINCI RESOLVE, UNREAL | Scorciatoie dei tre programmi (Unreal: play, compila C++, strumenti e viste) | ✅ | ✅ |
+| BROWSER DEV | Scorciatoie del browser per sviluppare: ricarica pulita, DevTools, console, modalità dispositivo, localhost | ✅ | ✅ |
+| ANDROID | adb e logcat: dispositivi, errori e crash, screenshot, schermo del telefono (scrcpy), React Native | ✅ serve adb | ✅ serve adb |
 | DESKTOP VIRTUALI | Guida alle scorciatoie | ❌ (è dentro SCHERMI) | ✅ |
 
 Le pagine da DISCORD in giù all'inizio non sono nella barra: le aggiungi dal pannello di controllo.
