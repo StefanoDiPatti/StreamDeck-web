@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Vibe Deck verticale</title>
+<!--
+  Video promozionale verticale (1080x1920) fatto solo con animazioni web e screenshot della demo.
+  Aperto nel browser si riproduce da solo (clic = pausa). Per l'mp4: vedi render.js in questa cartella.
+  La timeline è deterministica: window.render(t) disegna il fotogramma al secondo t.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05080e; --blue: #4d9bff; --cyan: #5ee7ff; --green: #3ddc84; --orange: #e8774a;
+    --text: #eef3fb; --dim: #8796ab; --card: #0d1420; --line: #1c2a3d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #000; }
+  body { display: grid; place-items: center; min-height: 100vh; overflow: hidden; }
+  #stage {
+    position: relative; width: 1080px; height: 1920px; overflow: hidden; background: var(--bg);
+    font-family: Inter, 'Segoe UI', sans-serif; color: var(--text); transform-origin: center center;
+  }
+  .mono { font-family: 'JetBrains Mono', Consolas, monospace; }
+  .abs { position: absolute; }
+  .glow { position: absolute; border-radius: 50%; filter: blur(120px); opacity: .55; }
+  #g1 { width: 900px; height: 900px; background: #1b4fd1; }
+  #g2 { width: 700px; height: 700px; background: #0aa6c9; opacity: .28; }
+  #grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(120,160,220,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(120,160,220,.07) 1px, transparent 1px);
+    background-size: 60px 60px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 45%, #000 30%, transparent 100%);
+            mask-image: radial-gradient(ellipse 70% 55% at 50% 45%, #000 30%, transparent 100%);
+  }
+  .scene { position: absolute; inset: 0; opacity: 0; }
+  .kicker { position: absolute; left: 90px; top: 250px; font-size: 30px; color: var(--blue); letter-spacing: .12em; font-weight: 700; }
+  .head { position: absolute; left: 90px; right: 90px; top: 300px; font-size: 100px; line-height: 1.02; font-weight: 900; letter-spacing: -.035em; }
+  .grad { background: linear-gradient(90deg, var(--blue), var(--cyan)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sub { position: absolute; left: 90px; right: 90px; font-size: 40px; line-height: 1.3; color: var(--dim); font-weight: 500; }
+  .chips { position: absolute; left: 90px; right: 90px; display: flex; flex-wrap: wrap; gap: 18px; }
+  .chip {
+    font-family: 'JetBrains Mono', monospace; font-size: 28px; padding: 14px 24px; border-radius: 999px;
+    background: rgba(77,155,255,.1); border: 1px solid rgba(77,155,255,.35); color: #cfe2ff; font-weight: 500;
+  }
+  .chip b { color: var(--green); font-weight: 700; }
+  /* finestre stile terminale/editor */
+  .win { position: absolute; background: var(--card); border: 1px solid var(--line); border-radius: 28px; box-shadow: 0 40px 120px rgba(0,0,0,.6); overflow: hidden; }
+  .win .bar { height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 26px; border-bottom: 1px solid var(--line); background: #0a101a; }
+  .win .bar i { width: 16px; height: 16px; border-radius: 50%; display: block; }
+  .win .bar span { margin-left: 14px; font-size: 24px; color: var(--dim); }
+  .term { padding: 34px 36px; font-size: 34px; line-height: 1.55; white-space: pre; }
+  .p { color: var(--green); } .c { color: #5f708a; } .k { color: #8ab4ff; } .s { color: #ffcf7a; } .n { color: #ff9ad5; } .ok { color: var(--green); }
+  .cur { display: inline-block; width: .55em; height: 1.05em; vertical-align: -.15em; background: var(--cyan); margin-left: 2px; }
+  /* dispositivi */
+  .dev { position: absolute; background: #111; border-radius: 44px; padding: 26px; box-shadow: 0 0 0 2px #2a2f38 inset, 0 50px 120px rgba(0,0,0,.7), 0 0 80px rgba(77,155,255,.18); }
+  .dev .scr { position: relative; width: 100%; height: 100%; border-radius: 10px; overflow: hidden; background: #000; }
+  .dev .scr img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .dev .cam { position: absolute; width: 12px; height: 12px; border-radius: 50%; background: #2a313c; }
+  #tablet { width: 940px; height: 640px; left: 70px; }
+  #tablet .cam { left: 50%; top: 8px; margin-left: -6px; }
+  #phone { width: 820px; height: 404px; border-radius: 64px; padding: 18px 28px; }
+  #phone .scr { border-radius: 40px; }
+  #phone .cam { left: 9px; top: 50%; margin-top: -6px; }
+  .tap { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 6px solid rgba(255,255,255,.9); opacity: 0; }
+  /* schede delle funzioni */
+  .card { position: absolute; left: 70px; width: 940px; top: 640px; }
+  .card .win { position: relative; }
+  .card .shot { width: 100%; height: 548px; object-fit: cover; object-position: top left; display: block; }
+  .card h3 { margin-top: 56px; font-size: 64px; line-height: 1.08; font-weight: 800; letter-spacing: -.025em; }
+  .card p { margin-top: 18px; font-size: 34px; color: var(--dim); }
+  #toast {
+    position: absolute; left: 50%; top: 1500px; transform: translateX(-50%); white-space: nowrap; padding: 24px 38px; border-radius: 20px;
+    background: rgba(61,220,132,.12); border: 1px solid rgba(61,220,132,.5); color: #b6f5d1; font-size: 32px;
+  }
+  /* finale */
+  #logo { position: absolute; left: 50%; top: 360px; width: 190px; height: 190px; margin-left: -95px; }
+  #logo i { position: absolute; width: 86px; height: 86px; border-radius: 22px; background: linear-gradient(135deg, #5aa7ff, #2c6fe0); box-shadow: 0 0 60px rgba(77,155,255,.5); }
+  #brand { position: absolute; left: 0; right: 0; top: 600px; text-align: center; font-size: 150px; font-weight: 900; letter-spacing: -.045em; }
+  #tag { position: absolute; left: 80px; right: 80px; top: 790px; text-align: center; font-size: 46px; line-height: 1.25; color: #c9d6ea; font-weight: 700; }
+  #url { position: absolute; left: 50%; top: 1640px; transform: translateX(-50%); white-space: nowrap; font-size: 34px; color: #cfe2ff; padding: 22px 36px; border-radius: 20px; border: 1px solid var(--line); background: #0a111c; }
+  #endchips { top: 1500px; justify-content: center; }
+  #bar { position: absolute; left: 0; bottom: 0; height: 6px; background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="g1" class="glow"></div><div id="g2" class="glow"></div>
+  <div id="grid"></div>
+
+  <!-- 1. aggancio -->
+  <div class="scene" id="s1">
+    <div class="win" id="t1" style="left:70px; right:70px; top:420px;">
+      <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span class="mono">~/vibe-deck/app</span></div>
+      <div class="term mono" id="t1txt"></div>
+    </div>
+    <div class="head" id="h1" style="top:900px;"></div>
+  </div>
+
+  <!-- 2. tablet / 3. telefono (dispositivi condivisi) -->
+  <div class="scene" id="s2">
+    <div class="kicker mono" id="k2">01 / HARDWARE</div>
+    <div class="head" id="h2">Quel tablet<br>Android 4<br><span class="grad">nel cassetto?</span></div>
+    <div class="chips" id="c2" style="top:1600px;"><span class="chip">Android 4.x</span><span class="chip">browser di serie</span><span class="chip">Wi-Fi</span></div>
+  </div>
+  <div class="scene" id="s3">
+    <div class="kicker mono">02 / OVUNQUE</div>
+    <div class="head">…o il telefono<br><span class="grad">che hai in tasca.</span></div>
+    <div class="sub" id="sub3" style="top:1610px;">Niente app da installare:<br>basta il browser.</div>
+  </div>
+  <div class="dev" id="tablet"><div class="cam"></div><div class="scr"><img id="tabA" src="shots/tab-main.jpg" alt=""><img id="tabB" src="shots/tab-apps.jpg" alt="" style="opacity:0"></div><div class="tap" id="tap"></div></div>
+  <div class="dev" id="phone"><div class="cam"></div><div class="scr"><img src="shots/phone-apps.jpg" alt=""></div></div>
+
+  <!-- 4. funzioni per dev -->
+  <div class="scene" id="s4">
+    <div class="kicker mono">03 / DEV MODE</div>
+    <div class="head">Il tuo stack,<br><span class="grad">a un tocco.</span></div>
+  </div>
+
+  <!-- 5. hackable -->
+  <div class="scene" id="s5">
+    <div class="kicker mono">04 / HACKABLE</div>
+    <div class="head">Una pagina?<br><span class="grad">Un file JSON.</span></div>
+    <div class="win" style="left:70px; right:70px; top:640px; height:800px;">
+      <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span class="mono">config/pages/ship.json</span></div>
+      <div class="term mono" id="code" style="font-size:31px;"></div>
+    </div>
+    <div id="toast" class="mono">✔ salvato · il tablet si aggiorna da solo</div>
+  </div>
+
+  <!-- 6. finale -->
+  <div class="scene" id="s6">
+    <div id="logo"><i style="left:0;top:0"></i><i style="left:104px;top:0"></i><i style="left:0;top:104px"></i><i style="left:104px;top:104px"></i></div>
+    <div id="brand">Vibe Deck</div>
+    <div id="tag">La Stream Deck da <span class="grad">nerd developer</span><br>per <span class="grad">nerd developer</span>.</div>
+    <div class="dev abs" id="endTab" style="width:600px;height:410px;padding:18px;border-radius:32px;"><div class="scr"><img src="shots/tab-claude.jpg" alt=""></div></div>
+    <div class="dev abs" id="endPhone" style="width:470px;height:232px;padding:12px 18px;border-radius:40px;"><div class="scr" style="border-radius:26px;"><img src="shots/phone-main.jpg" alt=""></div></div>
+    <div class="chips" id="endchips"><span class="chip">open source · MIT</span><span class="chip">Windows · Linux</span><span class="chip">tablet · telefono</span></div>
+    <div id="url" class="mono">github.com/StefanoDiPatti/vibe-deck</div>
+  </div>
+
+  <div id="bar"></div>
+</div>
+
+<script>
+(function () {
+  var DURATION = 28.5;
+  var $ = function (id) { return document.getElementById(id); };
+  var C = function (x) { return x < 0 ? 0 : x > 1 ? 1 : x; };
+  var P = function (t, a, b) { return C((t - a) / (b - a)); };
+  var eo = function (x) { return 1 - Math.pow(1 - x, 3); };
+  var eio = function (x) { return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+  var back = function (x) { var c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+  var lerp = function (a, b, x) { return a + (b - a) * x; };
+  // dentro/fuori di una scena: 0..1
+  var win = function (t, a, b, fi, fo) { return Math.min(P(t, a, a + (fi || .4)), 1 - P(t, b - (fo || .4), b)); };
+  var set = function (el, o, tf) { el.style.opacity = o; if (tf !== undefined) el.style.transform = tf; };
+
+  // testo che si scrive: segmenti [classe, testo]; n = caratteri visibili
+  function typed(segs, n, cursor) {
+    var html = '', left = n;
+    for (var i = 0; i < segs.length && left > 0; i++) {
+      var s = segs[i][1].slice(0, left); left -= s.length;
+      var esc = s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      html += segs[i][0] ? '<span class="' + segs[i][0] + '">' + esc + '</span>' : esc;
+    }
+    return html + (cursor ? '<span class="cur"></span>' : '');
+  }
+  var len = function (segs) { return segs.reduce(function (a, s) { return a + s[1].length; }, 0); };
+
+  var TERM = [['p', '$ '], ['', 'npm start\n']];
+  var TERM2 = [['ok', '✔ '], ['', 'Vibe Deck pronta\n'], ['c', '  → http://192.168.1.50:8787']];
+  var H1 = [['', 'La Stream Deck\nda '], ['grad', 'nerd developer'], ['', '\nper '], ['grad', 'nerd developer'], ['', '.']];
+  var CODE = [
+    ['p', '$ '], ['', 'npm run new:page -- ship\n'],
+    ['ok', '✔ '], ['c', 'creata, il tablet la mostra già\n\n'],
+    ['', '{\n  '], ['k', '"id"'], ['', ': '], ['s', '"ship"'], ['', ',\n  '],
+    ['k', '"title"'], ['', ': '], ['s', '"SHIP IT"'], ['', ',\n  '],
+    ['k', '"tiles"'], ['', ': [\n    { '], ['k', '"label"'], ['', ': '], ['s', '"DEPLOY"'], ['', ',\n      '],
+    ['k', '"icon"'], ['', ': '], ['s', '"bolt"'], ['', ',\n      '],
+    ['k', '"action"'], ['', ': { '], ['k', '"type"'], ['', ': '], ['s', '"command"'], ['', ',\n                  '],
+    ['k', '"id"'], ['', ': '], ['s', '"deploy"'], ['', ' } }\n  ]\n}']
+  ];
+
+  // schede delle funzioni (scena 4)
+  var CARDS = [
+    ['tab-claude', '> claude --continue', 'Scrivi a <span class="grad">Claude Code</span><br>dal divano.', 'Sessioni dell\'app desktop, a voce o a tasti.'],
+    ['tab-github', '> gh pr status', 'PR, CI e deploy<br><span class="grad">a colpo d\'occhio.</span>', 'GitHub, git e Docker in una pagina.'],
+    ['tab-android', '> adb logcat', 'adb, logcat, scrcpy:<br><span class="grad">un tocco.</span>', 'Pagine ANDROID e BROWSER DEV pronte.'],
+    ['tab-unreal', '> unreal --play', 'Unreal, Blender,<br><span class="grad">DaVinci, Discord…</span>', 'Scorciatoie, macro, audio, monitor.']
+  ];
+  var s4 = $('s4'), cardEls = CARDS.map(function (c) {
+    var d = document.createElement('div'); d.className = 'card';
+    d.innerHTML = '<div class="win"><div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span class="mono">' + c[1] + '</span></div>' +
+      '<img class="shot" src="shots/' + c[0] + '.jpg" alt=""></div><h3>' + c[2] + '</h3><p>' + c[3] + '</p>';
+    s4.appendChild(d); return d;
+  });
+
+  function render(t) {
+    // sfondo
+    $('g1').style.transform = 'translate(' + (-200 + 160 * Math.sin(t * .35)) + 'px,' + (300 + 200 * Math.cos(t * .27)) + 'px)';
+    $('g2').style.transform = 'translate(' + (520 + 120 * Math.cos(t * .4)) + 'px,' + (1150 + 160 * Math.sin(t * .31)) + 'px)';
+    $('grid').style.backgroundPosition = '0 ' + (t * 14) + 'px';
+    $('bar').style.width = (100 * t / DURATION) + '%';
+
+    // 1. aggancio: terminale e titolo che si scrive (0 - 3.8)
+    var o1 = win(t, 0, 3.8, .25, .35);
+    set($('s1'), o1, 'translateY(' + (-60 * P(t, 3.45, 3.8)) + 'px)');
+    var n1 = Math.floor(P(t, .25, .85) * len(TERM));
+    var showT2 = t > 1.0;
+    $('t1txt').innerHTML = typed(TERM, n1, !showT2) + (showT2 ? typed(TERM2, Math.floor(P(t, 1.0, 1.35) * len(TERM2))) : '');
+    set($('t1'), eo(P(t, 0, .4)), 'translateY(' + (40 * (1 - eo(P(t, 0, .4)))) + 'px)');
+    var nh = Math.floor(P(t, 1.35, 2.75) * len(H1));
+    $('h1').innerHTML = typed(H1, nh, t > 1.3 && (t < 2.75 || Math.floor(t * 2.5) % 2 === 0)).replace(/\n/g, '<br>');
+    $('h1').style.fontSize = '94px';
+
+    // 2. tablet (3.7 - 8) e 3. telefono (7.8 - 12.2)
+    var o2 = win(t, 3.7, 8.0, .45, .4);
+    var k2 = eo(P(t, 3.7, 4.3));
+    set($('s2'), o2);
+    $('h2').style.transform = 'translateY(' + (50 * (1 - k2)) + 'px)';
+    $('c2').style.opacity = eo(P(t, 4.8, 5.3));
+    var o3 = win(t, 7.8, 12.2, .45, .45);
+    set($('s3'), o3);
+    $('s3').querySelector('.head').style.transform = 'translateY(' + (50 * (1 - eo(P(t, 7.8, 8.4)))) + 'px)';
+    $('sub3').style.opacity = eo(P(t, 10.3, 10.8));
+
+    // tablet: entra dal basso, tocco, poi si sposta in alto e rimpicciolisce per far posto al telefono
+    var tin = back(P(t, 3.9, 4.8)), tout = 1 - P(t, 11.7, 12.2);
+    var up = eio(P(t, 7.8, 8.6));
+    var ts = lerp(1, .7, up);
+    var tyFinal = lerp(900, 500, up);
+    $('tablet').style.top = (tyFinal + (1 - tin) * 1100) + 'px';
+    $('tablet').style.transform = 'perspective(1800px) rotateX(' + (18 * (1 - P(t, 3.9, 4.9))) + 'deg) scale(' + ts + ')';
+    $('tablet').style.opacity = Math.min(P(t, 3.9, 4.2), tout);
+    // tocco su APP nella barra in basso e cambio schermata
+    var tp = P(t, 5.9, 6.5);
+    $('tap').style.left = '248px'; $('tap').style.top = '592px';
+    $('tap').style.opacity = tp > 0 && tp < 1 ? (1 - tp) : 0;
+    $('tap').style.transform = 'scale(' + (.4 + tp) + ')';
+    $('tabB').style.opacity = eo(P(t, 6.1, 6.4));
+
+    // telefono: entra in verticale (interfaccia girata), poi ruota in orizzontale
+    var pin = back(P(t, 8.2, 9.0)), rot = eio(P(t, 9.4, 10.2));
+    var pout = 1 - P(t, 11.7, 12.2);
+    $('phone').style.left = (540 - 410) + 'px';
+    $('phone').style.top = (lerp(1260, 1130, rot) + (1 - pin) * 900) + 'px';
+    $('phone').style.transform = 'rotate(' + (-90 * (1 - rot)) + 'deg) scale(' + lerp(.74, 1, rot) + ')';
+    $('phone').style.opacity = Math.min(P(t, 8.2, 8.5), pout);
+
+    // 4. dev mode (12.2 - 20.6): quattro schede da 2 secondi
+    var o4 = win(t, 12.2, 20.6, .4, .4);
+    set($('s4'), o4);
+    $('s4').querySelector('.head').style.transform = 'translateY(' + (50 * (1 - eo(P(t, 12.2, 12.8)))) + 'px)';
+    cardEls.forEach(function (el, i) {
+      var a = 12.5 + i * 2;
+      var inn = eio(P(t, a, a + .5)), out = i === CARDS.length - 1 ? 0 : eio(P(t, a + 2, a + 2.5));
+      var x = (1 - inn) * 1000 - out * 1000;
+      var ry = (1 - inn) * -25 + out * 25;
+      el.style.opacity = Math.min(P(t, a, a + .3), 1 - P(t, a + 2.1, a + 2.5) * (i === CARDS.length - 1 ? 0 : 1));
+      el.style.transform = 'perspective(2000px) translateX(' + x + 'px) rotateY(' + ry + 'deg)';
+    });
+
+    // 5. hackable (20.6 - 24.6)
+    var o5 = win(t, 20.6, 24.6, .4, .4);
+    set($('s5'), o5);
+    $('s5').querySelector('.head').style.transform = 'translateY(' + (50 * (1 - eo(P(t, 20.6, 21.2)))) + 'px)';
+    var nc = Math.floor(P(t, 20.9, 23.2) * len(CODE));
+    $('code').innerHTML = typed(CODE, nc, true);
+    var tt = eo(P(t, 23.3, 23.7));
+    $('toast').style.opacity = tt;
+    $('toast').style.transform = 'translateX(-50%) translateY(' + (30 * (1 - tt)) + 'px)';
+
+    // 6. finale (24.6 - fine)
+    var o6 = P(t, 24.6, 25.0);
+    set($('s6'), o6);
+    var sq = $('logo').children;
+    for (var i = 0; i < sq.length; i++) {
+      var q = back(P(t, 24.7 + i * .08, 25.2 + i * .08));
+      sq[i].style.transform = 'scale(' + q + ')';
+    }
+    var b = eo(P(t, 25.0, 25.5));
+    $('brand').style.opacity = b; $('brand').style.transform = 'translateY(' + (40 * (1 - b)) + 'px)';
+    var tg = eo(P(t, 25.3, 25.8));
+    $('tag').style.opacity = tg; $('tag').style.transform = 'translateY(' + (30 * (1 - tg)) + 'px)';
+    var dv = back(P(t, 25.5, 26.3));
+    var et = $('endTab'), ep = $('endPhone');
+    et.style.left = '120px'; et.style.top = (1010 + (1 - dv) * 700) + 'px';
+    et.style.transform = 'rotate(' + (-4 + Math.sin(t) * .6) + 'deg)';
+    ep.style.left = '500px'; ep.style.top = (1210 + (1 - back(P(t, 25.7, 26.5))) * 700) + 'px';
+    ep.style.transform = 'rotate(' + (5 + Math.cos(t) * .6) + 'deg)';
+    $('endchips').style.opacity = eo(P(t, 26.3, 26.8));
+    var u = eo(P(t, 26.6, 27.1));
+    $('url').style.opacity = u; $('url').style.transform = 'translateX(-50%) scale(' + lerp(.9, 1, u) + ')';
+  }
+
+  window.DURATION = DURATION;
+  window.render = render;
+
+  // adatta il palco 1080x1920 alla finestra
+  function fit() {
+    var k = Math.min(window.innerWidth / 1080, window.innerHeight / 1920);
+    $('stage').style.transform = 'scale(' + k + ')';
+    $('stage').style.margin = ((1920 * k - 1920) / 2) + 'px ' + ((1080 * k - 1080) / 2) + 'px';
+  }
+
+  if (/[?&]render=1/.test(location.search)) { render(0); return; }   // pilotato da render.js
+  window.addEventListener('resize', fit); fit();
+  var start = null, paused = false, pausedAt = 0;
+  document.addEventListener('click', function () {
+    paused = !paused;
+    if (!paused) start = performance.now() - pausedAt * 1000;
+  });
+  (function loop(now) {
+    if (start === null) start = now;
+    if (!paused) { pausedAt = ((now - start) / 1000) % (DURATION + 1); render(Math.min(pausedAt, DURATION)); }
+    requestAnimationFrame(loop);
+  })(performance.now());
+})();
+</script>
+</body>
+</html>

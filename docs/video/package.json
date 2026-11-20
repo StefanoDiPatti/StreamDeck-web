@@ -1,0 +1,13 @@
+{
+  "name": "vibe-deck-video",
+  "private": true,
+  "description": "Video promozionale verticale di Vibe Deck: animazione web registrata in mp4",
+  "scripts": {
+    "video": "node render.js",
+    "still": "node render.js --still"
+  },
+  "devDependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "puppeteer-core": "^24.0.0"
+  }
+}
