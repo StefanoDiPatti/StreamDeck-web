@@ -1,0 +1,35 @@
+// App per sviluppatori: Docker Desktop (pagina APP) e scrcpy (pagina ANDROID).
+{
+  "apps": {
+    "docker": {
+      "label": "Docker Desktop",
+      "toggle": true,
+      "windows": {
+        "path": "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe"
+      },
+      "linux": [
+        {
+          "path": "/opt/docker-desktop/bin/docker-desktop"
+        },
+        {
+          "path": "docker-desktop"
+        }
+      ]
+    },
+    "scrcpy": {
+      "label": "scrcpy (schermo del telefono)",
+      "toggle": true,
+      "windows": [
+        {
+          "path": "%LOCALAPPDATA%\\Microsoft\\WinGet\\Links\\scrcpy.exe"
+        },
+        {
+          "path": "scrcpy"
+        }
+      ],
+      "linux": {
+        "path": "scrcpy"
+      }
+    }
+  }
+}

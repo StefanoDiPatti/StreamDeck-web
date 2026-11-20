@@ -384,6 +384,10 @@
           "minimum": 0,
           "description": "wait: millisecondi."
         },
+        "doneMessage": {
+          "type": "string",
+          "description": "macro: messaggio mostrato sul tablet alla fine."
+        },
         "panel": {
           "type": "string",
           "description": "viber: pannello da aprire (terminal, git, browser, chat, tasks, files...)."

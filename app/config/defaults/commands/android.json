@@ -1,0 +1,571 @@
+// Comandi per la pagina ANDROID: adb (Android SDK platform-tools) e logcat.
+// Su Windows si usa adb della cartella standard dell'SDK, se no quello nel PATH.
+// Per cambiarli copia una voce in config/commands/<id>.json.
+{
+  "commands": {
+    "adb_devices": {
+      "label": "Dispositivi Android",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "devices",
+            "-l"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "devices",
+            "-l"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "devices",
+            "-l"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "devices",
+            "-l"
+          ]
+        }
+      ],
+      "showOutput": true
+    },
+    "adb_logcat_errors": {
+      "label": "Logcat: errori recenti",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "logcat",
+            "-d",
+            "-t",
+            "300",
+            "*:E"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "logcat",
+            "-d",
+            "-t",
+            "300",
+            "*:E"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "logcat",
+            "-d",
+            "-t",
+            "300",
+            "*:E"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "logcat",
+            "-d",
+            "-t",
+            "300",
+            "*:E"
+          ]
+        }
+      ],
+      "showOutput": true,
+      "timeoutMs": 30000
+    },
+    "adb_logcat_crash": {
+      "label": "Logcat: crash",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "logcat",
+            "-d",
+            "-b",
+            "crash"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "logcat",
+            "-d",
+            "-b",
+            "crash"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "logcat",
+            "-d",
+            "-b",
+            "crash"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "logcat",
+            "-d",
+            "-b",
+            "crash"
+          ]
+        }
+      ],
+      "showOutput": true,
+      "timeoutMs": 30000
+    },
+    "adb_logcat_clear": {
+      "label": "Logcat svuotato",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "logcat",
+            "-c"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "logcat",
+            "-c"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "logcat",
+            "-c"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "logcat",
+            "-c"
+          ]
+        }
+      ]
+    },
+    "adb_screencap": {
+      "label": "Screenshot sul telefono",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "shell",
+            "screencap",
+            "-p",
+            "/sdcard/vibedeck-screen.png"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "screencap",
+            "-p",
+            "/sdcard/vibedeck-screen.png"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "screencap",
+            "-p",
+            "/sdcard/vibedeck-screen.png"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "shell",
+            "screencap",
+            "-p",
+            "/sdcard/vibedeck-screen.png"
+          ]
+        }
+      ]
+    },
+    "adb_screenpull": {
+      "label": "Screenshot nelle Immagini",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "pull",
+            "/sdcard/vibedeck-screen.png",
+            "%USERPROFILE%Pictures\u000bibedeck-android.png"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "pull",
+            "/sdcard/vibedeck-screen.png",
+            "%USERPROFILE%Pictures\u000bibedeck-android.png"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "pull",
+            "/sdcard/vibedeck-screen.png",
+            "~/Pictures/vibedeck-android.png"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "pull",
+            "/sdcard/vibedeck-screen.png",
+            "~/Pictures/vibedeck-android.png"
+          ]
+        }
+      ]
+    },
+    "adb_devmenu": {
+      "label": "Menu sviluppatore (React Native)",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "82"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "82"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "82"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "82"
+          ]
+        }
+      ]
+    },
+    "adb_reload_rn": {
+      "label": "Ricarica React Native",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "shell",
+            "input",
+            "text",
+            "RR"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "input",
+            "text",
+            "RR"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "input",
+            "text",
+            "RR"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "shell",
+            "input",
+            "text",
+            "RR"
+          ]
+        }
+      ]
+    },
+    "adb_reverse_metro": {
+      "label": "Porta 8081 (Metro) collegata",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "reverse",
+            "tcp:8081",
+            "tcp:8081"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "reverse",
+            "tcp:8081",
+            "tcp:8081"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "reverse",
+            "tcp:8081",
+            "tcp:8081"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "reverse",
+            "tcp:8081",
+            "tcp:8081"
+          ]
+        }
+      ]
+    },
+    "adb_home": {
+      "label": "Home",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "3"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "3"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "3"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "3"
+          ]
+        }
+      ]
+    },
+    "adb_back": {
+      "label": "Indietro",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "4"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "4"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "4"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "4"
+          ]
+        }
+      ]
+    },
+    "adb_recents": {
+      "label": "App recenti",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "187"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "187"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "187"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "shell",
+            "input",
+            "keyevent",
+            "187"
+          ]
+        }
+      ]
+    },
+    "adb_kill_server": {
+      "label": "Server adb fermato",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "kill-server"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "kill-server"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "kill-server"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "kill-server"
+          ]
+        }
+      ]
+    },
+    "adb_start_server": {
+      "label": "Server adb avviato",
+      "windows": [
+        {
+          "cmd": "%LOCALAPPDATA%\\Android\\Sdk\\platform-tools\\adb.exe",
+          "args": [
+            "start-server"
+          ]
+        },
+        {
+          "cmd": "adb",
+          "args": [
+            "start-server"
+          ]
+        }
+      ],
+      "linux": [
+        {
+          "cmd": "adb",
+          "args": [
+            "start-server"
+          ]
+        },
+        {
+          "cmd": "~/Android/Sdk/platform-tools/adb",
+          "args": [
+            "start-server"
+          ]
+        }
+      ],
+      "timeoutMs": 30000
+    }
+  }
+}

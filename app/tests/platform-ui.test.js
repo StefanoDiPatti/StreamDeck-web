@@ -183,3 +183,35 @@ test('pagina UNREAL: disponibile (fuori dalla barra), tasti validi, id unici, ap
     if (a.type === 'key') assert.doesNotThrow(function () { keys.parseCombo([a.key]); }, t.label);
   });
 });
+
+test('pagine BROWSER DEV e ANDROID e app DOCKER: disponibili e con una variante per Windows e una per Linux', function () {
+  const apps = config.apps(), commands = config.commands();
+  const has = function (entry, os) { return !!(entry && (entry.cmd || entry.path || entry[os])); };
+  ['browserdev', 'android'].forEach(function (id) {
+    const p = config.dock().pages.filter(function (x) { return x.id === id; })[0];
+    assert.ok(p, 'pagina ' + id);
+    assert.strictEqual(p.tab, false, id + ' tra le disponibili');
+    assert.ok(p.editable, id + ': pulsanti personalizzabili dal pannello');
+    p.allTiles.forEach(function (t) {
+      const steps = t.action.type === 'macro' ? t.action.steps : [t.action];
+      steps.forEach(function (a) {
+        ['windows', 'linux'].forEach(function (os) {
+          if (a.type === 'launch') assert.ok(has(apps[a.app], os), id + ' › ' + t.label + ': app ' + a.app + ' su ' + os);
+          if (a.type === 'command') assert.ok(has(commands[a.id], os), id + ' › ' + t.label + ': comando ' + a.id + ' su ' + os);
+        });
+      });
+    });
+  });
+  ['windows', 'linux'].forEach(function (os) { assert.ok(has(apps.docker, os), 'docker su ' + os); });
+  const appsPage = config.dock().pages.filter(function (x) { return x.id === 'apps'; })[0];
+  assert.ok(appsPage.allTiles.some(function (t) { return t.id === 'docker'; }), 'DOCKER nella pagina APP');
+});
+
+test('GitHub: i workflow di deploy si riconoscono dal nome o dal file', function () {
+  const g = require('../server/services/github');
+  assert.ok(g.isDeploy({ name: 'Deploy to Vercel' }));
+  assert.ok(g.isDeploy({ name: 'pages build and deployment' }));
+  assert.ok(g.isDeploy({ name: 'build', path: '.github/workflows/cd.yml' }));
+  assert.ok(!g.isDeploy({ name: 'CI', path: '.github/workflows/ci.yml' }));
+  assert.ok(!g.isDeploy({ name: 'Lint code' }));
+});

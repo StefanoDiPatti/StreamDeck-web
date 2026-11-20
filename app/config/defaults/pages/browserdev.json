@@ -1,0 +1,30 @@
+// Pagina BROWSER DEV (id "browserdev"): scorciatoie del browser per sviluppare siti (Chrome, Brave, Edge;
+// quasi tutte valgono anche in Firefox). I tasti vanno alla finestra in primo piano: tieni davanti il browser.
+// Tra le pagine disponibili: aggiungila alla barra e scegli i pulsanti dal pannello di controllo.
+// Per cambiarla copiala in config/pages/browserdev.json e modifica la copia.
+{
+  "id": "browserdev",
+  "title": "BROWSER DEV",
+  "icon": "code",
+  "description": "Scorciatoie del browser per sviluppare: ricarica pulita, DevTools, console, dispositivo, localhost",
+  "tab": false,
+  "autoGrid": true,
+  "tiles": [
+    { "id": "ricarica", "label": "RICARICA", "icon": "refresh", "sub": "Ctrl+R", "action": { "type": "hotkey", "keys": ["CTRL", "R"] } },
+    { "id": "ricarica_pulita", "label": "RICARICA PULITA", "icon": "refresh", "sub": "senza cache · Ctrl+Shift+R", "color": "#2f6b3a", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "R"] } },
+    { "id": "devtools", "label": "DEVTOOLS", "icon": "code", "sub": "F12", "color": "#1f4f8f", "action": { "type": "key", "key": "F12" } },
+    { "id": "console", "label": "CONSOLE", "icon": "terminal", "sub": "Ctrl+Shift+J", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "J"] } },
+    { "id": "ispeziona", "label": "ISPEZIONA", "icon": "target", "sub": "Ctrl+Shift+C", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "C"] } },
+    { "id": "dispositivo", "label": "DISPOSITIVO", "icon": "fullscreen", "sub": "telefono/tablet · Ctrl+Shift+M", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "M"] } },
+    { "id": "comandi", "label": "COMANDI", "icon": "keyboard", "sub": "DevTools · Ctrl+Shift+P", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "P"] } },
+    { "id": "cerca_file", "label": "CERCA NEI FILE", "icon": "folder", "sub": "DevTools · Ctrl+Shift+F", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "F"] } },
+    { "id": "sorgente", "label": "SORGENTE", "icon": "code", "sub": "Ctrl+U", "action": { "type": "hotkey", "keys": ["CTRL", "U"] } },
+    { "id": "incognito", "label": "INCOGNITO", "icon": "lock", "sub": "Ctrl+Shift+N", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "N"] } },
+    { "id": "riapri_scheda", "label": "RIAPRI SCHEDA", "icon": "undo", "sub": "Ctrl+Shift+T", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "T"] } },
+    { "id": "cancella_dati", "label": "CANCELLA DATI", "icon": "trash", "sub": "cache e cookie · Ctrl+Shift+Canc", "confirm": true, "color": "#8b1d1d", "action": { "type": "hotkey", "keys": ["CTRL", "SHIFT", "DELETE"] } },
+    { "id": "zoom_100", "label": "ZOOM 100%", "icon": "target", "sub": "Ctrl+0", "action": { "type": "hotkey", "keys": ["CTRL", "0"] } },
+    { "id": "schermo_intero", "label": "SCHERMO INTERO", "icon": "fullscreen", "sub": "F11", "action": { "type": "key", "key": "F11" } },
+    { "id": "localhost_5173", "label": "LOCALHOST:5173", "icon": "link", "sub": "Vite", "action": { "type": "open_url", "url": "http://localhost:5173" } },
+    { "id": "localhost_3000", "label": "LOCALHOST:3000", "icon": "link", "sub": "Next, React, Node", "action": { "type": "open_url", "url": "http://localhost:3000" } }
+  ]
+}

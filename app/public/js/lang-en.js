@@ -232,6 +232,21 @@
     'Gestione schermi disponibile su Windows e su Linux con KDE Plasma': 'Screen management is available on Windows and on Linux with KDE Plasma'
   });
 
+  // ---------------------------------------------------------------- pagine per sviluppatori: BROWSER DEV, ANDROID, deploy
+  I18n.add({
+    'Scorciatoie del browser per sviluppare: ricarica pulita, DevTools, console, dispositivo, localhost': 'Browser shortcuts for web development: hard reload, DevTools, console, device mode, localhost',
+    'adb e logcat: dispositivi, errori e crash, screenshot, schermo con scrcpy, React Native': 'adb and logcat: devices, errors and crashes, screenshots, phone screen with scrcpy, React Native',
+    'Ricarica': 'Reload', 'Ricarica pulita': 'Hard reload', 'senza cache · Ctrl+Shift+R': 'no cache · Ctrl+Shift+R', 'Ispeziona': 'Inspect',
+    'Dispositivo': 'Device', 'telefono/tablet · Ctrl+Shift+M': 'phone/tablet · Ctrl+Shift+M', 'Comandi': 'Commands', 'Cerca nei file': 'Search files',
+    'Sorgente': 'Source', 'Riapri scheda': 'Reopen tab', 'Cancella dati': 'Clear data', 'cache e cookie · Ctrl+Shift+Canc': 'cache and cookies · Ctrl+Shift+Del',
+    'Schermo intero': 'Full screen', 'Dispositivi': 'Devices', 'Errori': 'Errors', 'logcat · ultimi errori': 'logcat · latest errors',
+    'logcat · buffer crash': 'logcat · crash buffer', 'Pulisci logcat': 'Clear logcat', 'nelle Immagini del PC': 'to the PC Pictures folder',
+    'tasto del telefono': 'phone button', 'Recenti': 'Recents', 'app aperte': 'open apps', 'Ricarica app': 'Reload app',
+    'se il telefono non si vede': 'if the phone is not listed', 'Riavvia adb': 'Restart adb', 'Deploy falliti': 'Failed deploys',
+    'Screenshot salvato in Immagini (vibedeck-android.png)': 'Screenshot saved to Pictures (vibedeck-android.png)', 'adb riavviato': 'adb restarted',
+    'Logcat svuotato': 'Logcat cleared', 'Server adb fermato': 'adb server stopped', 'Server adb avviato': 'adb server started'
+  });
+
   // ---------------------------------------------------------------- testi con numeri o nomi
   var DAYS = { dom: 'Sun', lun: 'Mon', mar: 'Tue', mer: 'Wed', gio: 'Thu', ven: 'Fri', sab: 'Sat' };
   I18n.rules([

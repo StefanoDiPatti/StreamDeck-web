@@ -33,8 +33,20 @@ test('dock vuoto produce comunque una pagina', function () {
 
 test('ogni pulsante di default punta ad app, comandi, pagine e tasti esistenti', function () {
   const dock = config.normalizeDock(config.defaultDock());
-  const apps = readDefault('apps').apps;
-  const commands = readDefault('commands').commands;
+  // app e comandi predefiniti: apps.json / commands.json più le cartelle config/defaults/apps e commands
+  const fromDir = function (kind) {
+    const dir = require('path').join(__dirname, '..', 'config', 'defaults', kind);
+    const out = {};
+    let names = [];
+    try { names = require('fs').readdirSync(dir); } catch (e) { names = []; }
+    names.forEach(function (n) {
+      const d = config.parseJson(require('fs').readFileSync(require('path').join(dir, n), 'utf8'));
+      Object.assign(out, d[kind] || { [n.replace(/\.json$/, '')]: d });
+    });
+    return out;
+  };
+  const apps = Object.assign({}, readDefault('apps').apps, fromDir('apps'));
+  const commands = Object.assign({}, readDefault('commands').commands, fromDir('commands'));
   const pageIds = dock.pages.map(function (p) { return p.id; });
   const widgets = ['system', 'nowplaying', 'queue', 'github', 'todo', 'chat', 'clock', 'claude', 'discord', 'screens', 'mail', 'audio', 'vdesk', 'viber'];
   function checkAction(a, where) {

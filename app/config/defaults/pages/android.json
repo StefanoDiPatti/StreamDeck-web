@@ -1,0 +1,26 @@
+// Pagina ANDROID (id "android"): adb e logcat per provare le app sul telefono collegato (USB o Wi-Fi).
+// Serve adb (Android SDK platform-tools); scrcpy per vedere lo schermo del telefono sul PC.
+// I comandi sono in config/defaults/commands/android.json. Tra le pagine disponibili: aggiungila dal pannello.
+{
+  "id": "android",
+  "title": "ANDROID",
+  "icon": "android",
+  "description": "adb e logcat: dispositivi, errori e crash, screenshot, schermo con scrcpy, React Native",
+  "tab": false,
+  "autoGrid": true,
+  "tiles": [
+    { "id": "dispositivi", "label": "DISPOSITIVI", "icon": "android", "sub": "adb devices", "color": "#2f6b3a", "action": { "type": "command", "id": "adb_devices" } },
+    { "id": "errori", "label": "ERRORI", "icon": "flag", "sub": "logcat · ultimi errori", "color": "#8b1d1d", "action": { "type": "command", "id": "adb_logcat_errors" } },
+    { "id": "crash", "label": "CRASH", "icon": "bolt", "sub": "logcat · buffer crash", "action": { "type": "command", "id": "adb_logcat_crash" } },
+    { "id": "pulisci_logcat", "label": "PULISCI LOGCAT", "icon": "trash", "sub": "logcat -c", "action": { "type": "command", "id": "adb_logcat_clear" } },
+    { "id": "scrcpy", "label": "SCHERMO", "icon": "desktop", "sub": "scrcpy", "color": "#1f4f8f", "action": { "type": "launch", "app": "scrcpy" } },
+    { "id": "screenshot", "label": "SCREENSHOT", "icon": "camera", "sub": "nelle Immagini del PC", "action": { "type": "macro", "doneMessage": "Screenshot salvato in Immagini (vibedeck-android.png)", "steps": [ { "type": "command", "id": "adb_screencap" }, { "type": "command", "id": "adb_screenpull" } ] } },
+    { "id": "home", "label": "HOME", "icon": "home", "sub": "tasto del telefono", "action": { "type": "command", "id": "adb_home" } },
+    { "id": "indietro", "label": "INDIETRO", "icon": "back", "sub": "tasto del telefono", "action": { "type": "command", "id": "adb_back" } },
+    { "id": "recenti", "label": "RECENTI", "icon": "apps", "sub": "app aperte", "action": { "type": "command", "id": "adb_recents" } },
+    { "id": "rn_menu", "label": "DEV MENU", "icon": "keyboard", "sub": "React Native", "action": { "type": "command", "id": "adb_devmenu" } },
+    { "id": "rn_reload", "label": "RICARICA APP", "icon": "refresh", "sub": "React Native · RR", "action": { "type": "command", "id": "adb_reload_rn" } },
+    { "id": "metro", "label": "METRO 8081", "icon": "link", "sub": "adb reverse", "action": { "type": "command", "id": "adb_reverse_metro" } },
+    { "id": "riavvia_adb", "label": "RIAVVIA ADB", "icon": "power", "sub": "se il telefono non si vede", "confirm": true, "action": { "type": "macro", "doneMessage": "adb riavviato", "steps": [ { "type": "command", "id": "adb_kill_server" }, { "type": "wait", "ms": 500 }, { "type": "command", "id": "adb_start_server" } ] } }
+  ]
+}
