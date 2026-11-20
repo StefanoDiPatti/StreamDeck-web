@@ -5,5 +5,7 @@
   "title": "GITHUB",
   "icon": "github",
   "description": "Repository, pull request e issue",
+  // configurazione standard: tra le disponibili, la aggiungi alla barra dal pannello
+  "tab": false,
   "tiles": [ { "widget": "github", "w": 5, "h": 3 } ]
 }

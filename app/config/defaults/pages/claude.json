@@ -5,5 +5,7 @@
   "title": "CLAUDE",
   "icon": "sparkle",
   "description": "Chat, sessioni di Claude Code, dettatura, scrittura sul PC",
+  // configurazione standard: tra le disponibili, la aggiungi alla barra dal pannello
+  "tab": false,
   "tiles": [ { "widget": "claude", "w": 5, "h": 3 } ]
 }

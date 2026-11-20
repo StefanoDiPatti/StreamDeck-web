@@ -5,6 +5,6 @@
   "title": "AUDIO",
   "icon": "volup",
   "description": "Uscite e microfoni (predefinito, volume, mute) e volume di ogni app",
-  "tab": false,
+  // configurazione standard: nella barra
   "tiles": [ { "widget": "audio", "w": 5, "h": 3 } ]
 }

@@ -5,6 +5,8 @@
   "title": "DEV",
   "icon": "code",
   "description": "VS Code, Claude Code, terminale, OpenClaw e scorciatoie",
+  // configurazione standard: tra le disponibili, la aggiungi alla barra dal pannello
+  "tab": false,
   "autoGrid": true,
   "tiles": [
     { "id": "vscode", "label": "VS CODE", "icon": "code", "color": "#1e6fb8", "action": { "type": "launch", "app": "vscode" } },
